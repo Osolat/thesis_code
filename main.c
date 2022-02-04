@@ -8,7 +8,7 @@ main() {
     return 0;
 }
 
-//This is IBE 1-2-3 ABC
+//This is IBE 1-2-3 ABC Comb my beard
 void ibe() {
     core_init();
     g1_t P;
