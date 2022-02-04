@@ -8,6 +8,7 @@ main() {
     return 0;
 }
 
+//This is IBE 1-2-3 ABC
 void ibe() {
     core_init();
     g1_t P;
