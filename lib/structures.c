@@ -17,15 +17,39 @@
 
 #include <stdlib.h>
 #include "structures.h"
+#include "zp_arith.h"
+#include "g1_arith.h"
+#include "g2_arith.h"
+#include "gt_arith.h"
 
 int init_master_key(const uint32_t n_attr, struct master_key *m) {
 
     m->N_ATTR = n_attr;
-    m->attributes = (struct attribute *) malloc (n_attr * sizeof(struct attribute));
+    m->attributes = (struct attribute *) malloc(n_attr * sizeof(struct attribute));
 
     if (m->attributes == NULL) {
         return EXIT_FAILURE;
     } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_public_key_cp(const uint32_t n_attr, struct public_key_cp *p) {
+
+    p->N_ATTR = n_attr;
+    p->attributes = (struct attribute_blind *) malloc (n_attr * sizeof(struct attribute_blind));
+
+    if (p->attributes == NULL) {
+        return EXIT_FAILURE;
+    } else {
+
+        g1_ar_init(&p->g);
+        g1_ar_init(&p->B);
+        g2_ar_init(&p->h);
+
+        for (uint32_t i = 0; i < n_attr; i++)
+            g1_ar_init(&p->attributes[i].g_b_attr);
+
         return EXIT_SUCCESS;
     }
 }

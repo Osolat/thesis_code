@@ -8,7 +8,11 @@
 extern "C" {
 #include "relic_type3/relic.h"
 #include "lib/structures.h"
-
+#include "lib/g1_arith.h"
+#include "lib/g2_arith.h"
+#include "lib/gt_arith.h"
+#include "lib/zp_arith.h"
+#include "lib/pairing_arith.h"
 }
 
 

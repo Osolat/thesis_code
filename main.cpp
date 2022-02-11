@@ -41,7 +41,19 @@ int main(int argc, char **argv) {
     }
 
     struct master_key msk;
+    struct public_key_cp mpk;
+
     init_master_key(N_ATTR, &msk);
+    init_public_key_cp(N_ATTR, &mpk);
+
+    core_init();
+
+    bn_t order;
+    pc_param_set_any();
+    pc_param_print();
+    pc_get_ord(order);
+
+    /* Setup */
 
     return 0;
 }
