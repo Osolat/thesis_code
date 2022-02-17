@@ -1,3 +1,4 @@
+/*
 #include "relic_type3/relic.h"
 #include "relic_type3/relic_test.h"
 
@@ -113,3 +114,4 @@ void ibe() {
     //Test comment
     core_clean();
 }
+*/
