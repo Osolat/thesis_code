@@ -6,53 +6,48 @@
 #include <string>
 #include "bench_defs.h"
 
-long long cpucycles(void)
-{
+long long cpucycles(void) {
     unsigned long long result;
     asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"
-    : "=a" (result) ::  "%rdx");
+    : "=a" (result)::"%rdx");
     return result;
 }
 
-static int cmp_llu(const void *a, const void*b)
-{
-    if(*(unsigned long long *)a < *(unsigned long long *)b) return -1;
-    if(*(unsigned long long *)a > *(unsigned long long *)b) return 1;
+static int cmp_llu(const void *a, const void *b) {
+    if (*(unsigned long long *) a < *(unsigned long long *) b) return -1;
+    if (*(unsigned long long *) a > *(unsigned long long *) b) return 1;
     return 0;
 }
 
-static unsigned long long median(unsigned long long *l, size_t llen)
-{
-    qsort(l,llen,sizeof(unsigned long long),cmp_llu);
+static unsigned long long median(unsigned long long *l, size_t llen) {
+    qsort(l, llen, sizeof(unsigned long long), cmp_llu);
 
-    if(llen%2) return l[llen/2];
-    else return (l[llen/2-1]+l[llen/2])/2;
+    if (llen % 2) return l[llen / 2];
+    else return (l[llen / 2 - 1] + l[llen / 2]) / 2;
 }
 
-static unsigned long long average(unsigned long long *t, size_t tlen)
-{
-    unsigned long long acc=0;
+static unsigned long long average(unsigned long long *t, size_t tlen) {
+    unsigned long long acc = 0;
     size_t i;
-    for(i=0;i<tlen;i++)
+    for (i = 0; i < tlen; i++)
         acc += t[i];
-    return acc/(tlen);
+    return acc / (tlen);
 }
 
-static void print_results(const char *s, unsigned long long *t, size_t tlen)
-{
+static void print_results(const char *s, unsigned long long *t, size_t tlen) {
     size_t i;
-    for(i=0;i<tlen-1;i++)
-    {
-        t[i] = t[i+1] - t[i];
+    for (i = 0; i < tlen - 1; i++) {
+        t[i] = t[i + 1] - t[i];
     }
-    printf("%llu,", average(t, tlen-1));
+    printf("%llu,", average(t, tlen - 1));
 }
 
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
     if (argc == 1) {
-        printf("Need to give argument");
+        printf("Need to give argument\n");
+        printf("I did it. LOL EASY PEASY, I AM COMPILED WITH OPENABE POLICIES! \n");
         return 0;
     }
 
@@ -125,8 +120,11 @@ int main(int argc, char **argv) {
 
     gt_new(mpk.A);
     fp12_set_dig(mpk.A, 1);
-    g1_t g_b_attr; g1_null(g_b_attr); g1_new(g_b_attr);
-    bn_t b_attr; bn_null(b_attr);
+    g1_t g_b_attr;
+    g1_null(g_b_attr);
+    g1_new(g_b_attr);
+    bn_t b_attr;
+    bn_null(b_attr);
     bn_new(b_attr);
 
     for (int j = 0; j < NTESTS; j++) {
@@ -157,17 +155,23 @@ int main(int argc, char **argv) {
 
     struct secret_key_cp sk;
     init_secret_key_cp(N_ATTR, &sk);
-    bn_t exp_tmp; bn_null(exp_tmp);
+    bn_t exp_tmp;
+    bn_null(exp_tmp);
     bn_new(exp_tmp);
-    g1_t k_attr; g1_null(k_attr); g1_new(k_attr);
+    g1_t k_attr;
+    g1_null(k_attr);
+    g1_new(k_attr);
 
-    bn_t exp_tmp_x; bn_null(exp_tmp_x);
+    bn_t exp_tmp_x;
+    bn_null(exp_tmp_x);
     bn_new(exp_tmp_x);
-    bn_t r; bn_null(r);
+    bn_t r;
+    bn_null(r);
     bn_new(r);
 
     bn_rand_mod(r, order);
-    bn_t r_mul_b; bn_null(r_mul_b);
+    bn_t r_mul_b;
+    bn_null(r_mul_b);
     bn_new(r_mul_b);
 
     for (int j = 0; j < NTESTS; j++) {
@@ -191,11 +195,16 @@ int main(int argc, char **argv) {
 
     std::unique_ptr <L_OpenABEFunctionInput> funcInput = nullptr;
 
-    g1_t C_1; g2_null(C_1); g2_new(C_1);
-    g2_t C_2; g2_null(C_2); g2_new(C_2);
+    g1_t C_1;
+    g2_null(C_1);
+    g2_new(C_1);
+    g2_t C_2;
+    g2_null(C_2);
+    g2_new(C_2);
 
     struct ciphertext_cp CT_A;
-    init_ciphertext_cp(N_ATTR, &CT_A);gt_new(CT_A.C);
+    init_ciphertext_cp(N_ATTR, &CT_A);
+    gt_new(CT_A.C);
     fp12_set_dig(CT_A.C, 1);
 
     L_OpenABELSSS lsss(1);
@@ -219,9 +228,12 @@ int main(int argc, char **argv) {
     bn_t s;
     bn_null(s);
     bn_new(s);
-    bn_t ri; bn_null(ri);
+    bn_t ri;
+    bn_null(ri);
     bn_new(ri);
-    g1_t b_attr_blind; g1_null(b_attr_blind); g1_new(b_attr_blind);
+    g1_t b_attr_blind;
+    g1_null(b_attr_blind);
+    g1_new(b_attr_blind);
 
     for (int j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
@@ -254,36 +266,56 @@ int main(int argc, char **argv) {
     bn_t pack_bn[N_ATTR];
     g1_t pairing_g1[N_ATTR];
     g2_t pairing_g2[N_ATTR];
-    gt_t z;gt_null(z);gt_new(z);
-    bn_t coeff; bn_null(coeff);
+    gt_t z;
+    gt_null(z);
+    gt_new(z);
+    bn_t coeff;
+    bn_null(coeff);
     bn_new(coeff);
-    gt_t P_3;gt_null(P_3);gt_new(P_3);
+    gt_t P_3;
+    gt_null(P_3);
+    gt_new(P_3);
     fp12_set_dig(P_3, 1);
 
-    gt_t P_3_prod;gt_null(P_3_prod);gt_new(P_3_prod);
+    gt_t P_3_prod;
+    gt_null(P_3_prod);
+    gt_new(P_3_prod);
     fp12_set_dig(P_3_prod, 1);
 
-    g1_t C1_prod; g1_null(C1_prod); g1_new(C1_prod);
+    g1_t C1_prod;
+    g1_null(C1_prod);
+    g1_new(C1_prod);
     g1_set_infty(C1_prod);
-    g1_t K_prod; g1_null(K_prod); g1_new(K_prod);
+    g1_t K_prod;
+    g1_null(K_prod);
+    g1_new(K_prod);
     g1_set_infty(K_prod);
 
 
     int i = 0;
 
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
-        g1_null(pack_g1[i]); g1_new(pack_g1[i]);
+        g1_null(pack_g1[i]);
+        g1_new(pack_g1[i]);
         bn_null(pack_bn[i]);
         bn_new(pack_bn[i]);
-        g1_null(pairing_g1[i]); g1_new(pairing_g1[i]);
-        g2_null(pairing_g2[i]); g2_new(pairing_g2[i]);
+        g1_null(pairing_g1[i]);
+        g1_new(pairing_g1[i]);
+        g2_null(pairing_g2[i]);
+        g2_new(pairing_g2[i]);
 
         i++;
     }
 
-    gt_t P_1;gt_null(P_1);gt_new(P_1);
-    gt_t P_2;gt_null(P_2);gt_new(P_2);
-    gt_t final;gt_null(final);gt_new(final);
+    gt_t P_1;
+    gt_null(P_1);
+    gt_new(P_1);
+    gt_t P_2;
+    gt_null(P_2);
+    gt_new(P_2);
+    gt_t final;
+    gt_null(final);
+    gt_new(final);
 
     for (int j = 0; j < NTESTS; j++) {
 
