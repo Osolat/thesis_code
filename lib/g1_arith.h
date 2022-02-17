@@ -31,8 +31,9 @@
 #ifndef __G1_ARITH_H__
 #define __G1_ARITH_H__
 
-#include "relic_type3/relic.h"
-
+extern "C" {
+#include <relic/relic.h>
+}
 
 void g1_ar_init(g1_t *e);                         
 void g1_ar_set_to_infinity(g1_t *e);              

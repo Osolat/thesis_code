@@ -24,24 +24,39 @@
 /// Public License. For more information on commerical licenses,
 /// visit <http://www.zeutro.com>.
 ///
+/// \file   zgroup.h
+///
+/// \brief  Base class definition for OpenABE groups (EC/pairings)
+///
+/// \author J. Ayo Akinyele
+///
 
+#ifndef __L_ZGROUP_H__
+#define __L_ZGROUP_H__
 
-/* Arithmetic in G2, function declarations */                          
+#include <gmpxx.h>
+#include "../l_zobject.h"
+#include "../l_zconstants.h"
 
-#ifndef __G_2_ARITH_H__                                               
-#define __G_2_ARITH_H__     
+///
+/// @class  ZGroup
+///
+/// @brief  Abstract group for EC/Pairing operations.
+///
+//namespace oabe {
 
-extern "C" {                                                                    
- #include <relic/relic.h>                                                        
-}
+class L_ZGroup : public L_ZObject {
+public:
+  L_ZGroup(L_OpenABECurveID id);
+  ~L_ZGroup();
+  L_OpenABECurveID  getCurveID();
+  friend std::ostream& operator<<(std::ostream& s, const L_ZGroup&);
 
-void g2_ar_init(g2_t *e);                         
-void g2_ar_set_to_infinity(g2_t *e);              
-int g2_ar_cmp_op(g2_t x, g2_t y);               
-void g2_ar_mul_op(g2_t z, g2_t x, bn_t r);  
+protected:
+  L_OpenABECurveID id;
+  std::string group_param;
+};
 
-void g2_ar_point_add(g2_t z, g2_t y);
+//}
 
-void g2_ar_point_sub(g2_t z, g2_t x);
-
-#endif
+#endif /* ifdef __ZGROUP_H__ */

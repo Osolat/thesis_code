@@ -24,24 +24,44 @@
 /// Public License. For more information on commerical licenses,
 /// visit <http://www.zeutro.com>.
 ///
+/// \file   zgroup.cpp
+///
+/// \brief  Base class definition for OpenABE groups (EC/pairings)
+///
+/// \author J. Ayo Akinyele
+///
 
+#define __L_ZGROUP_CPP__
 
-/* Arithmetic in G2, function declarations */                          
+#include "l_zgroup.h"
+//#include <openabe/openabe.h>
 
-#ifndef __G_2_ARITH_H__                                               
-#define __G_2_ARITH_H__     
+/********************************************************************************
+ * Implementation of the ZGroup class
+ ********************************************************************************/
+//namespace oabe {
 
-extern "C" {                                                                    
- #include <relic/relic.h>                                                        
+/*!
+ * Constructor for the ZGroup class.
+ *
+ */
+
+L_ZGroup::L_ZGroup(L_OpenABECurveID id) {
+  this->id = id;
+  this->group_param = "";
 }
 
-void g2_ar_init(g2_t *e);                         
-void g2_ar_set_to_infinity(g2_t *e);              
-int g2_ar_cmp_op(g2_t x, g2_t y);               
-void g2_ar_mul_op(g2_t z, g2_t x, bn_t r);  
+/*!
+ * Destructor for the ZGroup class.
+ *
+ */
 
-void g2_ar_point_add(g2_t z, g2_t y);
+L_ZGroup::~L_ZGroup() {}
 
-void g2_ar_point_sub(g2_t z, g2_t x);
+L_OpenABECurveID L_ZGroup::getCurveID() { return id; }
 
-#endif
+std::ostream &operator<<(std::ostream &os, const L_ZGroup &z) {
+  //os << z.group_param << " : " << z.id;
+  return os;
+}
+

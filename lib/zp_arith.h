@@ -32,8 +32,9 @@
 #ifndef __ZP_ARITH_H__
 #define __ZP_ARITH_H__
 
-#include "relic_type3/relic.h"
-
+extern "C" {                                                                    
+        #include <relic/relic.h>                                                        
+}   
 
 #define bn_t_inits(bp){\
         bn_null(bp);\
