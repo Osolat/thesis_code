@@ -771,6 +771,20 @@ void set_c_attr_c_2_ok(const uint32_t attr, g2_t c_2, struct ciphertext_ok *c);
 void set_c_attr_c_2_od(const uint32_t attr, g2_t c_2, struct ciphertext_od *c);
 void set_c_attr_c_2_cp(const uint32_t attr, g2_t c_2, struct ciphertext_cp *c);
 
+//Key Policy
+
+struct public_key_kp_gpsw {
+    uint32_t N_ATTR;
+    gt_t Y;
+    g1_t *T_values;
+};
+
+struct master_key_kp_gpsw {
+    uint32_t N_ATTR;
+    struct attribute *attributes;
+    bn_t y;
+    bn_t *t_values;
+};
 #endif
 
 
