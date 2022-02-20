@@ -1203,7 +1203,34 @@ void set_c_attr_c_2_cp(const uint32_t attr, g2_t c_2, struct ciphertext_cp *c) {
   }
 }
 
+int init_master_key_kp_gpsw(const u_int32_t n_attr, struct master_key_kp_gpsw *m) {
+    m->N_ATTR = n_attr;
+    m->attributes = (struct attribute *) malloc(n_attr * sizeof(struct attribute));
 
+    if (m->attributes == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+
+    m->t_values = (bn_t *) malloc(n_attr * sizeof(bn_t));
+    if (m->t_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+    bn_null(m->y);
+    bn_new(m->y);
+    return EXIT_SUCCESS;
+}
+
+int init_public_key_kp_gpsw(const u_int32_t n_attr, struct public_key_kp_gpsw *p) {
+    p->N_ATTR = n_attr;
+    p->T_values = (g1_t *) malloc(n_attr * sizeof(g1_t));
+    gt_null(&p->Y);
+    gt_new(&p->Y);
+    return EXIT_SUCCESS;
+}
 
 
 
