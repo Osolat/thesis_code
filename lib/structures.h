@@ -711,7 +711,7 @@ void set_c_attr_c_2_cp(const uint32_t attr, g2_t c_2, struct ciphertext_cp *c);
 struct public_key_kp_gpsw {
     uint32_t N_ATTR;
     gt_t Y;
-    g1_t *T_values;
+    g2_t *T_values;
 };
 
 struct master_key_kp_gpsw {
@@ -728,7 +728,7 @@ struct secret_key_kp_gpsw {
 struct ciphertext_kp_gpsw {
     bn_t gamma;
     gt_t E_prime;
-    g1_t *E_values;
+    g2_t *E_values;
 };
 
 int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m);

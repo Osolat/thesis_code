@@ -1042,13 +1042,6 @@ void get_c_attr_c_2_cp(const uint32_t attr, const struct ciphertext_cp c, g2_t c
     }
 }
 
-void get_c_attr_c_2_lu_oe(const uint32_t attr, const struct ciphertext_cp c, g2_t c_2) {
-    for (uint32_t i = 0; i < c.N_ATTR; i++) {
-        if (c.C_2[i].attr == attr)
-            g2_copy(c_2, c.C_2[i].c_attr);
-    }
-}
-
 void set_c_attr_c_1(const uint32_t attr, g1_t c_1, struct ciphertext *c) {
     for (uint32_t i = 0; i < c->N_ATTR; i++) {
         if (c->C_1[i].attr == attr)
@@ -1151,7 +1144,7 @@ int init_master_key_kp_gpsw(const u_int32_t n_attr, struct master_key_kp_gpsw *m
 
 int init_public_key_kp_gpsw(const u_int32_t n_attr, struct public_key_kp_gpsw *p) {
     p->N_ATTR = n_attr;
-    p->T_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
+    p->T_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (p->T_values == NULL) {
         return EXIT_FAILURE;
     }
@@ -1170,7 +1163,7 @@ int init_secret_key_kp_gpsw(const u_int32_t n_attr, struct secret_key_kp_gpsw *s
 
 int init_ciphertext_kp_gpsw(const u_int32_t n_attr, struct ciphertext_kp_gpsw *E) {
     // TODO: Implement to work with complicated access structures. Right now it's just all attributes.
-    E->E_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
+    E->E_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (E->E_values == NULL) {
         return EXIT_FAILURE;
     }

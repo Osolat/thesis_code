@@ -129,6 +129,7 @@ int main(int argc, char **argv) {
         bn_null(msk.t_values[i]);
         bn_rand_mod(msk.t_values[i], order);
     }
+
     /*pick y randomly in Z_p*/
     bn_new(msk.y);
     bn_null(msk.y);
@@ -139,8 +140,9 @@ int main(int argc, char **argv) {
     for (int i = 0; i < test_attr; i++) {
         g1_new(mpk.T_values[i]);
         g1_null(mpk.T_values[i]);
-        g1_mul(mpk.T_values[i], g, msk.t_values[i]);
+        g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
     }
+
     /*Y = e(g,g)^y*/
     pp_map_oatep_k12(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
@@ -189,13 +191,16 @@ int main(int argc, char **argv) {
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
         /*Dx = g^(q_x(0)/t_x)*/
         // g1_mul_sim(CT_A.C_1[i].c_attr, mpk.B, it->second.element().m_ZP, mpk.attributes[i].g_b_attr, ri);
-        bn_div(temp, it->second.element().m_ZP, msk.t_values[i]);
+        // bn_div(temp, it->second.element().m_ZP, msk.t_values[i]);
+        bn_mod_inv(temp, msk.t_values[i], order);
+        bn_mul(temp, temp, it->second.element().m_ZP);
         g1_mul(sk.D_values[i], g, temp);
         // bn_print(it->second.element().m_ZP);
         i++;
     }
 
     /* Encryption */
+    // TODO: Fix message construction.
     gt_t message;
     gt_new(message);
     gt_null(message);
@@ -208,7 +213,50 @@ int main(int argc, char **argv) {
     bn_rand_mod(s, order);
 
     struct ciphertext_kp_gpsw E;
+    init_ciphertext_kp_gpsw(test_attr, &E);
+    gt_exp(E.E_prime, mpk.Y, s);
+    gt_mul(E.E_prime, E.E_prime, message);
+    for (int i = 0; i < test_attr; i++) {
+        g1_new(E.E_values[i]);
+        g1_null(E.E_values[i]);
+        // TODO: Should this be mul? need T^s.
+        g2_mul(E.E_values[i], mpk.T_values[i], s);
+    }
 
+    /*Decryption(E,D) -> message*/
+    lsss.l_recoverCoefficients(policy, attrList);
+    lsssRows = lsss.l_getRows();
+
+    gt_t F_root;
+    gt_new(F_root);
+    gt_null(F_root);
+    // TODO: Is this legal? fp12_set_dig
+    fp12_set_dig(F_root, 1);
+    gt_t mapping;
+    gt_new(mapping);
+    gt_null(mapping);
+    i = 0;
+
+    for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
+        // TODO: Fix so it works with special attribute policies
+        // TODO: Could do pp_map_sim here instead. Sim is better
+        pp_map_oatep_k12(mapping, sk.D_values[i], E.E_values[i]);
+        gt_exp(mapping, mapping, it->second.element().m_ZP);
+        gt_mul(F_root, F_root, mapping);
+        i++;
+    }
+
+    gt_t result;
+    gt_new(result);
+    gt_null(result);
+
+    gt_inv(F_root, F_root);
+    gt_mul(result, F_root, E.E_prime);
+
+    printf("------------------ \n");
+    gt_print(result);
+    printf("----------------------\n");
+    printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
     /* Generate precomputation tables for g, h */
 
     /*
