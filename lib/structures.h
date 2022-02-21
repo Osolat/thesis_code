@@ -785,6 +785,10 @@ struct master_key_kp_gpsw {
     bn_t y;
     bn_t *t_values;
 };
+
+int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m);
+int init_public_key_kp_gpsw(const uint32_t n_attr, struct public_key_kp_gpsw *p);
+
 #endif
 
 
