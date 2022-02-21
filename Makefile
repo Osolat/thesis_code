@@ -30,7 +30,7 @@ main:
 	cc $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) -fPIC  -O3 -DSSL_LIB_INIT  -Wno-implicit-function-declaration  -c legacy/arith/l_zelement.c -o l_zelement.o
 	g++ $(CXXFLAGS) -c legacy/arith/l_zelement_bp.cpp -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c legacy/lsss/l_zlsss.cpp -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(LEGACY_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) main.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(LEGACY_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o	
 
 clean:
