@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
         gt_mul(F_root, F_root, mapping);
         i++;
     }
-
+    L_createPolicyTree()
     gt_t result;
     gt_new(result);
     gt_null(result);
