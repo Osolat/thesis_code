@@ -12,3 +12,4 @@
 *.vsix
 
 objects/*
+objects/main
