@@ -235,8 +235,8 @@ int main(int argc, char **argv) {
     gt_t mapping;
     gt_new(mapping);
     gt_null(mapping);
-    i = 0;
 
+    i = 0;
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
         // TODO: Fix so it works with special attribute policies
         // TODO: Could do pp_map_sim here instead. Sim is better
@@ -245,7 +245,6 @@ int main(int argc, char **argv) {
         gt_mul(F_root, F_root, mapping);
         i++;
     }
-    L_createPolicyTree()
     gt_t result;
     gt_new(result);
     gt_null(result);

@@ -14,8 +14,9 @@ struct node {
 /**
  * Initialises a tree from a boolean formula.
  * @param[in] formula			- "AND(OR(A), OR(B), OR(OR(C), OR(D))" = A AND B AND (C OR D)
+ * @param[in] root              - Node to initialise as root.
  */
-int tree_from_string(std::string formula);
+int tree_from_string(std::string formula, struct node *root);
 
 /**
  * Add children to a node from formula. A result of parsing into a formula string.
