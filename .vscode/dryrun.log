@@ -1,0 +1,25 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory '/home/benjamin/Master-Thesis/code/thesis_code'
+************  Compiling ************
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/policy/policy_tree.cpp -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/zp_arith.c -Iusr/local/include/ 
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/g1_arith.c -Iusr/local/include/ 
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/g2_arith.c -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/gt_arith.c -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/structures.c -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c lib/pairing_arith.c -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/l_zobject.cpp 
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/l_zfunctioninput.cpp 
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/l_zattributelist.cpp  
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/l_zpolicy.cpp
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/parser/l_zdriver.cpp
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/parser/zscanner.cpp 
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/parser/zparser.tab.cc
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/arith/l_zgroup.cpp
+cc -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -Iusr/local/include/ -fPIC  -O3 -DSSL_LIB_INIT  -Wno-implicit-function-declaration  -c legacy/arith/l_zelement.c -o l_zelement.o
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/arith/l_zelement_bp.cpp -Iusr/local/include/
+g++ -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  -c legacy/lsss/l_zlsss.cpp -Iusr/local/include/
+g++ -o objects/main -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native  zp_arith.o g1_arith.o g2_arith.o gt_arith.o structures.o pairing_arith.o policy_tree.o l_zobject.o l_zfunctioninput.o l_zattributelist.o l_zpolicy.o l_zdriver.o zscanner.o zparser.tab.o l_zgroup.o l_zelement.o l_zelement_bp.o l_zlsss.o -Iusr/local/include/ test_access_tree.cpp /usr/local/lib/librelic_s.a -lgmp
+rm *.o	
+make: Leaving directory '/home/benjamin/Master-Thesis/code/thesis_code'
+ 
