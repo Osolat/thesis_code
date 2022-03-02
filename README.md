@@ -6,7 +6,7 @@ This repository contains the code for the authors' thesis project.
   * Clone project ``git clone https://github.com/Osolat/thesis_code.git``
 
 ### Dependencies
-The current version of the code requires Relic (https://github.com/relic-toolkit/relic) to be installed in /usr/include, although that could be easily changed. We have only tested on curve bls12-381. Therefore, follow and install Relic using preset ``x64-pbc-bls12-381.sh``
+The current version of the code requires Relic (https://github.com/relic-toolkit/relic) to be installed in /usr/lib, although that could be easily changed. We have only tested on curve bls12-381. Therefore, follow and install Relic using preset ``x64-pbc-bls12-381.sh``
 
 #### Prequisites for installing Relic
 Follow guidelines from Relic, but here's an reiteration of important dependencies:
