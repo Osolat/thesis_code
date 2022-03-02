@@ -648,7 +648,6 @@ void get_k_attr(const uint32_t attr, const struct secret_key s, g2_t k_attr);
 void get_k_attr_lu_oe(const uint32_t attr, const struct secret_key_lu_oe s, g1_t k_attr);
 
 void get_k_attr_ok(const uint32_t attr, const struct secret_key_ok s, g1_t k_attr);
-void get_k_attr_wat11_i_ok(const uint32_t attr, const struct secret_key_ok s, g1_t k_attr);
 
 void get_k_attr_lu_ok(const uint32_t attr, const struct secret_key_lu_ok s, g1_t k_attr);
 
@@ -689,7 +688,6 @@ void set_c_attr_c_1_od(const uint32_t attr, g1_t c_1, struct ciphertext_od *c);
 void set_c_attr_c_1_cp(const uint32_t attr, g1_t c_1, struct ciphertext_cp *c);
 
 void get_c_attr_c_2(const uint32_t attr, const struct ciphertext c, g1_t c_2);
-void get_c_attr_c_2_lu_oe(const uint32_t attr, const struct ciphertext_lu_oe c, g2_t c_2);
 
 void get_c_attr_c_2_lu_oe(const uint32_t attr, const struct ciphertext c, g2_t c_2);
 
@@ -735,4 +733,15 @@ int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m)
 int init_public_key_kp_gpsw(const uint32_t n_attr, struct public_key_kp_gpsw *p);
 int init_secret_key_kp_gpsw(const u_int32_t n_attr, struct secret_key_kp_gpsw *sk);
 int init_ciphertext_kp_gpsw(const u_int32_t n_attr, struct ciphertext_kp_gpsw *E);
+
+struct master_key_kp_gpsw_lu {
+    bn_t y;
+};
+
+struct public_key_kp_gpsw_lu {
+    g1_t g1;
+    g2_t g2;
+    g1_t *t_values;
+};
+
 #endif

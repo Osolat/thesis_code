@@ -50,21 +50,6 @@ int test5() {
 }
 
 int main(int argc, char const *argv[]) {
-    /*   struct node root;
-      root.gate = AND_GATE;
-      struct node* current_node = new node;
-      root.firstchild = current_node;
-      current_node -> gate = LEAF;
-
-      for (size_t i = 0; i < 5; i++)
-      {
-
-          struct node* brother = new node;
-          brother->gate = LEAF;
-          current_node->nextsibling = brother;
-          current_node = brother;
-      }
-      print_tree(&root); */
     std::cout << "Test 1 " << std::endl;
     test1();
     std::cout << "--------------------- " << std::endl;
