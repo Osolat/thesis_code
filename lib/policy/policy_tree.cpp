@@ -120,13 +120,13 @@ int add_children(struct node* parent, string formula) {
         g = LEAF;
         open = open + 2;
     } else {
-        size_t found = formula.substr(open, open + 3).find("OR");
+        size_t found = string(&formula[open], &formula[open + 4]).find("OR");
         // Case 2
         if (found != string::npos) {
             open = open + 2;
             g = OR_GATE;
         } else {
-            found = formula.substr(open, open + 3).find("AND");
+            found = string(&formula[open], &formula[open + 4]).find("AND");
             if (found != string::npos) {
                 open = open + 3;
                 g = AND_GATE;
@@ -135,25 +135,24 @@ int add_children(struct node* parent, string formula) {
             }
         }
     }
-    cout << "Child add here" << endl;
 
     size_t closing = find_closing_paren(formula, open);
     struct node* leftmost_child = new node;
     leftmost_child->gate = g;
-    leftmost_child->firstchild = nullptr;
-    leftmost_child->nextsibling = nullptr;
     parent->firstchild = leftmost_child;
     if (g == OR_GATE || g == AND_GATE) {
-        add_children(leftmost_child, formula.substr(open, closing - 1));
+        add_children(leftmost_child, string(&formula[open], &formula[closing]));
+    } else {
+        // Is LEAF gate
+        string s = string(&formula[open + 5], &formula[closing]);
+        leftmost_child->attribute_idx = stoull(s);
     }
     // Parse and add all siblings
     struct node* current_node = leftmost_child;
     string sibling_string = formula.substr(closing + 1, formula.size());
-    sibling_string = trim(sibling_string);
 
     while (sibling_string.size() != 0 && sibling_string.at(0) == ',') {
         sibling_string = sibling_string.substr(1);
-        sibling_string = trim(sibling_string);
         size_t open = find_index_first_gate(sibling_string);
         gate_type g;
         // Case 1
@@ -162,63 +161,67 @@ int add_children(struct node* parent, string formula) {
             g = LEAF;
             open = open + 2;
         } else {
-            size_t found = sibling_string.substr(open, open + 3).find("OR");
+            size_t found = string(&sibling_string[open], &sibling_string[open + 4]).find("OR");
             // Case 2
             if (found != string::npos) {
                 open = open + 2;
                 g = OR_GATE;
             } else {
-                found = sibling_string.substr(open, open + 3).find("AND");
+                found = string(&sibling_string[open], &sibling_string[open + 4]).find("AND");
                 if (found != string::npos) {
                     open = open + 3;
                     g = AND_GATE;
                 }
             }
         }
-        cout << "Here sib" << endl;
         closing = find_closing_paren(sibling_string, open);
         struct node* brother = new node;
         brother->gate = g;
-        brother->nextsibling = nullptr;
-        brother->firstchild = nullptr;
         current_node->nextsibling = brother;
         if (g == OR_GATE || g == AND_GATE) {
-            add_children(brother, sibling_string.substr(open + 1, closing - 3));
+            add_children(brother, string(&sibling_string[open + 1], &sibling_string[closing]));
+        } else {
+            // Is LEAF gate
+            string s = string(&sibling_string[open + 5], &sibling_string[closing]);
+            brother->attribute_idx = stoull(s);
         }
-        sibling_string = sibling_string.substr(closing + 1, sibling_string.size());
+        sibling_string = sibling_string.substr(closing + 1);
         current_node = brother;
     }
     return EXIT_SUCCESS;
 }
 
-int print_node(struct node* n) {
-    string gate_name;
+string stringify_node(struct node* n) {
+    string s;
     switch (n->gate) {
         case LEAF:
-            gate_name = "LEAF";
+            s = "LEAF";
+            s.append(" - attribute").append(to_string(n->attribute_idx));
             break;
         case AND_GATE:
-            gate_name = "AND";
+            s = "AND";
             break;
         case OR_GATE:
-            gate_name = "OR";
+            s = "OR";
             break;
         default:
-            cout << "Node has no gate_name!" << endl;
-            return EXIT_FAILURE;
+            s = "UNDEFINED NODE";
             break;
     }
-    cout << gate_name << endl;
+    return s;
+}
+int print_node(struct node* n) {
+    cout << stringify_node(n) << endl;
     return EXIT_SUCCESS;
 }
 
 void print_tree(struct node* root) {
     print_node(root);
-    if (root->firstchild != nullptr) {
+    if (root->firstchild != NULL) {
         cout << "child" << endl;
         print_tree(root->firstchild);
     }
-    if (root->nextsibling != nullptr) {
+    if (root->nextsibling != NULL) {
         cout << "sibling" << endl;
         print_tree(root->nextsibling);
     }

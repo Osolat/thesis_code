@@ -1,14 +1,18 @@
 /*Created by Benjamin Birch Hansen on 2/22/22.*/
 #include <relic/relic.h>
+
 #include <string>
-enum gate_type{AND_GATE, OR_GATE, LEAF};
+enum gate_type { AND_GATE,
+                 OR_GATE,
+                 LEAF };
 
 struct node {
     // TODO: Need to define what a node needs internally. Lagrange coefficients?
     enum gate_type gate;
+    unsigned long long attribute_idx;
     bn_t share;
-    struct node *firstchild;
-    struct node *nextsibling;
+    struct node *firstchild = NULL;
+    struct node *nextsibling = NULL;
 };
 
 /**
@@ -25,7 +29,6 @@ int tree_from_string(std::string formula, struct node *root);
  */
 int add_children(struct node *parent, std::string formula);
 
-
 /**
  * Prints entire tree
  * @param[in] root			- pointer to root of tree that we want printed
@@ -37,3 +40,5 @@ void print_tree(struct node *root);
  * @param[in] n			- pointer to node we want printed
  */
 int print_node(struct node *n);
+
+std::string stringify_node(struct node *n);
