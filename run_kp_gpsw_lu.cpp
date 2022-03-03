@@ -2,11 +2,23 @@
 // Created by benjamin on 2/11/22.
 //
 
+#include <algorithm>
 #include <cstdio>
 #include <string>
 
 #include "bench_defs.h"
 
+unsigned char *uint32_to_u_char_array(const uint32_t n) {
+    unsigned char *a;
+
+    a = (unsigned char *)malloc(4 * sizeof(unsigned char));
+    a[0] = (n >> 24) & 0xff;
+    a[1] = (n >> 16) & 0xff;
+    a[2] = (n >> 8) & 0xff;
+    a[3] = n & 0xff;
+
+    return a;
+}
 long long cpucycles(void) {
     unsigned long long result;
     asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"
@@ -52,7 +64,6 @@ unsigned long long t[NTESTS];
 int main(int argc, char **argv) {
     if (argc == 1) {
         printf("Need to give argument\n");
-        printf("I did it. LOL EASY PEASY, I AM COMPILED WITH OPENABE POLICIES! \n");
         return 0;
     }
 
@@ -82,11 +93,11 @@ int main(int argc, char **argv) {
         d++;
     }
 
-    struct master_key_kp_gpsw msk;
-    struct public_key_kp_gpsw mpk;
+    struct master_key_kp_gpsw_lu msk;
+    struct public_key_kp_gpsw_lu mpk;
 
-    init_master_key_kp_gpsw(N_ATTR, &msk);
-    init_public_key_kp_gpsw(N_ATTR, &mpk);
+    init_master_key_kp_gpsw_lu(N_ATTR, &msk);
+    init_public_key_kp_gpsw_lu(N_ATTR, &mpk);
 
     core_init();
 
@@ -112,50 +123,18 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    /*Generator of G1*/
-    g1_t g;
-    g1_new(g);
-    g1_null(g);
-    g1_get_gen(g);
-
-    g2_t h;
-    g2_new(h);
-    g2_null(h);
-    g2_get_gen(h);
-
-    /*For each attribute, t_i random*/
-    for (int i = 0; i < test_attr; i++) {
-        bn_new(msk.t_values[i]);
-        bn_null(msk.t_values[i]);
-        bn_rand_mod(msk.t_values[i], order);
-    }
-
-    /*pick y randomly in Z_p*/
-    bn_new(msk.y);
-    bn_null(msk.y);
+    /*y random in ZP*/
     bn_rand_mod(msk.y, order);
-    /*MSK = (t_i, y)*/
 
-    /*Setup PK*/
-    for (int i = 0; i < test_attr; i++) {
-        g1_new(mpk.T_values[i]);
-        g1_null(mpk.T_values[i]);
-        g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
-    }
+    /*g1 = g^y*/
+    g1_mul_gen(mpk.g1, msk.y);
 
-    /*Y = e(g,g)^y*/
-    pp_map_oatep_k12(mpk.Y, g, h);
-    gt_exp(mpk.Y, mpk.Y, msk.y);
-    /*MPK = (T_i, Y)*/
+    /*g2 random in G2*/
+    g2_rand(mpk.g2);
 
     /*KeyGeneration*/
-    struct secret_key_kp_gpsw sk;
-    init_secret_key_kp_gpsw(test_attr, &sk);
-
-    for (int i = 0; i < test_attr; i++) {
-        g1_new(sk.D_values[i]);
-        g1_null(sk.D_values[i]);
-    }
+    struct secret_key_kp_gpsw_lu sk;
+    init_secret_key_kp_gpsw_lu(test_attr, &sk);
 
     std::unique_ptr<L_OpenABEFunctionInput> funcInput = nullptr;
     L_OpenABELSSS lsss(1);
@@ -183,47 +162,87 @@ int main(int argc, char **argv) {
     lsss.l_shareSecret(policy, s_aux);
     lsssRows = lsss.l_getRows();
 
-    bn_t temp;
-    bn_new(temp);
-    bn_null(temp);
+    g2_t temp;
+    g2_new(temp);
+    g2_null(temp);
+
+    bn_t r;
+    bn_new(r);
+    bn_null(r);
     /*Accessing q_leaf(0) <= second.element().m_ZP*/
     int i = 0;
+    uint8_t hash[32];
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
-        /*Dx = g^(q_x(0)/t_x)*/
-        // g1_mul_sim(CT_A.C_1[i].c_attr, mpk.B, it->second.element().m_ZP, mpk.attributes[i].g_b_attr, ri);
-        // bn_div(temp, it->second.element().m_ZP, msk.t_values[i]);
-        bn_mod_inv(temp, msk.t_values[i], order);
-        bn_mul(temp, temp, it->second.element().m_ZP);
-        g1_mul(sk.D_values[i], g, temp);
-        // bn_print(it->second.element().m_ZP);
+        /*Dx = g_2^(q_x(0)) T(i)^(r_x)*/
+        // TODO: Precomputation tables
+        g2_mul(sk.D_values[i], mpk.g2, it->second.element().m_ZP);
+        /*  g2_mul(sk.D_values[i], mpk.g2, it->second.element().m_ZP);
+         std::string attribute = it->second.label();
+         std::copy(attribute.begin(), attribute.end(), std::begin(hash)); */
+        // Has form attr-----
+        std::string attr = it->second.label();
+        attr.erase(0, std::string("|attr").length() - 1);
+        uint32_t attr_int_1 = stoi(attr);
+
+        unsigned char *input_data = uint32_to_u_char_array(attr_int_1);
+        g2_map(temp, input_data, 4);
+        // md_map_sh256(hash, hash, 32);
+        // g2_map(temp, hash, 32);
+        std::cout << attr_int_1 << std::endl;
+        g2_print(temp);
+        // Temp is the hash of attribute string into G2 at this point
+        bn_rand_mod(r, order);
+        g2_mul(temp, temp, r);
+        // g2^qx * T(i)^r
+        g2_add(sk.D_values[i], sk.D_values[i], temp);
+        g1_mul_gen(sk.R_values[i], r);
         i++;
     }
 
     /* Encryption */
-    // TODO: Fix message construction.
     gt_t message;
     gt_new(message);
     gt_null(message);
     gt_rand(message);
-    gt_print(message);
 
     bn_t s;
     bn_new(s);
     bn_null(s);
     bn_rand_mod(s, order);
+    struct ciphertext_kp_gpsw_lu E;
+    init_ciphertext_kp_gpsw_lu(test_attr, &E);
+    /*E = (gamma, me(g1,g2)^s, g^s, E_i = T(i)^s)*/
+    /*g^s*/
+    g1_mul_gen(E.E_prime_prime, s);
 
-    struct ciphertext_kp_gpsw E;
-    init_ciphertext_kp_gpsw(test_attr, &E);
-    gt_exp(E.E_prime, mpk.Y, s);
-    gt_mul(E.E_prime, E.E_prime, message);
-    for (int i = 0; i < test_attr; i++) {
-        g1_new(E.E_values[i]);
-        g1_null(E.E_values[i]);
-        // TODO: Should this be mul? need T^s.
-        g2_mul(E.E_values[i], mpk.T_values[i], s);
+    /*m * e(g1,g2)^s*/
+    gt_t e;
+    gt_new(e);
+    gt_null(e);
+    pp_map_oatep_k12(e, mpk.g1, mpk.g2);
+    gt_exp(e, e, s);
+    gt_mul(E.E_prime, message, e);
+    i = 0;
+    for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
+        /* std::string attribute = it->second.label();
+        // Has form attr-----
+        std::copy(attribute.begin(), attribute.end(), std::begin(hash));
+        // Has form attr-----
+        md_map_sh256(hash, hash, 32);
+        g2_map(temp, hash, 32); */
+        std::string attr = it->second.label();
+        attr.erase(0, std::string("|attr").length() - 1);
+        uint32_t attr_int_1 = stoi(attr);
+        unsigned char *input_data = uint32_to_u_char_array(attr_int_1);
+        g2_map(temp, input_data, 4);
+        std::cout << attr_int_1 << std::endl;
+        g2_print(temp);
+        // Temp is the hash of attribute string into G2 at this point
+        g2_mul(E.E_values[i], temp, s);
+        i++;
     }
 
-    /*Decryption(E,D) -> message*/
+    /*Decryption*/
     lsss.l_recoverCoefficients(policy, attrList);
     lsssRows = lsss.l_getRows();
 
@@ -236,15 +255,23 @@ int main(int argc, char **argv) {
     gt_new(mapping);
     gt_null(mapping);
 
+    gt_t mapping2;
+    gt_new(mapping2);
+    gt_null(mapping2);
+
     i = 0;
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
         // TODO: Fix so it works with special attribute policies
         // TODO: Could do pp_map_sim here instead. Sim is better
-        pp_map_oatep_k12(mapping, sk.D_values[i], E.E_values[i]);
+        pp_map_oatep_k12(mapping, E.E_prime_prime, sk.D_values[i]);
+        pp_map_oatep_k12(mapping2, sk.R_values[i], E.E_values[i]);
+        gt_inv(mapping2, mapping2);
+        gt_mul(mapping, mapping, mapping2);
         gt_exp(mapping, mapping, it->second.element().m_ZP);
         gt_mul(F_root, F_root, mapping);
         i++;
     }
+
     gt_t result;
     gt_new(result);
     gt_null(result);
@@ -255,247 +282,9 @@ int main(int argc, char **argv) {
     printf("------------------ \n");
     gt_print(result);
     printf("----------------------\n");
+    printf("------------------ \n");
+    gt_print(message);
+    printf("----------------------\n");
     printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
-    /* Generate precomputation tables for g, h */
-
-    /*
-    g1_t t_pre_g[RLC_EP_TABLE_MAX];
-    g2_t t_pre_h[RLC_EP_TABLE_MAX];
-
-    for (int i = 0; i < RLC_EP_TABLE; i++) {
-        g1_new(t_pre_g[i]);
-        g2_new(t_pre_h[i]);
-    }
-
-    gt_new(mpk.A);
-    fp12_set_dig(mpk.A, 1);
-    g1_t g_b_attr;
-    g1_null(g_b_attr);
-    g1_new(g_b_attr);
-    bn_t b_attr;
-    bn_null(b_attr);
-    bn_new(b_attr);
-
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-
-        g1_rand(mpk.g);
-        g2_rand(mpk.h);
-        g1_mul_pre(t_pre_g, mpk.g);
-        g2_mul_pre(t_pre_h, mpk.h);
-
-        bn_rand_mod(msk.b, order);
-        bn_rand_mod(msk.alpha, order);
-
-        pp_map_oatep_k12(mpk.A, mpk.g, mpk.h);
-        gt_exp(mpk.A, mpk.A, msk.alpha);
-        g1_mul_fix(mpk.B, t_pre_g, msk.b);
-
-        for (int i = 0; i < N_ATTR; i++) {
-            bn_rand_mod(msk.attributes[i].b_attr, order);
-            g1_mul_fix(mpk.attributes[i].g_b_attr, t_pre_g, msk.attributes[i].b_attr);
-        }
-    }
-    printf("[");
-    print_results("Results gen param():           ", t, NTESTS);
-
-    /* Key Generation */
-    /*
-    struct secret_key_cp sk;
-    init_secret_key_cp(N_ATTR, &sk);
-    bn_t exp_tmp;
-    bn_null(exp_tmp);
-    bn_new(exp_tmp);
-    g1_t k_attr;
-    g1_null(k_attr);
-    g1_new(k_attr);
-
-    bn_t exp_tmp_x;
-    bn_null(exp_tmp_x);
-    bn_new(exp_tmp_x);
-    bn_t r;
-    bn_null(r);
-    bn_new(r);
-
-    bn_rand_mod(r, order);
-    bn_t r_mul_b;
-    bn_null(r_mul_b);
-    bn_new(r_mul_b);
-
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-
-        bn_t_mul(r_mul_b, r, msk.b, order);
-        bn_t_sub_order(exp_tmp_x, msk.alpha, r_mul_b, order);
-
-        g1_mul_fix(sk.K, t_pre_g, exp_tmp_x);
-        g2_mul_fix(sk.K_PRIMA, t_pre_h, r);
-
-        for (int i = 0; i < N_ATTR; i++) {
-            bn_t_mul(exp_tmp, r, msk.attributes[i].b_attr, order);
-            g1_mul_fix(sk.attributes[i].k_attr, t_pre_g, exp_tmp);
-        }
-    }
-    print_results("Results key gen():           ", t, NTESTS); */
-
-    /* Encryption */
-
-    /* std::unique_ptr<L_OpenABEFunctionInput> funcInput = nullptr;
-
-    g1_t C_1;
-    g2_null(C_1);
-    g2_new(C_1);
-    g2_t C_2;
-    g2_null(C_2);
-    g2_new(C_2);
-
-    struct ciphertext_cp CT_A;
-    init_ciphertext_cp(N_ATTR, &CT_A);
-    gt_new(CT_A.C);
-    fp12_set_dig(CT_A.C, 1);
-
-    L_OpenABELSSS lsss(1);
-    L_OpenABELSSSRowMap lsssRows;
-    L_OpenABEPolicy *policy;
-
-    funcInput = L_createPolicyTree(encInput);
-    if (!funcInput) {
-        printf("Create policy error in encryption\n");
-        return -1;
-    }
-
-    policy = dynamic_cast<L_OpenABEPolicy *>(funcInput.get());
-
-    if (policy == nullptr) {
-        printf("Error in input policy\n");
-        return -1;
-    }
-
-    bn_t s;
-    bn_null(s);
-    bn_new(s);
-    bn_t ri;
-    bn_null(ri);
-    bn_new(ri);
-    g1_t b_attr_blind;
-    g1_null(b_attr_blind);
-    g1_new(b_attr_blind);
-
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-
-        bn_rand_mod(s, order);
-        gt_exp(CT_A.C, mpk.A, s);
-        g2_mul_fix(CT_A.C_PRIMA, t_pre_h, s);
-
-        L_ZP s_aux;
-        s_aux.isOrderSet = true;
-        bn_copy(s_aux.order, order);
-        bn_copy(s_aux.m_ZP, s);
-        lsss.l_shareSecret(policy, s_aux);
-        lsssRows = lsss.l_getRows();
-        int i = 0;
-        bn_rand_mod(ri, order);
-        g2_mul_fix(CT_A.C_2[0].c_attr, t_pre_h, ri);
-
-        for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
-            g1_mul_sim(CT_A.C_1[i].c_attr, mpk.B, it->second.element().m_ZP, mpk.attributes[i].g_b_attr, ri);
-
-            i++;
-        }
-    }
-    print_results("Results encryption():           ", t, NTESTS); */
-
-    /* Decryption */
-
-    /* g1_t pack_g1[N_ATTR];
-    bn_t pack_bn[N_ATTR];
-    g1_t pairing_g1[N_ATTR];
-    g2_t pairing_g2[N_ATTR];
-    gt_t z;
-    gt_null(z);
-    gt_new(z);
-    bn_t coeff;
-    bn_null(coeff);
-    bn_new(coeff);
-    gt_t P_3;
-    gt_null(P_3);
-    gt_new(P_3);
-    fp12_set_dig(P_3, 1);
-
-    gt_t P_3_prod;
-    gt_null(P_3_prod);
-    gt_new(P_3_prod);
-    fp12_set_dig(P_3_prod, 1);
-
-    g1_t C1_prod;
-    g1_null(C1_prod);
-    g1_new(C1_prod);
-    g1_set_infty(C1_prod);
-    g1_t K_prod;
-    g1_null(K_prod);
-    g1_new(K_prod);
-    g1_set_infty(K_prod);
-
-    int i = 0;
-
-    for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
-        g1_null(pack_g1[i]);
-        g1_new(pack_g1[i]);
-        bn_null(pack_bn[i]);
-        bn_new(pack_bn[i]);
-        g1_null(pairing_g1[i]);
-        g1_new(pairing_g1[i]);
-        g2_null(pairing_g2[i]);
-        g2_new(pairing_g2[i]);
-
-        i++;
-    }
-
-    gt_t P_1;
-    gt_null(P_1);
-    gt_new(P_1);
-    gt_t P_2;
-    gt_null(P_2);
-    gt_new(P_2);
-    gt_t final;
-    gt_null(final);
-    gt_new(final);
-
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-        lsss.l_recoverCoefficients(policy, attrList);
-
-        lsssRows = lsss.l_getRows();
-        i = 0;
-
-        for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
-            g1_copy(pack_g1[i], CT_A.C_1[i].c_attr);
-            g1_copy(pairing_g1[i], sk.attributes[i].k_attr);
-            bn_copy(pack_bn[i], it->second.element().m_ZP);
-
-            i++;
-        }
-
-        g1_mul_sim_lot(C1_prod, pack_g1, pack_bn, N_ATTR);
-        g1_mul_sim_lot(K_prod, pairing_g1, pack_bn, N_ATTR);
-
-        g1_neg(pairing_g1[0], K_prod);
-        g1_copy(pairing_g1[1], sk.K);
-        g1_copy(pairing_g1[2], C1_prod);
-
-        g2_copy(pairing_g2[0], CT_A.C_2[0].c_attr);
-        g2_copy(pairing_g2[1], CT_A.C_PRIMA);
-        g2_copy(pairing_g2[2], sk.K_PRIMA);
-
-        pp_map_sim_oatep_k12(z, pairing_g1, pairing_g2, 3);
-    }
-    print_results("Results decryption():           ", t, NTESTS);
-    printf("]\n"); */
-
-    /* Uncomment for correctness check;
-     * assert(gt_cmp(z, CT_A.C) == RLC_EQ);
-     * cout << "[*] PASSED" << endl;
-     */
     return 0;
 }

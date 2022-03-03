@@ -190,12 +190,9 @@ int main(int argc, char **argv) {
     int i = 0;
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
         /*Dx = g^(q_x(0)/t_x)*/
-        // g1_mul_sim(CT_A.C_1[i].c_attr, mpk.B, it->second.element().m_ZP, mpk.attributes[i].g_b_attr, ri);
-        // bn_div(temp, it->second.element().m_ZP, msk.t_values[i]);
         bn_mod_inv(temp, msk.t_values[i], order);
         bn_mul(temp, temp, it->second.element().m_ZP);
         g1_mul(sk.D_values[i], g, temp);
-        // bn_print(it->second.element().m_ZP);
         i++;
     }
 

@@ -1126,9 +1126,8 @@ void set_c_attr_c_2_cp(const uint32_t attr, g2_t c_2, struct ciphertext_cp *c) {
     }
 }
 
-
-//GPSW
-int init_master_key_kp_gpsw(const u_int32_t n_attr, struct master_key_kp_gpsw *m) {
+// GPSW
+int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m) {
     m->N_ATTR = n_attr;
     m->attributes = (struct attribute *)malloc(n_attr * sizeof(struct attribute));
 
@@ -1144,7 +1143,7 @@ int init_master_key_kp_gpsw(const u_int32_t n_attr, struct master_key_kp_gpsw *m
     return EXIT_SUCCESS;
 }
 
-int init_public_key_kp_gpsw(const u_int32_t n_attr, struct public_key_kp_gpsw *p) {
+int init_public_key_kp_gpsw(const uint32_t n_attr, struct public_key_kp_gpsw *p) {
     p->N_ATTR = n_attr;
     p->T_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (p->T_values == NULL) {
@@ -1155,7 +1154,7 @@ int init_public_key_kp_gpsw(const u_int32_t n_attr, struct public_key_kp_gpsw *p
     return EXIT_SUCCESS;
 }
 
-int init_secret_key_kp_gpsw(const u_int32_t n_attr, struct secret_key_kp_gpsw *sk) {
+int init_secret_key_kp_gpsw(const uint32_t n_attr, struct secret_key_kp_gpsw *sk) {
     sk->D_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
     if (sk->D_values == NULL) {
         return EXIT_FAILURE;
@@ -1163,7 +1162,7 @@ int init_secret_key_kp_gpsw(const u_int32_t n_attr, struct secret_key_kp_gpsw *s
     return EXIT_SUCCESS;
 }
 
-int init_ciphertext_kp_gpsw(const u_int32_t n_attr, struct ciphertext_kp_gpsw *E) {
+int init_ciphertext_kp_gpsw(const uint32_t n_attr, struct ciphertext_kp_gpsw *E) {
     // TODO: Implement to work with complicated access structures. Right now it's just all attributes.
     E->E_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (E->E_values == NULL) {
@@ -1174,4 +1173,60 @@ int init_ciphertext_kp_gpsw(const u_int32_t n_attr, struct ciphertext_kp_gpsw *E
     return EXIT_SUCCESS;
 }
 
-//GPSW Large Universe
+// GPSW Large Universe
+int init_master_key_kp_gpsw_lu(const uint32_t n_attr, struct master_key_kp_gpsw_lu *m) {
+    bn_new(m->y);
+    bn_null(m->y);
+    return EXIT_SUCCESS;
+}
+
+int init_public_key_kp_gpsw_lu(const uint32_t n_attr, struct public_key_kp_gpsw_lu *p) {
+    p->t_values = (g2_t *)malloc((n_attr + 1) * sizeof(g2_t));
+    if (p->t_values == NULL) {
+        return EXIT_FAILURE;
+    }
+    g1_new(p->g1);
+    g1_null(p->g1);
+    g2_new(p->g2);
+    g2_null(p->g2);
+    return EXIT_SUCCESS;
+}
+
+int init_secret_key_kp_gpsw_lu(const uint32_t n_attr, struct secret_key_kp_gpsw_lu *sk) {
+    sk->D_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
+    if (sk->D_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g2_new(sk->D_values[i]);
+            g2_null(sk->D_values[i]);
+        }
+    }
+    sk->R_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
+    if (sk->R_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g1_new(sk->R_values[i]);
+            g1_null(sk->R_values[i]);
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+int init_ciphertext_kp_gpsw_lu(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu *E) {
+    E->E_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
+    if (E->E_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g2_new(E->E_values[i]);
+            g2_null(E->E_values[i]);
+        }
+    }
+    gt_new(E->E_prime);
+    gt_null(E->E_prime);
+    g1_new(E->E_prime_prime);
+    g1_null(E->E_prime_prime);
+    return EXIT_SUCCESS;
+}
