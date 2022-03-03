@@ -180,6 +180,7 @@ int main(int argc, char **argv) {
          std::string attribute = it->second.label();
          std::copy(attribute.begin(), attribute.end(), std::begin(hash)); */
         // Has form attr-----
+        // TODO: Confirm this is the correct way of doing T(i) aka hashing
         std::string attr = it->second.label();
         attr.erase(0, std::string("|attr").length() - 1);
         uint32_t attr_int_1 = stoi(attr);
@@ -230,6 +231,7 @@ int main(int argc, char **argv) {
         // Has form attr-----
         md_map_sh256(hash, hash, 32);
         g2_map(temp, hash, 32); */
+        // TODO: Confirm this is the correct way of doing T(i) aka hashing
         std::string attr = it->second.label();
         attr.erase(0, std::string("|attr").length() - 1);
         uint32_t attr_int_1 = stoi(attr);
