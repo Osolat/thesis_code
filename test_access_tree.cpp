@@ -105,11 +105,14 @@ int main(int argc, char const *argv[]) {
     mpc_sss_gen(x, y, secret, order, 1, 10);
     mpc_sss_key(recovered, x, y, order, 1);
     //These are just to see if any function from relic_mpc compiles
+    mt_st some_struct;
     mpc_mt_gen(NULL, NULL);
     mpc_mt_lcl(NULL, NULL, NULL, NULL, NULL, NULL);
     mpc_mt_bct(NULL, NULL, NULL);
     mpc_mt_mul(NULL, NULL, NULL, NULL, NULL, NULL);
     md_map_sh512(NULL, NULL, NULL);
+    bn_set_dig(order, 100);
+    bn_add(order, secret, order);
     rand_bytes(NULL,NULL);
     bn_print(recovered);
     return 0;
