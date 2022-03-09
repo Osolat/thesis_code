@@ -2,7 +2,7 @@
 
 //#include "lib/policy/policy_tree.h"
 extern "C" {
-#include <relic/relic.h>
+#include "relic/relic.h"
 }
 /* int test1() {
     char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4)))";
