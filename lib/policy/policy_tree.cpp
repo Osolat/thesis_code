@@ -140,6 +140,7 @@ int add_children(struct node* parent, string formula) {
     struct node* leftmost_child = new node;
     leftmost_child->gate = g;
     parent->firstchild = leftmost_child;
+    parent->children_num++;
     if (g == OR_GATE || g == AND_GATE) {
         add_children(leftmost_child, string(&formula[open], &formula[closing]));
     } else {
@@ -178,6 +179,7 @@ int add_children(struct node* parent, string formula) {
         struct node* brother = new node;
         brother->gate = g;
         current_node->nextsibling = brother;
+        parent->children_num++;
         if (g == OR_GATE || g == AND_GATE) {
             add_children(brother, string(&sibling_string[open + 1], &sibling_string[closing]));
         } else {
@@ -208,8 +210,10 @@ string stringify_node(struct node* n) {
             s = "UNDEFINED NODE";
             break;
     }
+    s.append(" with ").append(to_string(n->children_num)).append(" children");
     return s;
 }
+
 int print_node(struct node* n) {
     cout << stringify_node(n) << endl;
     return EXIT_SUCCESS;
@@ -219,10 +223,112 @@ void print_tree(struct node* root) {
     print_node(root);
     if (root->firstchild != NULL) {
         cout << "child" << endl;
+        bn_print(root->firstchild->share);
+
         print_tree(root->firstchild);
     }
     if (root->nextsibling != NULL) {
         cout << "sibling" << endl;
+        bn_print(root->nextsibling->share);
+
         print_tree(root->nextsibling);
     }
+}
+
+int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
+    size_t children = tree_root->children_num;
+    bn_t x[children], y[children];
+
+    // TODO This is because of Relic's Shamir implementation only supporting t >= 3
+    switch (tree_root->gate) {
+        case AND_GATE: {
+            //(n,n) treshold
+            if (children >= 3) {
+                /* code */
+
+                for (size_t i = 0; i < children; i++) {
+                    bn_null(x[i]);
+                    bn_null(y[i]);
+                    bn_new(x[i]);
+                    bn_new(y[i]);
+                }
+                mpc_sss_gen(x, y, secret, order, children, children);
+                struct node* child = tree_root->firstchild;
+                if (child != NULL) {
+                    cout << "First child got shares" << endl;
+                    bn_null(child->share);
+                    bn_new(child->share);
+                    bn_null(child->share_index);
+                    bn_new(child->share_index);
+                    bn_copy(child->share_index, x[0]);
+                    bn_copy(child->share, y[0]);
+                    share_secret(child, y[0], order);
+                    // Get next child which is the first child's brother.
+                    child = child->nextsibling;
+                }
+                int i = 1;
+                while (child != NULL) {
+                    bn_null(child->share);
+                    bn_new(child->share);
+                    bn_null(child->share_index);
+                    bn_new(child->share_index);
+                    bn_copy(child->share_index, x[i]);
+                    bn_copy(child->share, y[i]);
+                    share_secret(child, y[i], order);
+                    child = child->nextsibling;
+                    i++;
+                }
+                for (size_t i = 0; i < children; i++) {
+                    bn_free(y[i]);
+                    bn_free(x[i]);
+                }
+            }
+            break;
+        }
+        case OR_GATE: {
+            //(1,n) threshold
+            // Constant polynomial. f(0) = secret, so must be constant polynomial with coeff a_= secret.
+            // All shares are the same
+            cout << "Or or or " << endl;
+            struct node* child = tree_root->firstchild;
+            bn_t bn_index;
+            bn_null(bn_index);
+            bn_new(bn_index);
+            bn_set_dig(bn_index, 0);
+            if (child != NULL) {
+                cout << "Or not null " << endl;
+                bn_null(child->share);
+                bn_new(child->share);
+                bn_null(child->share_index);
+                bn_new(child->share_index);
+                bn_copy(child->share_index, bn_index);
+                bn_copy(child->share, secret);
+                cout << "Or not null blyat " << endl;
+
+                share_secret(child, secret, order);
+                // Get next child which is the first child's brother.
+                child = child->nextsibling;
+            }
+            int i = 1;
+            while (child != NULL) {
+                bn_null(child->share);
+                bn_new(child->share);
+                bn_null(child->share_index);
+                bn_new(child->share_index);
+                bn_set_dig(bn_index, i);
+                bn_copy(child->share_index, bn_index);
+                bn_copy(child->share, secret);
+                share_secret(child, secret, order);
+                child = child->nextsibling;
+                i++;
+            }
+            bn_free(bn_index);
+            break;
+        }
+        default:
+            // Nothing needs to happen in a leaf.
+            break;
+    }
+
+    return 1;
 }
