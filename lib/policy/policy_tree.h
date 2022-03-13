@@ -5,6 +5,7 @@ extern "C" {
 }
 #include <exception>
 #include <string>
+#include <vector>
 
 enum gate_type { AND_GATE,
                  OR_GATE,
@@ -16,12 +17,21 @@ struct node {
     unsigned long long attribute_idx;
     bn_t attribute_zp;
     size_t children_num = 0;
+    size_t leaf_index = 1;
     bn_t share;
     bn_t share_index;
     struct node *firstchild = NULL;
     struct node *nextsibling = NULL;
     bool marked_for_coeff = false;
 };
+
+struct policy_coefficient {
+    // Index in a left-to-right indexing of leaves.
+    size_t leaf_index;
+    bn_t coeff;
+    bn_t share;
+};
+
 
 /**
  * Initialises a tree from a boolean formula.
@@ -69,8 +79,18 @@ int share_secret(struct node *tree_root, bn_t secret, bn_t order);
  */
 void check_satisfiability(struct node *tree_root, bn_t *attributes, size_t num_attributes);
 
+/**
+ * Parses tree and recovers needed coefficients to recover the secret at the root. Will first check if provided attributes can even satisfy policy.
+ * @param[in] tree_root			- pointer to root of the access tree
+ * @param[in] attributes		- array of attributes
+ * @param[in] num_attributes    - number of attributes
+ * @throw                       - Throws exception attributes do not satisfy tree
+ */
+std::vector<policy_coefficient> recover_coefficients(struct node *tree_root, bn_t *attributes, size_t num_attributes);
+
 struct TreeUnsatisfiableException : public std::exception {
     const char *what() const throw() {
         return "Access policy tree could not be satisfied by attempted attributes";
     }
 };
+

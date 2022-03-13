@@ -6,10 +6,13 @@
 #include <array>
 #include <iostream>
 #include <regex>
+#include <stack>
 #include <string>
 #include <vector>
-
 using namespace std;
+
+// TODO: This is very dangerous.
+size_t global_leaf_idx;
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 int id = 0;
@@ -344,9 +347,8 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
         case AND_GATE: {
             /* code */
             // (n,n) threshold, all children must satisfy.
-
-            /* code */
             struct node* child = root->firstchild;
+
             if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
             child = child->nextsibling;
             while (child != NULL) {
@@ -359,6 +361,8 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
             break;
         }
         case LEAF: {
+            root->leaf_index = global_leaf_idx;
+            global_leaf_idx++;
             for (size_t i = 0; i < num_attributes; i++) {
                 if (bn_cmp(root->attribute_zp, attributes[i]) == 0) {
                     root->marked_for_coeff = true;
@@ -387,6 +391,7 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
         }
 
         default:
+            print_node(root);
             cout << "Found undefined gate_type. Everything will now break probably." << endl;
             return 0;
             break;
@@ -394,5 +399,136 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
 }
 
 void check_satisfiability(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
+    global_leaf_idx = 1;
     if (check_subtree_satisfiability(tree_root, attributes, num_attributes) == 0) throw TreeUnsatisfiableException();
+}
+
+std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
+    vector<policy_coefficient> result;
+    std::stack<struct node*> node_stack;
+    std::stack<bn_t*> coefficients;
+
+    bn_t order;
+    bn_null(order);
+    bn_new(order);
+
+    pc_get_ord(order);
+
+    bn_t temp;
+    bn_null(temp);
+    bn_new(temp);
+
+    bn_t unit;
+    bn_null(unit);
+    bn_new(unit);
+
+    bn_t top_j, bot_j, bot_i, top_zero;
+    bn_null(top_j);
+    bn_new(top_j);
+    bn_null(bot_j);
+    bn_new(bot_j);
+    bn_null(bot_i);
+    bn_new(bot_i);
+    bn_null(top_zero);
+    bn_new(top_zero);
+    bn_zero(top_zero);
+
+    bn_set_dig(unit, 1);
+    node_stack.push(tree_root);
+    coefficients.push(&unit);
+
+    struct node* current_node;
+    struct node* child;
+    struct node* brother;
+    size_t threshold;
+    while (!node_stack.empty()) {
+        cout << "ummm" << endl;
+        bn_print(*coefficients.top());
+        current_node = node_stack.top();
+        bn_copy(temp, *coefficients.top());
+
+        node_stack.pop();
+        coefficients.pop();
+
+        if (current_node->gate == LEAF) {
+            policy_coefficient p = policy_coefficient();
+            p.leaf_index = current_node->leaf_index;
+            bn_null(p.coeff);
+            bn_new(p.coeff);
+            bn_null(p.share);
+            bn_new(p.share);
+            bn_copy(p.coeff, temp);
+            bn_copy(p.share, current_node->share);
+            result.push_back(p);
+        } else {
+            switch (current_node->gate) {
+                case AND_GATE:
+                    threshold = current_node->children_num;
+                    break;
+                case OR_GATE:
+                    threshold = 1;
+                    break;
+                default:
+                    cout << "Found Undefined node during coeff recovery, should not happen" << endl;
+                    threshold = 0;
+                    break;
+            }
+            size_t i = 1;
+            bn_t* coeff = RLC_ALLOCA(bn_t, current_node->children_num);
+            for (size_t i = 0; i < current_node->children_num; i++) {
+                /* code */
+                bn_null(coeff[i]);
+                bn_new(coeff[i]);
+                bn_set_dig(coeff[i], 1);
+            }
+
+            child = current_node->firstchild;
+            while (child != NULL) {
+                if (child->marked_for_coeff) {
+                    size_t j = 1;
+                    /*     bn_t coeff;
+                        bn_null(coeff);
+                        bn_new(coeff);
+                        bn_set_dig(coeff, 1); */
+                    // Calculate langrange coefficients Prod(0 - j/ i - j)
+                    brother = current_node->firstchild;
+                    while (brother != NULL) {
+                        if (brother->marked_for_coeff) {
+                            if (j != i) {
+                                cout << "i = " << i << " + j = " << j << endl;
+                                // This seems to be a really slow way of doing Prod(0-j/i-j)
+                                bn_set_dig(top_j, j);
+                                bn_sub(top_j, top_zero, top_j);
+                                bn_mod(top_j, top_j, order);
+                                bn_set_dig(bot_i, i);
+                                bn_set_dig(bot_j, j);
+                                bn_sub(bot_i, bot_i, bot_j);
+                                bn_mod_inv(bot_i, bot_i, order);
+                                bn_mul(top_j, top_j, bot_i);
+                                bn_mod(top_j, top_j, order);
+                                bn_mul(coeff[i - 1], coeff[i - 1], top_j);
+                                bn_mod(coeff[i - 1], coeff[i - 1], order);
+                            }
+                        }
+                        j++;
+                        brother = brother->nextsibling;
+                    }
+                    cout << "I get here?" << endl;
+                    node_stack.push(child);
+                    bn_print(coeff[i - 1]);
+                    bn_print(temp);
+                    bn_mul(coeff[i - 1], temp, coeff[i - 1]);
+                    bn_mod(coeff[i - 1], coeff[i - 1], order);
+                    bn_print(coeff[i - 1]);
+                    bn_print(temp);
+                    cout << &coeff[i - 1] << endl;
+                    coefficients.push(&coeff[i - 1]);
+                }
+                i++;
+                child = child->nextsibling;
+            }
+        }
+    }
+
+    return result;
 }

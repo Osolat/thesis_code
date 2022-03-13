@@ -53,24 +53,48 @@ int test5() {
 }
 
 int test6() {
-    bn_t secret, recovered, x[10], y[10];
+    core_init();
+    char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4)))";
+    struct node root;
+    tree_from_string(formula, &root);
+
+    bn_t secret, order;
     bn_null(secret);
     bn_new(secret);
-    bn_null(recovered);
-    bn_new(recovered);
-    bn_t order;
     bn_null(order);
     bn_new(order);
+    pc_param_set_any();
+    g1_get_ord(order);
     bn_set_dig(secret, 99);
-    for (size_t i = 0; i < 10; i++) {
-        bn_null(y[i]);
-        bn_new(y[i]);
-        bn_null(x[i]);
-        bn_new(x[i]);
+    share_secret(&root, secret, order);
+    print_tree(&root);
+
+    bn_t attributes[4];
+    for (size_t i = 0; i < 4; i++) {
+        bn_null(attributes[i]);
+        bn_new(attributes[i]);
+        bn_set_dig(attributes[i], i + 1);
     }
-    mpc_sss_gen(x, y, secret, order, 1, 10);
-    mpc_sss_key(recovered, x, y, order, 1);
-    bn_print(recovered);
+    bn_t fail_attributes[3];
+    for (size_t i = 0; i < 3; i++) {
+        bn_null(fail_attributes[i]);
+        bn_new(fail_attributes[i]);
+        bn_set_dig(fail_attributes[i], i + 2);
+    }
+
+    try {
+        check_satisfiability(&root, attributes, 4);
+        std::cout << "Satisfiable with correct attributes" << std::endl;
+    } catch (struct TreeUnsatisfiableException *e) {
+        std::cout << e->what() << std::endl;
+    }
+
+    try {
+        check_satisfiability(&root, fail_attributes, 3);
+    } catch (struct TreeUnsatisfiableException *e) {
+        std::cout << e->what() << std::endl;
+    }
+    core_clean();
 }
 
 int main(int argc, char const *argv[]) {
@@ -91,7 +115,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "Test 5 " << std::endl;
     test5(); */
     core_init();
-    char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4)))";
+    char formula[] = "AND(OR(attr1),OR(attr2),OR(attr3))";
     struct node root;
     tree_from_string(formula, &root);
 
@@ -103,33 +127,43 @@ int main(int argc, char const *argv[]) {
     pc_param_set_any();
     g1_get_ord(order);
     bn_set_dig(secret, 99);
+    bn_print(secret);
     share_secret(&root, secret, order);
     print_tree(&root);
-    bn_t attributes[4];
-    for (size_t i = 0; i < 4; i++) {
+
+    bn_t attributes[3];
+    for (size_t i = 0; i < 3; i++) {
         bn_null(attributes[i]);
         bn_new(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
 
-    bn_t fail_attributes[3];
-    for (size_t i = 1; i < 4; i++) {
-        bn_null(fail_attributes[i]);
-        bn_new(fail_attributes[i]);
-        bn_set_dig(fail_attributes[i], i + 1);
-    }
     try {
-        check_satisfiability(&root, attributes, 4);
+        check_satisfiability(&root, attributes, 3);
         std::cout << "Satisfiable with correct attributes" << std::endl;
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
+    std::vector<policy_coefficient> res;
+    res = recover_coefficients(&root, attributes, 3);
+    bn_t gather;
+    bn_null(gather);
+    bn_new(gather);
+    bn_zero(gather);
 
-    try {
-        check_satisfiability(&root, fail_attributes, 3);
-    } catch (struct TreeUnsatisfiableException *e) {
-        std::cout << e->what() << std::endl;
+    bn_t tmp;
+    bn_null(tmp);
+    bn_new(tmp);
+
+    for (std::vector<policy_coefficient>::iterator it = res.begin(); it != res.end(); ++it) {
+        bn_print(it->share);
+        bn_print(it->coeff);
+        bn_mul(tmp, it->coeff, it->share);
+        bn_add(gather, gather, tmp);
+        bn_mod(gather, gather, order);
     }
+    bn_print(secret);
+    bn_print(gather);
     core_clean();
 
     return 1;
