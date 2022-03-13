@@ -147,6 +147,9 @@ int add_children(struct node* parent, string formula) {
         // Is LEAF gate
         string s = string(&formula[open + 5], &formula[closing]);
         leftmost_child->attribute_idx = stoull(s);
+        bn_null(leftmost_child->attribute_zp);
+        bn_new(leftmost_child->attribute_zp);
+        bn_set_dig(leftmost_child->attribute_zp, stoull(s));
     }
     // Parse and add all siblings
     struct node* current_node = leftmost_child;
@@ -186,6 +189,9 @@ int add_children(struct node* parent, string formula) {
             // Is LEAF gate
             string s = string(&sibling_string[open + 5], &sibling_string[closing]);
             brother->attribute_idx = stoull(s);
+            bn_null(brother->attribute_zp);
+            bn_new(brother->attribute_zp);
+            bn_set_dig(brother->attribute_zp, stoull(s));
         }
         sibling_string = sibling_string.substr(closing + 1);
         current_node = brother;
@@ -331,4 +337,62 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
     }
 
     return 1;
+}
+
+int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num_attributes) {
+    switch (root->gate) {
+        case AND_GATE: {
+            /* code */
+            // (n,n) threshold, all children must satisfy.
+
+            /* code */
+            struct node* child = root->firstchild;
+            if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
+            child = child->nextsibling;
+            while (child != NULL) {
+                if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
+                child = child->nextsibling;
+            }
+
+            root->marked_for_coeff = true;
+            return 1;
+            break;
+        }
+        case LEAF: {
+            for (size_t i = 0; i < num_attributes; i++) {
+                if (bn_cmp(root->attribute_zp, attributes[i]) == 0) {
+                    root->marked_for_coeff = true;
+                    // Found correct attribute in leaf, so it can be satisfied
+                    return 1;
+                }
+            }
+            // No correct attribute in leaf, can't satisfy.
+            return 0;
+            break;
+        }
+        case OR_GATE: {
+            // Here we must ensure only one branch is marked for efficiency.
+            bool can_be_satisfied = false;
+            struct node* child = root->firstchild;
+            while (!can_be_satisfied && child != NULL) {
+                can_be_satisfied = check_subtree_satisfiability(child, attributes, num_attributes);
+                child = child->nextsibling;
+            }
+            if (can_be_satisfied) {
+                root->marked_for_coeff = true;
+                return 1;
+            }
+            return 0;
+            break;
+        }
+
+        default:
+            cout << "Found undefined gate_type. Everything will now break probably." << endl;
+            return 0;
+            break;
+    }
+}
+
+void check_satisfiability(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
+    if (check_subtree_satisfiability(tree_root, attributes, num_attributes) == 0) throw TreeUnsatisfiableException();
 }

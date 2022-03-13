@@ -3,7 +3,9 @@
 extern "C" {
 #include <relic/relic.h>
 }
+#include <exception>
 #include <string>
+
 enum gate_type { AND_GATE,
                  OR_GATE,
                  LEAF };
@@ -12,11 +14,13 @@ struct node {
     // TODO: Need to define what a node needs internally. Lagrange coefficients?
     enum gate_type gate;
     unsigned long long attribute_idx;
+    bn_t attribute_zp;
     size_t children_num = 0;
     bn_t share;
     bn_t share_index;
     struct node *firstchild = NULL;
     struct node *nextsibling = NULL;
+    bool marked_for_coeff = false;
 };
 
 /**
@@ -54,3 +58,19 @@ std::string stringify_node(struct node *n);
  * @param[in] order			    - order of field
  */
 int share_secret(struct node *tree_root, bn_t secret, bn_t order);
+
+/**
+ * Parses tree and checks if it can be satisfied by provided attributes. Also marks the minimal leafs
+ * needed to find the coefficients that is needed to reconstruct the root secret
+ * @param[in] tree_root			- pointer to root of the access tree
+ * @param[in] attributes		- array of attributes
+ * @param[in] num_attributes    - number of attributes
+ * @throw                       - Throws exception if can't satisfy tree
+ */
+void check_satisfiability(struct node *tree_root, bn_t *attributes, size_t num_attributes);
+
+struct TreeUnsatisfiableException : public std::exception {
+    const char *what() const throw() {
+        return "Access policy tree could not be satisfied by attempted attributes";
+    }
+};

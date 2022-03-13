@@ -94,7 +94,7 @@ int main(int argc, char const *argv[]) {
     char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4)))";
     struct node root;
     tree_from_string(formula, &root);
-   
+
     bn_t secret, order;
     bn_null(secret);
     bn_new(secret);
@@ -105,7 +105,32 @@ int main(int argc, char const *argv[]) {
     bn_set_dig(secret, 99);
     share_secret(&root, secret, order);
     print_tree(&root);
+    bn_t attributes[4];
+    for (size_t i = 0; i < 4; i++) {
+        bn_null(attributes[i]);
+        bn_new(attributes[i]);
+        bn_set_dig(attributes[i], i + 1);
+    }
+
+    bn_t fail_attributes[3];
+    for (size_t i = 1; i < 4; i++) {
+        bn_null(fail_attributes[i]);
+        bn_new(fail_attributes[i]);
+        bn_set_dig(fail_attributes[i], i + 1);
+    }
+    try {
+        check_satisfiability(&root, attributes, 4);
+        std::cout << "Satisfiable with correct attributes" << std::endl;
+    } catch (struct TreeUnsatisfiableException *e) {
+        std::cout << e->what() << std::endl;
+    }
+
+    try {
+        check_satisfiability(&root, fail_attributes, 3);
+    } catch (struct TreeUnsatisfiableException *e) {
+        std::cout << e->what() << std::endl;
+    }
     core_clean();
-    
+
     return 1;
 }
