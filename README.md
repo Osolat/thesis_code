@@ -1,6 +1,8 @@
 # Engineering Attribute-Based Encryption Schemes Code Base
 This repository contains the code for the authors' thesis project.
 
+## Licensing!!
+This is a work in progress project and is only visible for the sake of ease between group members. Proper use of licensing is yet to be added to the code base, particularly concerning legacy code that is directly taken from https://github.com/abecryptools/abe_squared, which in turn is taken from https://github.com/zeutro/openabe/.
 
 ## Installation Instructions
   * Clone project ``git clone https://github.com/Osolat/thesis_code.git``
