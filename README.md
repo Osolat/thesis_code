@@ -19,6 +19,10 @@ Follow guidelines from Relic, but here's an reiteration of important dependencie
   * Install gmp dev lib for some gmpxx.h header file needed in relic
     * ``sudo apt-get install libgmp-dev``       
 
+## Running
+For large number of attributes the policy tree will need a lot of stack space
+
+``ulimit -s unlimited && objects/main 10000``
 
 ## Authors
  * Benjamin B. Hansen
