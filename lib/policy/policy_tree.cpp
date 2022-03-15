@@ -97,7 +97,8 @@ int tree_from_string(string formula, struct node* root) {
     // Strips AND(x) into x = arguments
     auto first = formula.find_first_of('(');
     auto last = formula.find_last_of(')');
-    string arguments = formula.substr(first + 1, last - 1);
+    // string arguments = formula.substr(first + 1, last - 1);
+    string arguments = string(&formula[first + 1], &formula[last]);
     if (arguments.substr(0, 5).find("attr") != string::npos) {
         // Formula was OR(attr...)
         // TODO: More stuff when we find a leaf node
@@ -138,14 +139,13 @@ int add_children(struct node* parent, string formula) {
             }
         }
     }
-
     size_t closing = find_closing_paren(formula, open);
     struct node* leftmost_child = new node;
     leftmost_child->gate = g;
     parent->firstchild = leftmost_child;
     parent->children_num++;
     if (g == OR_GATE || g == AND_GATE) {
-        add_children(leftmost_child, string(&formula[open], &formula[closing]));
+        add_children(leftmost_child, string(&formula[open + 1], &formula[closing]));
     } else {
         // Is LEAF gate
         string s = string(&formula[open + 5], &formula[closing]);
@@ -156,8 +156,7 @@ int add_children(struct node* parent, string formula) {
     }
     // Parse and add all siblings
     struct node* current_node = leftmost_child;
-    string sibling_string = formula.substr(closing + 1, formula.size());
-
+    string sibling_string = string(&formula[closing + 1], &formula[formula.size()]);
     while (sibling_string.size() != 0 && sibling_string.at(0) == ',') {
         sibling_string = sibling_string.substr(1);
         size_t open = find_index_first_gate(sibling_string);
@@ -244,15 +243,19 @@ void print_tree(struct node* root) {
     }
 }
 
-int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
+int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient> &res, bool root) {
+    if (root) {
+        /* code */
+        global_leaf_idx = 1;
+    }
+
     size_t children = tree_root->children_num;
     bn_t x[children], y[children];
 
-    // TODO This is because of Relic's Shamir implementation only supporting t >= 3
     switch (tree_root->gate) {
         case AND_GATE: {
             //(n,n) treshold
-            if (children >= 3) {
+            if (children >= 2) {
                 /* code */
 
                 for (size_t i = 0; i < children; i++) {
@@ -263,19 +266,8 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
                 }
                 mpc_sss_gen(x, y, secret, order, children, children);
                 struct node* child = tree_root->firstchild;
-                if (child != NULL) {
-                    cout << "First child got shares" << endl;
-                    bn_null(child->share);
-                    bn_new(child->share);
-                    bn_null(child->share_index);
-                    bn_new(child->share_index);
-                    bn_copy(child->share_index, x[0]);
-                    bn_copy(child->share, y[0]);
-                    share_secret(child, y[0], order);
-                    // Get next child which is the first child's brother.
-                    child = child->nextsibling;
-                }
-                int i = 1;
+
+                int i = 0;
                 while (child != NULL) {
                     bn_null(child->share);
                     bn_new(child->share);
@@ -283,7 +275,7 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
                     bn_new(child->share_index);
                     bn_copy(child->share_index, x[i]);
                     bn_copy(child->share, y[i]);
-                    share_secret(child, y[i], order);
+                    share_secret(child, y[i], order, res, false);
                     child = child->nextsibling;
                     i++;
                 }
@@ -291,6 +283,8 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
                     bn_free(y[i]);
                     bn_free(x[i]);
                 }
+            } else {
+                cout << "And node with 1 operand, fix your string." << endl;
             }
             break;
         }
@@ -298,23 +292,20 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
             //(1,n) threshold
             // Constant polynomial. f(0) = secret, so must be constant polynomial with coeff a_= secret.
             // All shares are the same
-            cout << "Or or or " << endl;
             struct node* child = tree_root->firstchild;
             bn_t bn_index;
             bn_null(bn_index);
             bn_new(bn_index);
             bn_set_dig(bn_index, 0);
             if (child != NULL) {
-                cout << "Or not null " << endl;
                 bn_null(child->share);
                 bn_new(child->share);
                 bn_null(child->share_index);
                 bn_new(child->share_index);
                 bn_copy(child->share_index, bn_index);
                 bn_copy(child->share, secret);
-                cout << "Or not null blyat " << endl;
 
-                share_secret(child, secret, order);
+                share_secret(child, secret, order, res, false);
                 // Get next child which is the first child's brother.
                 child = child->nextsibling;
             }
@@ -327,15 +318,29 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order) {
                 bn_set_dig(bn_index, i);
                 bn_copy(child->share_index, bn_index);
                 bn_copy(child->share, secret);
-                share_secret(child, secret, order);
+                share_secret(child, secret, order, res, false);
                 child = child->nextsibling;
                 i++;
             }
             bn_free(bn_index);
             break;
         }
+        case LEAF: {
+            policy_coefficient p = policy_coefficient();
+            p.leaf_index = global_leaf_idx;
+            tree_root->leaf_index = global_leaf_idx;
+            bn_null(p.coeff);
+            bn_new(p.coeff);
+            bn_null(p.share);
+            bn_new(p.share);
+            bn_copy(p.share, tree_root->share);
+            res.push_back(p);
+            global_leaf_idx++;
+            break;
+        }
         default:
             // Nothing needs to happen in a leaf.
+            cout << "Reached undefined node in secret sharing function" << endl;
             break;
     }
 
@@ -378,6 +383,7 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
             // Here we must ensure only one branch is marked for efficiency.
             bool can_be_satisfied = false;
             struct node* child = root->firstchild;
+            cout << "Wtf?" << endl;
             while (!can_be_satisfied && child != NULL) {
                 can_be_satisfied = check_subtree_satisfiability(child, attributes, num_attributes);
                 child = child->nextsibling;
@@ -442,8 +448,8 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     struct node* brother;
     size_t threshold;
     while (!node_stack.empty()) {
-        cout << "ummm" << endl;
-        bn_print(*coefficients.top());
+        // cout << "ummm" << endl;
+        // bn_print(*coefficients.top());
         current_node = node_stack.top();
         bn_copy(temp, *coefficients.top());
 
@@ -495,33 +501,37 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
                     while (brother != NULL) {
                         if (brother->marked_for_coeff) {
                             if (j != i) {
-                                cout << "i = " << i << " + j = " << j << endl;
+                                // cout << "i = " << i << " + j = " << j << endl;
+                                // cout << "Leaf index (brother): " << brother->leaf_index << endl;
+                                // cout << "Leaf index (child): " << child->leaf_index << endl;
+                                // cout << "Share index RELIC: " << endl;
+                                // bn_print(brother->share_index);
+                                // bn_print(child->share_index);
                                 // This seems to be a really slow way of doing Prod(0-j/i-j)
                                 bn_set_dig(top_j, j);
                                 bn_sub(top_j, top_zero, top_j);
-                                bn_mod(top_j, top_j, order);
                                 bn_set_dig(bot_i, i);
                                 bn_set_dig(bot_j, j);
                                 bn_sub(bot_i, bot_i, bot_j);
+                                bn_mod(bot_i, bot_i, order);
                                 bn_mod_inv(bot_i, bot_i, order);
+
                                 bn_mul(top_j, top_j, bot_i);
-                                bn_mod(top_j, top_j, order);
+
                                 bn_mul(coeff[i - 1], coeff[i - 1], top_j);
-                                bn_mod(coeff[i - 1], coeff[i - 1], order);
                             }
                         }
                         j++;
                         brother = brother->nextsibling;
                     }
-                    cout << "I get here?" << endl;
+                    // cout << "I get here?" << endl;
                     node_stack.push(child);
-                    bn_print(coeff[i - 1]);
-                    bn_print(temp);
+                    // bn_print(coeff[i - 1]);
+                    // bn_print(temp);
                     bn_mul(coeff[i - 1], temp, coeff[i - 1]);
-                    bn_mod(coeff[i - 1], coeff[i - 1], order);
-                    bn_print(coeff[i - 1]);
-                    bn_print(temp);
-                    cout << &coeff[i - 1] << endl;
+                    // bn_print(coeff[i - 1]);
+                    // bn_print(temp);
+                    // cout << &coeff[i - 1] << endl;
                     coefficients.push(&coeff[i - 1]);
                 }
                 i++;

@@ -66,8 +66,10 @@ std::string stringify_node(struct node *n);
  * @param[in] tree_root			- pointer to root of the access tree
  * @param[in] secret			- secret we want to share
  * @param[in] order			    - order of field
+ * @param[in] res               - reference to vector to fill out with shares
+ * @param[in] is_root           - indicates if this is the top of recursion
  */
-int share_secret(struct node *tree_root, bn_t secret, bn_t order);
+int share_secret(struct node *tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient> &res, bool is_root);
 
 /**
  * Parses tree and checks if it can be satisfied by provided attributes. Also marks the minimal leafs
