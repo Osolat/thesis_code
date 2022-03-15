@@ -151,9 +151,9 @@ int main(int argc, char const *argv[]) {
      test6(); */
 
     test6();
-    // std::cout << and_tree_formula(100) << std::endl;
+    std::cout << and_tree_formula(10) << std::endl;
     struct node root;
-    tree_from_string(and_tree_formula(1000), &root);
+    tree_from_string(and_tree_formula(10), &root);
     bn_t secret, order;
     bn_null(secret);
     bn_new(secret);
@@ -172,21 +172,21 @@ int main(int argc, char const *argv[]) {
         std::cout << it->leaf_index << std::endl;
     }
 
-    bn_t attributes[1000];
-    for (size_t i = 0; i < 1000; i++) {
+    bn_t attributes[10];
+    for (size_t i = 0; i < 10; i++) {
         bn_null(attributes[i]);
         bn_new(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
 
     try {
-        check_satisfiability(&root, attributes, 1000);
+        check_satisfiability(&root, attributes, 10);
         std::cout << "Satisfiable with correct attributes" << std::endl;
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
     res = std::vector<policy_coefficient>();
-    res = recover_coefficients(&root, attributes, 1000);
+    res = recover_coefficients(&root, attributes, 10);
     bn_t gather;
     bn_null(gather);
     bn_new(gather);
