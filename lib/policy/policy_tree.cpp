@@ -106,7 +106,6 @@ int tree_from_string(string formula, struct node* root) {
         root->gate = LEAF;
         return EXIT_SUCCESS;
     }
-
     add_children(root, arguments);
 
     return EXIT_SUCCESS;
@@ -243,7 +242,7 @@ void print_tree(struct node* root) {
     }
 }
 
-int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient> &res, bool root) {
+int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient>& res, bool root) {
     if (root) {
         /* code */
         global_leaf_idx = 1;
@@ -296,20 +295,7 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<po
             bn_t bn_index;
             bn_null(bn_index);
             bn_new(bn_index);
-            bn_set_dig(bn_index, 0);
-            if (child != NULL) {
-                bn_null(child->share);
-                bn_new(child->share);
-                bn_null(child->share_index);
-                bn_new(child->share_index);
-                bn_copy(child->share_index, bn_index);
-                bn_copy(child->share, secret);
-
-                share_secret(child, secret, order, res, false);
-                // Get next child which is the first child's brother.
-                child = child->nextsibling;
-            }
-            int i = 1;
+            int i = 0;
             while (child != NULL) {
                 bn_null(child->share);
                 bn_new(child->share);
@@ -353,7 +339,6 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
             /* code */
             // (n,n) threshold, all children must satisfy.
             struct node* child = root->firstchild;
-
             if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
             child = child->nextsibling;
             while (child != NULL) {
@@ -366,8 +351,6 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
             break;
         }
         case LEAF: {
-            root->leaf_index = global_leaf_idx;
-            global_leaf_idx++;
             for (size_t i = 0; i < num_attributes; i++) {
                 if (bn_cmp(root->attribute_zp, attributes[i]) == 0) {
                     root->marked_for_coeff = true;
@@ -383,7 +366,6 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
             // Here we must ensure only one branch is marked for efficiency.
             bool can_be_satisfied = false;
             struct node* child = root->firstchild;
-            cout << "Wtf?" << endl;
             while (!can_be_satisfied && child != NULL) {
                 can_be_satisfied = check_subtree_satisfiability(child, attributes, num_attributes);
                 child = child->nextsibling;
@@ -405,7 +387,6 @@ int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num
 }
 
 void check_satisfiability(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
-    global_leaf_idx = 1;
     if (check_subtree_satisfiability(tree_root, attributes, num_attributes) == 0) throw TreeUnsatisfiableException();
 }
 
@@ -448,8 +429,6 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     struct node* brother;
     size_t threshold;
     while (!node_stack.empty()) {
-        // cout << "ummm" << endl;
-        // bn_print(*coefficients.top());
         current_node = node_stack.top();
         bn_copy(temp, *coefficients.top());
 
@@ -482,7 +461,6 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
             size_t i = 1;
             bn_t* coeff = RLC_ALLOCA(bn_t, current_node->children_num);
             for (size_t i = 0; i < current_node->children_num; i++) {
-                /* code */
                 bn_null(coeff[i]);
                 bn_new(coeff[i]);
                 bn_set_dig(coeff[i], 1);
@@ -492,21 +470,11 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
             while (child != NULL) {
                 if (child->marked_for_coeff) {
                     size_t j = 1;
-                    /*     bn_t coeff;
-                        bn_null(coeff);
-                        bn_new(coeff);
-                        bn_set_dig(coeff, 1); */
                     // Calculate langrange coefficients Prod(0 - j/ i - j)
                     brother = current_node->firstchild;
                     while (brother != NULL) {
                         if (brother->marked_for_coeff) {
                             if (j != i) {
-                                // cout << "i = " << i << " + j = " << j << endl;
-                                // cout << "Leaf index (brother): " << brother->leaf_index << endl;
-                                // cout << "Leaf index (child): " << child->leaf_index << endl;
-                                // cout << "Share index RELIC: " << endl;
-                                // bn_print(brother->share_index);
-                                // bn_print(child->share_index);
                                 // This seems to be a really slow way of doing Prod(0-j/i-j)
                                 bn_set_dig(top_j, j);
                                 bn_sub(top_j, top_zero, top_j);
@@ -524,14 +492,8 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
                         j++;
                         brother = brother->nextsibling;
                     }
-                    // cout << "I get here?" << endl;
                     node_stack.push(child);
-                    // bn_print(coeff[i - 1]);
-                    // bn_print(temp);
                     bn_mul(coeff[i - 1], temp, coeff[i - 1]);
-                    // bn_print(coeff[i - 1]);
-                    // bn_print(temp);
-                    // cout << &coeff[i - 1] << endl;
                     coefficients.push(&coeff[i - 1]);
                 }
                 i++;
@@ -541,4 +503,26 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     }
 
     return result;
+}
+
+std::string and_tree_formula(size_t size) {
+    string s;
+    for (size_t i = 0; i < size - 2; i++) {
+        string num = to_string(i + 1);
+        s.append("AND(OR(attr");
+        s.append(num);
+        s.append("),");
+    }
+    string num = to_string(size - 1);
+    s.append("AND(OR(attr");
+    s.append(num);
+    num = to_string(size);
+    s.append("),OR(attr");
+    s.append(num);
+
+    for (size_t i = 0; i < size + 1; i++) {
+        s.append(")");
+    }
+
+    return s;
 }

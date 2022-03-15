@@ -90,6 +90,12 @@ void check_satisfiability(struct node *tree_root, bn_t *attributes, size_t num_a
  */
 std::vector<policy_coefficient> recover_coefficients(struct node *tree_root, bn_t *attributes, size_t num_attributes);
 
+/**
+ * Constructs a policy tree with attributes (attr1, attr2... etc), in recursive fashion of structure AND(attr1, AND(attr2, AND(...)))
+ * @param[in] size			- pointer to root of the access tree
+ */
+std::string and_tree_formula(size_t size);
+
 struct TreeUnsatisfiableException : public std::exception {
     const char *what() const throw() {
         return "Access policy tree could not be satisfied by attempted attributes";
