@@ -762,4 +762,178 @@ int init_public_key_kp_gpsw_lu(const uint32_t n_attr, struct public_key_kp_gpsw_
 int init_secret_key_kp_gpsw_lu(const uint32_t n_attr, struct secret_key_kp_gpsw_lu *sk);
 int init_ciphertext_kp_gpsw_lu(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu *E);
 
+
+//Stuff used for the K_LIN scheme.
+const int k = 2;                                     //Here k=1 means (SXLIN) and k=2 means (DLIN)
+//TODO factor out the constant k such that it is set at compile time.
+struct k_lin_att {
+    uint32_t attr;
+    bn_t w[(k+1)*k];                                 //Matrix w has size ((k+1) * k)
+};
+
+struct k_lin_mat {
+    uint32_t attr;
+    g1_t w[k*k];                                      //Matrix AW_i will have size k*k after matrix multiplication.
+};
+
+struct k_lin_secret_key {
+    uint32_t attr;
+    g2_t sk_one[k+1];                                //SK1 will be a vector of k+1 since matrix-vector multiplication yields a vector of size k. Then addition of two vectors must have same dimensions, so we finally get a vector of size k+1
+    g2_t sk_two[k];                                  //SK2 is a vector of size k.
+};
+
+struct tmp_vj {
+    bn_t vec_j[k+1];                                 //The vj-vector will have size k+1 otherwise we can't do vector addition for SK1.
+};
+
+struct tmp_rj {
+    bn_t vec_rj[k];                                  //The rj-vector has size k.
+};
+
+struct c_attribute_K_Lin {
+    uint32_t attr;
+    g1_t c_2_mat[k];                                 //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
+};
+
+struct master_key_k_lin {
+    uint32_t N_ATTR;
+    uint32_t N_SEC;
+    struct k_lin_att *atts;                          //Set of matrices W_i, where the set-size is N_ATTR + 1, since W_0 = 0 and W_1,...,W_n is valid matrices of msk.
+    bn_t *v_share;                                   //A vector v of size (k+1).
+};
+
+struct public_key_k_lin {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    struct k_lin_mat *mats;                          //Set of matrices AW_i, where the set-size is N_ATTR + 1, since AW_0 = 0 by matrix multiplication of W_0 and AW_1,...,AW_n is valid matrices of mpk.
+    g1_t *a_mat;                                     //The matrix A has size k*(k+1) and the entries are group1 elements raised to the power of the matrix-product AW_i of each component.
+    gt_t *e_mat;                                     //Asymmetric mapping E = e([A]_1, [v]_2) = gt^Av = e(g,h)^Av which has size k, since Av yields a vector of size k. //TODO can't malloc gt_t as it gives a bus core seg fault.
+};
+
+struct secret_key_K_Lin {
+    uint32_t N_ATTR;
+    struct k_lin_secret_key * sk;                    //Set of secret key pairs (SK1,SK2) where sk1 is a vector of size k+1 and SK2 is a vector of size k.
+};
+
+struct sk_tmp_vj {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    struct tmp_vj * vj;                              //Temporary set of vj vectors containing the j'th share of vector v. The set-size is j, where j=N_ATTR when the policy-tree only consists of AND gates. //TODO adjust for policy-trees with or gates as well.
+    struct tmp_rj * rj;                              //Temporary set of rj vectors containing random bn_t values. The set-size is j, where j=N_ATTR when the policy-tree only consists of AND gates. //TODO adjust for policy-trees with or gates as well.
+};
+
+struct ciphertext_K_Lin {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    gt_t M;                                         //This is the message M from the encryption algorithm, sets it to 1 for simplicity.
+    g1_t *C_1;                                      //CT1 is a vector of size k+1 because the vector-matrix multiplication s^T*A yields a vector of size k+1
+    struct c_attribute_K_Lin * C_2;                 //CT2 is a set of vectors where the set-size is based on #attributes where x_i = 1?
+    gt_t C_3_one_val;                               //CT3 is a vector of size k+1 because of the cross-product of two vectors of size k+1 yields a vector of size k+1 //TODO cannot change like for C1 since it give a bus seg fault
+
+};
+
+int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin *c);
+int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s);
+int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vj *v);
+int init_master_key_k_lin(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin *m);
+int init_public_key_k_lin(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin *p);
+
+
+//Stuff used for KLin large universe
+
+
+
+struct c_attribute_K_Lin_lu_c23 {
+    uint32_t attr;
+    g1_t c_2_vec[k];                                                            //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
+    g1_t c_3_vec[(2*k)+1];
+};
+
+
+struct tmp_vj_lu {
+    bn_t vec_j[(2*k)+1];                                                           //The vj-vector will have size 2k+1 otherwise we can't do vector addition for SK1.
+};
+
+struct tmp_rj_lu {
+    bn_t vec_rj[k];                                                             //The rj-vector has size k.
+};
+
+struct si_lu {
+    bn_t si_vec[k];                                                             //The rj-vector has size k.
+};
+
+struct sk_tmp_vectors_lu {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    struct tmp_vj_lu * vj;                                                     //Temporary set of vj vectors containing the j'th share of vector v. The set-size is j, where j=N_ATTR when the policy-tree only consists of AND gates. //TODO adjust for policy-trees with or gates as well.
+    struct tmp_rj_lu * rj;                                                     //Temporary set of rj vectors containing random bn_t values. The set-size is j, where j=N_ATTR when the policy-tree only consists of AND gates. //TODO adjust for policy-trees with or gates as well.
+};
+
+struct tmp_si_lu {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    struct si_lu * si;                                                     //Temporary set of vj vectors containing the j'th share of vector v. The set-size is j, where j=N_ATTR when the policy-tree only consists of AND gates. //TODO adjust for policy-trees with or gates as well.
+};
+
+
+
+struct k_lin_secret_key_lu_13 {
+    uint32_t attr;
+    g2_t sk_one[(2*k)+1];                                                      //sk1 is a vector of size 2k+1
+    g2_t sk_two[k];                                                         //sk2 is a vector of size k
+    g2_t sk_three[(2*k)+1];                                                    //sk3 is a vector of size 2k+1 not exactly sure what rho(j)!=0 is and how it works for pure and gates
+};
+
+struct k_lin_secret_key_lu_4 {
+    uint32_t attr;
+    g2_t sk_four[(2*k)+1];                                                     //sk4 is a vector of size 2k+1 and again not sure about rho(j)=0.
+};
+
+
+
+struct master_key_k_lin_lu {
+    uint32_t N_ATTR;
+    uint32_t N_SEC;
+    bn_t *W_matrix;                                                          //w matrix of size (2k+1)*k
+    bn_t *W0_matrix;                                                         //w0 matrix of size (2k+1)*k
+    bn_t *W1_matrix;                                                         //w1 matrix of size (2k+1)*k
+    bn_t *v_secret;                                                          //vector of secrets  of size 2k+1
+};
+
+
+struct public_key_k_lin_lu {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    g1_t *A1_mat;                                                           //A1 matrix of size K*(2k+1)
+    g1_t *AW_mat;                                                           //AW matrix of size k*K
+    g1_t *AW0_mat;                                                          //AW0 matrix of size k*K
+    g1_t *AW1_mat;                                                          //AW1 matrix of size k*K
+    gt_t *e_mat;                                                            //e mapping vector of size k.
+};
+
+
+struct secret_key_K_Lin_lu {
+    uint32_t N_ATTR;
+    struct k_lin_secret_key_lu_13 * sk13;
+    struct k_lin_secret_key_lu_4 * sk4;
+};
+
+
+struct ciphertext_K_Lin_lu {
+    uint32_t N_ATTR;
+    uint32_t K_SEC;
+    gt_t M;                                                             //This is the message M from the encryption algorithm, sets it to 1 for simplicity.
+    g1_t *C_1;                                                          //CT1 is a vector of size 2k+1 because the vector-matrix multiplication s^T*A yields a vector of size 2k+1
+    struct c_attribute_K_Lin_lu_c23 * C_23;                            //CT2 is a set of vectors where the set-size is based on #attributes where x_i = 1?
+    gt_t C_4_one_val;                                                   //CT4 one gt value.
+
+};
+
+int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin_lu *c);
+int init_secret_key_K_Lin_lu(const uint32_t n_attr, struct secret_key_K_Lin_lu *s);
+int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vectors_lu *v);
+int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin_lu *m);
+int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin_lu *p);
+int init_tmp_si_lu(const uint32_t n_attr, const uint32_t k, struct tmp_si_lu *si);
+
 #endif
