@@ -97,7 +97,6 @@ int main(int argc, char **argv) {
 
     /* Setup */
 
-
     /*Generator of G1*/
     g1_t g;
     g1_new(g);
@@ -124,8 +123,8 @@ int main(int argc, char **argv) {
 
     /*Setup PK*/
     for (int i = 0; i < N_ATTR; i++) {
-        g1_new(mpk.T_values[i]);
-        g1_null(mpk.T_values[i]);
+        g2_new(mpk.T_values[i]);
+        g2_null(mpk.T_values[i]);
         g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
     }
 
@@ -144,11 +143,10 @@ int main(int argc, char **argv) {
     }
 
     /*Secret sharing of y, according to policy tree*/
-     struct node tree_root;
+    struct node tree_root;
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     std::vector<policy_coefficient> res;
     share_secret(&tree_root, msk.y, order, res, true);
-
     bn_t temp;
     bn_new(temp);
     bn_null(temp);
@@ -186,7 +184,7 @@ int main(int argc, char **argv) {
     }
 
     /*Decryption(E,D) -> message*/
-  
+
     bn_t attributes[test_attr];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -230,6 +228,6 @@ int main(int argc, char **argv) {
     gt_print(result);
     printf("----------------------\n");
     printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
-   
+
     return 0;
 }
