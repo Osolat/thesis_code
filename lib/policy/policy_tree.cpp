@@ -6,10 +6,13 @@
 #include <array>
 #include <iostream>
 #include <regex>
+#include <stack>
 #include <string>
 #include <vector>
-
 using namespace std;
+
+// TODO: This is very dangerous.
+size_t global_leaf_idx;
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 int id = 0;
@@ -94,7 +97,8 @@ int tree_from_string(string formula, struct node* root) {
     // Strips AND(x) into x = arguments
     auto first = formula.find_first_of('(');
     auto last = formula.find_last_of(')');
-    string arguments = formula.substr(first + 1, last - 1);
+    // string arguments = formula.substr(first + 1, last - 1);
+    string arguments = string(&formula[first + 1], &formula[last]);
     if (arguments.substr(0, 5).find("attr") != string::npos) {
         // Formula was OR(attr...)
         // TODO: More stuff when we find a leaf node
@@ -102,7 +106,6 @@ int tree_from_string(string formula, struct node* root) {
         root->gate = LEAF;
         return EXIT_SUCCESS;
     }
-
     add_children(root, arguments);
 
     return EXIT_SUCCESS;
@@ -135,22 +138,24 @@ int add_children(struct node* parent, string formula) {
             }
         }
     }
-
     size_t closing = find_closing_paren(formula, open);
     struct node* leftmost_child = new node;
     leftmost_child->gate = g;
     parent->firstchild = leftmost_child;
+    parent->children_num++;
     if (g == OR_GATE || g == AND_GATE) {
-        add_children(leftmost_child, string(&formula[open], &formula[closing]));
+        add_children(leftmost_child, string(&formula[open + 1], &formula[closing]));
     } else {
         // Is LEAF gate
         string s = string(&formula[open + 5], &formula[closing]);
         leftmost_child->attribute_idx = stoull(s);
+        bn_null(leftmost_child->attribute_zp);
+        bn_new(leftmost_child->attribute_zp);
+        bn_set_dig(leftmost_child->attribute_zp, stoull(s));
     }
     // Parse and add all siblings
     struct node* current_node = leftmost_child;
-    string sibling_string = formula.substr(closing + 1, formula.size());
-
+    string sibling_string = string(&formula[closing + 1], &formula[formula.size()]);
     while (sibling_string.size() != 0 && sibling_string.at(0) == ',') {
         sibling_string = sibling_string.substr(1);
         size_t open = find_index_first_gate(sibling_string);
@@ -178,12 +183,16 @@ int add_children(struct node* parent, string formula) {
         struct node* brother = new node;
         brother->gate = g;
         current_node->nextsibling = brother;
+        parent->children_num++;
         if (g == OR_GATE || g == AND_GATE) {
             add_children(brother, string(&sibling_string[open + 1], &sibling_string[closing]));
         } else {
             // Is LEAF gate
             string s = string(&sibling_string[open + 5], &sibling_string[closing]);
             brother->attribute_idx = stoull(s);
+            bn_null(brother->attribute_zp);
+            bn_new(brother->attribute_zp);
+            bn_set_dig(brother->attribute_zp, stoull(s));
         }
         sibling_string = sibling_string.substr(closing + 1);
         current_node = brother;
@@ -208,8 +217,10 @@ string stringify_node(struct node* n) {
             s = "UNDEFINED NODE";
             break;
     }
+    s.append(" with ").append(to_string(n->children_num)).append(" children");
     return s;
 }
+
 int print_node(struct node* n) {
     cout << stringify_node(n) << endl;
     return EXIT_SUCCESS;
@@ -219,10 +230,299 @@ void print_tree(struct node* root) {
     print_node(root);
     if (root->firstchild != NULL) {
         cout << "child" << endl;
+        bn_print(root->firstchild->share);
+
         print_tree(root->firstchild);
     }
     if (root->nextsibling != NULL) {
         cout << "sibling" << endl;
+        bn_print(root->nextsibling->share);
+
         print_tree(root->nextsibling);
     }
+}
+
+int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient>& res, bool root) {
+    if (root) {
+        /* code */
+        global_leaf_idx = 1;
+    }
+
+    size_t children = tree_root->children_num;
+    bn_t x[children], y[children];
+
+    switch (tree_root->gate) {
+        case AND_GATE: {
+            //(n,n) treshold
+            if (children >= 2) {
+                /* code */
+
+                for (size_t i = 0; i < children; i++) {
+                    bn_null(x[i]);
+                    bn_null(y[i]);
+                    bn_new(x[i]);
+                    bn_new(y[i]);
+                }
+                mpc_sss_gen(x, y, secret, order, children, children);
+                struct node* child = tree_root->firstchild;
+
+                int i = 0;
+                while (child != NULL) {
+                    bn_null(child->share);
+                    bn_new(child->share);
+                    bn_null(child->share_index);
+                    bn_new(child->share_index);
+                    bn_copy(child->share_index, x[i]);
+                    bn_copy(child->share, y[i]);
+                    share_secret(child, y[i], order, res, false);
+                    child = child->nextsibling;
+                    i++;
+                }
+                for (size_t i = 0; i < children; i++) {
+                    bn_free(y[i]);
+                    bn_free(x[i]);
+                }
+            } else {
+                cout << "And node with 1 operand, fix your string." << endl;
+            }
+            break;
+        }
+        case OR_GATE: {
+            //(1,n) threshold
+            // Constant polynomial. f(0) = secret, so must be constant polynomial with coeff a_= secret.
+            // All shares are the same
+            struct node* child = tree_root->firstchild;
+            bn_t bn_index;
+            bn_null(bn_index);
+            bn_new(bn_index);
+            int i = 0;
+            while (child != NULL) {
+                bn_null(child->share);
+                bn_new(child->share);
+                bn_null(child->share_index);
+                bn_new(child->share_index);
+                bn_set_dig(bn_index, i);
+                bn_copy(child->share_index, bn_index);
+                bn_copy(child->share, secret);
+                share_secret(child, secret, order, res, false);
+                child = child->nextsibling;
+                i++;
+            }
+            bn_free(bn_index);
+            break;
+        }
+        case LEAF: {
+            policy_coefficient p = policy_coefficient();
+            p.leaf_index = global_leaf_idx;
+            tree_root->leaf_index = global_leaf_idx;
+            bn_null(p.coeff);
+            bn_new(p.coeff);
+            bn_null(p.share);
+            bn_new(p.share);
+            bn_copy(p.share, tree_root->share);
+            res.push_back(p);
+            global_leaf_idx++;
+            break;
+        }
+        default:
+            // Nothing needs to happen in a leaf.
+            cout << "Reached undefined node in secret sharing function" << endl;
+            break;
+    }
+
+    return 1;
+}
+
+int check_subtree_satisfiability(struct node* root, bn_t* attributes, size_t num_attributes) {
+    switch (root->gate) {
+        case AND_GATE: {
+            /* code */
+            // (n,n) threshold, all children must satisfy.
+            struct node* child = root->firstchild;
+            if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
+            child = child->nextsibling;
+            while (child != NULL) {
+                if (check_subtree_satisfiability(child, attributes, num_attributes) == 0) return 0;
+                child = child->nextsibling;
+            }
+
+            root->marked_for_coeff = true;
+            return 1;
+            break;
+        }
+        case LEAF: {
+            for (size_t i = 0; i < num_attributes; i++) {
+                if (bn_cmp(root->attribute_zp, attributes[i]) == 0) {
+                    root->marked_for_coeff = true;
+                    // Found correct attribute in leaf, so it can be satisfied
+                    return 1;
+                }
+            }
+            // No correct attribute in leaf, can't satisfy.
+            return 0;
+            break;
+        }
+        case OR_GATE: {
+            // Here we must ensure only one branch is marked for efficiency.
+            bool can_be_satisfied = false;
+            struct node* child = root->firstchild;
+            while (!can_be_satisfied && child != NULL) {
+                can_be_satisfied = check_subtree_satisfiability(child, attributes, num_attributes);
+                child = child->nextsibling;
+            }
+            if (can_be_satisfied) {
+                root->marked_for_coeff = true;
+                return 1;
+            }
+            return 0;
+            break;
+        }
+
+        default:
+            print_node(root);
+            cout << "Found undefined gate_type. Everything will now break probably." << endl;
+            return 0;
+            break;
+    }
+}
+
+void check_satisfiability(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
+    if (check_subtree_satisfiability(tree_root, attributes, num_attributes) == 0) throw TreeUnsatisfiableException();
+}
+
+std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_t* attributes, size_t num_attributes) {
+    vector<policy_coefficient> result;
+    std::stack<struct node*> node_stack;
+    std::stack<bn_t*> coefficients;
+
+    bn_t order;
+    bn_null(order);
+    bn_new(order);
+
+    pc_get_ord(order);
+
+    bn_t temp;
+    bn_null(temp);
+    bn_new(temp);
+
+    bn_t unit;
+    bn_null(unit);
+    bn_new(unit);
+
+    bn_t top_j, bot_j, bot_i, top_zero;
+    bn_null(top_j);
+    bn_new(top_j);
+    bn_null(bot_j);
+    bn_new(bot_j);
+    bn_null(bot_i);
+    bn_new(bot_i);
+    bn_null(top_zero);
+    bn_new(top_zero);
+    bn_zero(top_zero);
+
+    bn_set_dig(unit, 1);
+    node_stack.push(tree_root);
+    coefficients.push(&unit);
+
+    struct node* current_node;
+    struct node* child;
+    struct node* brother;
+    size_t threshold;
+    while (!node_stack.empty()) {
+        current_node = node_stack.top();
+        bn_copy(temp, *coefficients.top());
+
+        node_stack.pop();
+        coefficients.pop();
+
+        if (current_node->gate == LEAF) {
+            policy_coefficient p = policy_coefficient();
+            p.leaf_index = current_node->leaf_index;
+            bn_null(p.coeff);
+            bn_new(p.coeff);
+            bn_null(p.share);
+            bn_new(p.share);
+            bn_copy(p.coeff, temp);
+            bn_copy(p.share, current_node->share);
+            result.push_back(p);
+        } else {
+            switch (current_node->gate) {
+                case AND_GATE:
+                    threshold = current_node->children_num;
+                    break;
+                case OR_GATE:
+                    threshold = 1;
+                    break;
+                default:
+                    cout << "Found Undefined node during coeff recovery, should not happen" << endl;
+                    threshold = 0;
+                    break;
+            }
+            size_t i = 1;
+            bn_t* coeff = RLC_ALLOCA(bn_t, current_node->children_num);
+            for (size_t i = 0; i < current_node->children_num; i++) {
+                bn_null(coeff[i]);
+                bn_new(coeff[i]);
+                bn_set_dig(coeff[i], 1);
+            }
+
+            child = current_node->firstchild;
+            while (child != NULL) {
+                if (child->marked_for_coeff) {
+                    size_t j = 1;
+                    // Calculate langrange coefficients Prod(0 - j/ i - j)
+                    brother = current_node->firstchild;
+                    while (brother != NULL) {
+                        if (brother->marked_for_coeff) {
+                            if (j != i) {
+                                // This seems to be a really slow way of doing Prod(0-j/i-j)
+                                bn_set_dig(top_j, j);
+                                bn_sub(top_j, top_zero, top_j);
+                                bn_set_dig(bot_i, i);
+                                bn_set_dig(bot_j, j);
+                                bn_sub(bot_i, bot_i, bot_j);
+                                bn_mod(bot_i, bot_i, order);
+                                bn_mod_inv(bot_i, bot_i, order);
+
+                                bn_mul(top_j, top_j, bot_i);
+
+                                bn_mul(coeff[i - 1], coeff[i - 1], top_j);
+                            }
+                        }
+                        j++;
+                        brother = brother->nextsibling;
+                    }
+                    node_stack.push(child);
+                    bn_mul(coeff[i - 1], temp, coeff[i - 1]);
+                    coefficients.push(&coeff[i - 1]);
+                }
+                i++;
+                child = child->nextsibling;
+            }
+        }
+    }
+
+    return result;
+}
+
+std::string and_tree_formula(size_t size) {
+    string s;
+    for (size_t i = 0; i < size - 2; i++) {
+        string num = to_string(i + 1);
+        s.append("AND(OR(attr");
+        s.append(num);
+        s.append("),");
+    }
+    string num = to_string(size - 1);
+    s.append("AND(OR(attr");
+    s.append(num);
+    num = to_string(size);
+    s.append("),OR(attr");
+    s.append(num);
+
+    for (size_t i = 0; i < size + 1; i++) {
+        s.append(")");
+    }
+
+    return s;
 }

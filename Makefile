@@ -6,7 +6,9 @@ CXXFLAGS = -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -mar
 CXX = g++
 
 RELIC_LIB_BLS_12_381=/usr/local/lib/librelic_s.a
-RELIC_INCLUDE_BLS_12_381=usr/local/include/
+RELIC_INCLUDE_BLS_12_381=/usr/local/include/
+#RELIC_LIB_BLS_12_381=~/Master-Thesis/relic/relic-target/lib/librelic_s.a
+#RELIC_INCLUDE_BLS_12_381=~/Master-Thesis/
 
 ARITH_OBJ = zp_arith.o g1_arith.o g2_arith.o gt_arith.o structures.o pairing_arith.o
 LEGACY_OBJ = l_zobject.o l_zfunctioninput.o l_zattributelist.o l_zpolicy.o l_zdriver.o zscanner.o zparser.tab.o l_zgroup.o l_zelement.o l_zelement_bp.o l_zlsss.o
@@ -43,6 +45,10 @@ policy_tree:
 	$(CXX) -o objects/main $(CXXFLAGS) $(POLICY_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) test_access_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
+failing_comp:
+	$(info ************  Compiling Policy Tree Test************)
+	$(CXX) -o objects/main $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) test_access_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	rm *.o
 clean:
 	rm -f objects/* main *~
 

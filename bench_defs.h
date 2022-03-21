@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#include "lib/policy/policy_tree.h"
 #include "lib/zp_arith.h"
 #include "lib/structures.h"
 #include "lib/pairing_arith.h"
