@@ -123,12 +123,19 @@ int main(int argc, char **argv){
         printf("Invalid attribute encryption input\n");
         return(EXIT_FAILURE);
     }
-    if ((attrList = dynamic_cast<L_OpenABEAttributeList *>(encFuncInput.get())) == nullptr) {
-        printf("Error in attribute list\n");
-        return(EXIT_FAILURE);
+    cout << "sheesh 1\n";
+    bn_t attributes[test_attr];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        bn_null(attributes[i]);
+        bn_new(attributes[i]);
+        bn_set_dig(attributes[i], i + 1);
     }
+    //if ((attrList = dynamic_cast<L_OpenABEAttributeList *>(encFuncInput.get())) == nullptr) {
+    //    printf("Error in attribute list\n");
+    //    return(EXIT_FAILURE);
+    //}
 
-    cout << "Encryption input: " << attrList->l_toString() << "\n";
+    //cout << "Encryption input: " << attrList->l_toString() << "\n";
 
     g1_t big_es[N_ATTR];
     bn_t s; bn_null(s); bn_new(s)
@@ -148,40 +155,47 @@ int main(int argc, char **argv){
     //ATM we just encrypt 1
     gt_exp(e_prime, big_y, s);
     //KeyGen
-    L_OpenABEPolicy *policy;
-    L_OpenABELSSS lsss(1);
-    L_OpenABELSSSRowMap lsssRows;
+    //L_OpenABEPolicy *policy;
+    //L_OpenABELSSS lsss(1);
+    //L_OpenABELSSSRowMap lsssRows;
 
-    unique_ptr<L_OpenABEFunctionInput> funcInput = nullptr;
-
-
-    funcInput = L_createPolicyTree(keyInput);
-    if (!funcInput) {
-        printf("Create policy error in key generation\n");
-        return -1;
-    }
-    policy = dynamic_cast<L_OpenABEPolicy *>(funcInput.get());
-    if (policy == nullptr) {
-        printf("Error in input policy\n");
-        return -1;
-    }
+    //unique_ptr<L_OpenABEFunctionInput> funcInput = nullptr;
 
 
-    cout << "Key input: " << policy-> l_toString() << "\n";
-    lsss.l_shareSecret(policy, y);
-    lsssRows = lsss.l_getRows();
+    //funcInput = L_createPolicyTree(keyInput);
+    //if (!funcInput) {
+    //    printf("Create policy error in key generation\n");
+    //    return -1;
+    //}
+    //policy = dynamic_cast<L_OpenABEPolicy *>(funcInput.get());
+    //if (policy == nullptr) {
+    //    printf("Error in input policy\n");
+    //    return -1;
+    //}
+
+
+
+    struct node tree_root;
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    vector<policy_coefficient> vector;
+    share_secret(&tree_root, y.m_ZP, order, vector, true);
+
+    cout << "Key input\n";
+    print_tree(&tree_root);
+
+    //lsss.l_shareSecret(policy, y);
+    //lsssRows = lsss.l_getRows();
     g2_t big_ds[N_ATTR];
     int attr_int;
     bn_t shares[N_ATTR];
-    for (auto it = lsssRows.begin(); it != lsssRows.end(); it++) {
+    for (auto it = vector.begin(); it != vector.end(); it++) {
         //My name is Deez
         cout << "Share\n";
-        bn_print(it -> second.element().m_ZP);
-        string label = it -> second.label();
-        attr_int = getAttrNumber(label);
-        int attr_index = attr_int-1;
+        bn_print(it -> share);
+        //string label = it -> second.label();
+        int attr_index = it -> leaf_index-1;
         bn_null(shares[attr_index]); bn_new(shares[attr_index]);
-        bn_copy(shares[attr_index], it -> second.element().m_ZP);
+        bn_copy(shares[attr_index], it -> share);
         g2_null(big_ds[attr_index); g2_new(big_ds[attr_index]);
         g2_mul(big_ds[attr_index], big_ts_g2_inv[attr_index], shares[attr_index]);
         cout << "D(" << attr_index<< ")\n";
@@ -192,20 +206,28 @@ int main(int argc, char **argv){
 
     //Decryption
     gt_t big_vas[N_ATTR];
-    lsss.l_recoverCoefficients(policy, attrList);
-    lsssRows = lsss.l_getRows();
+    //lsss.l_recoverCoefficients(policy, attrList);
+    //lsssRows = lsss.l_getRows();
+    try {
+        check_satisfiability(&tree_root, attributes, N_ATTR);
+        std::cout << "Satisfiable with correct attributes" << std::endl;
+    } catch (struct TreeUnsatisfiableException *e) {
+        std::cout << e->what() << std::endl;
+    }
     g1_t e_reconstruct[N_ATTR];
     bn_t reconCoeffs[N_ATTR];
-    for (auto it = lsssRows.begin(); it != lsssRows.end(); it++) {
+    vector = std::vector<policy_coefficient>();
+    vector = recover_coefficients(&tree_root, attributes, N_ATTR);
+    for (auto it = vector.begin(); it != vector.end(); it++) {
         gt_null(big_vas[N_ATTR]); gt_new(big_vas[N_ATTR]);
         cout << "recon coefficient\n";
-        bn_print(it -> second.element().m_ZP);
-        string label = it -> second.label();
-        attr_int = getAttrNumber(label);
-        int attr_index = attr_int-1;
+        bn_print(it -> coeff);
+        //string label = it -> second.label();
+        //attr_int = getAttrNumber(label);
+        int attr_index = it -> leaf_index-1;
         bn_null(reconCoeffs[attr_index]); bn_new(reconCoeffs[attr_index]);
         //cout << "recon element " << it -> second.element() << "\n";
-        bn_copy(reconCoeffs[attr_index], it -> second.element().m_ZP);
+        bn_copy(reconCoeffs[attr_index], it -> coeff);
         //cout << "recon element zp " << attr_index << "\n";
         //bn_print(reconCoeffs[attr_index]);
         g1_null(e_reconstruct[attr_index]); g1_new(e_reconstruct[attr_index]);
@@ -299,4 +321,5 @@ int main(int argc, char **argv){
 
 
     return 0;
+
 }
