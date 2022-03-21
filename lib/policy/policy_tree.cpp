@@ -104,6 +104,12 @@ int tree_from_string(string formula, struct node* root) {
         // TODO: More stuff when we find a leaf node
         cout << "Tree with only a leaf? Was that intended?" << endl;
         root->gate = LEAF;
+        // Is LEAF gate
+        string s = string(&formula[first + 5], &formula[last]);
+        root->attribute_idx = stoull(s);
+        bn_null(root->attribute_zp);
+        bn_new(root->attribute_zp);
+        bn_set_dig(root->attribute_zp, stoull(s));
         return EXIT_SUCCESS;
     }
     add_children(root, arguments);
@@ -244,8 +250,19 @@ void print_tree(struct node* root) {
 
 int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<policy_coefficient>& res, bool root) {
     if (root) {
-        /* code */
         global_leaf_idx = 1;
+        if (tree_root->gate == LEAF) {
+            policy_coefficient p = policy_coefficient();
+            p.leaf_index = global_leaf_idx;
+            tree_root->leaf_index = global_leaf_idx;
+            bn_null(p.coeff);
+            bn_new(p.coeff);
+            bn_null(p.share);
+            bn_new(p.share);
+            bn_copy(p.share, secret);
+            res.push_back(p);
+            return 1;
+        }
     }
 
     size_t children = tree_root->children_num;
@@ -405,6 +422,21 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     bn_null(temp);
     bn_new(temp);
 
+    if (num_attributes == 1) {
+        policy_coefficient p = policy_coefficient();
+        p.leaf_index = tree_root->leaf_index;
+        bn_null(p.coeff);
+        bn_new(p.coeff);
+        bn_null(p.share);
+        bn_new(p.share);
+
+        bn_set_dig(temp, 1);
+        bn_copy(p.coeff, temp);
+        bn_copy(p.share, tree_root->share);
+        result.push_back(p);
+        return result;
+    }
+
     bn_t unit;
     bn_null(unit);
     bn_new(unit);
@@ -507,12 +539,18 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
 
 std::string and_tree_formula(size_t size) {
     string s;
+    if (size == 1) {
+        s.append("OR(attr1)");
+        return s;
+    }
+
     for (size_t i = 0; i < size - 2; i++) {
         string num = to_string(i + 1);
         s.append("AND(OR(attr");
         s.append(num);
         s.append("),");
     }
+
     string num = to_string(size - 1);
     s.append("AND(OR(attr");
     s.append(num);
@@ -520,7 +558,7 @@ std::string and_tree_formula(size_t size) {
     s.append("),OR(attr");
     s.append(num);
 
-    for (size_t i = 0; i < size + 1; i++) {
+    for (size_t i = 0; i < size; i++) {
         s.append(")");
     }
 
