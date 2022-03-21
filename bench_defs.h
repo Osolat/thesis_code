@@ -32,6 +32,5 @@ extern "C" {
 /* Number of tests per operation during measurement */
 
 #define NTESTS 10
-#define KSEC 2               //KSEC = 2  means (DLIN);
 
 #endif

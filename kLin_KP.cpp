@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
     struct master_key_k_lin msk;
     struct public_key_k_lin mpk;
 
-    init_master_key_k_lin(N_ATTR, KSEC, &msk);
-    init_public_key_k_lin(N_ATTR, KSEC, &mpk);
+    init_master_key_k_lin(N_ATTR, kss, &msk);
+    init_public_key_k_lin(N_ATTR, kss, &mpk);
 
     core_init();
 
@@ -103,10 +103,10 @@ int main(int argc, char **argv) {
     g1_get_ord(order);
 
     //DEBUG UTIL:
-    //test_matrix_mul_vector(KSEC, order);
-    //test_vector_trans_mul_matrix(KSEC, order);
-    //test_matrix_mul_matrix(KSEC, order);
-    //test_vector_dot_product(KSEC, order);
+    //test_matrix_mul_vector(kss, order);
+    //test_vector_trans_mul_matrix(kss, order);
+    //test_matrix_mul_matrix(kss, order);
+    //test_vector_dot_product(kss, order);
 
     std::unique_ptr <L_OpenABEFunctionInput> keyFuncInput = nullptr;
     keyFuncInput = L_createAttributeList(keyInput);
@@ -169,11 +169,11 @@ int main(int argc, char **argv) {
     for (int jo = 0; jo < NTESTS; jo++) {
         t[jo] = cpucycles();
 
-        bn_t A_tmp[(KSEC + 1) * KSEC];
+        bn_t A_tmp[(kss + 1) * kss];
 
         //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
-        for (int d = 0; d < ((KSEC + 1) * KSEC); ++d) {
-            if (d < (KSEC + 1)){
+        for (int d = 0; d < ((kss + 1) * kss); ++d) {
+            if (d < (kss + 1)){
                 bn_rand_mod(msk.v_share[d], order);
             }
             //Initializes the bn_t entries of the A-matrix as just random bn_t value modulo the order.
@@ -184,16 +184,16 @@ int main(int argc, char **argv) {
 
 
         //Define dimensions of matrix A and vector v and calculate the matrix-vector product Av.
-        int a_rows = KSEC;
-        int a_cols = KSEC + 1;
-        int v_rows = KSEC + 1;
+        int a_rows = kss;
+        int a_cols = kss + 1;
+        int v_rows = kss + 1;
 
         bn_t *Av;
-        bn_t output[KSEC];
+        bn_t output[kss];
         Av = matrix_mul_vector(output, A_tmp, msk.v_share, a_rows, a_cols, v_rows, order);
-        gt_t map_tmp[KSEC];
+        gt_t map_tmp[kss];
 
-        for (int k = 0; k < KSEC; k++) {
+        for (int k = 0; k < kss; k++) {
             //Initialize the gt entries of the e-mapping matrix doing matrix multiplications exponent-wise.
             pp_map_oatep_k12(map_tmp[k], group1, group2);
             gt_exp(mpk.e_mat[k], map_tmp[k], Av[k]);
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
         //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
         //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
         for (int j = 0; j < (N_ATTR + 1); j++) {
-            for (int m = 0; m < ((KSEC + 1) * KSEC); m++) {
+            for (int m = 0; m < ((kss + 1) * kss); m++) {
                 if (j != 0) {
                     //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                     bn_rand_mod(msk.atts[j].w[m], order);
@@ -212,18 +212,17 @@ int main(int argc, char **argv) {
                 }
             }
             //Here matrix multiplication is being calculated.
-
             bn_t one_as_bn; bn_null(one_as_bn); bn_new(one_as_bn);
             bn_set_dig(one_as_bn, 1);
             g1_t one_as_g1; g1_null(one_as_g1); g1_new(one_as_g1);
             g1_mul_fix(one_as_g1, t_pre_g, one_as_bn);
 
             g1_t *AWi;
-            g1_t output[KSEC * KSEC];
-            AWi = matrixG1_mul_matrixBN(output, mpk.a_mat, msk.atts[j].w, KSEC, (KSEC + 1), (KSEC + 1), KSEC, one_as_g1);
+            g1_t output[kss * kss];
+            AWi = matrixG1_mul_matrixBN(output, mpk.a_mat, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss, one_as_g1);
 
             //Initializes the "n" AW_i (masker public key).
-            for (int x = 0; x < (KSEC * KSEC); ++x) {
+            for (int x = 0; x < (kss * kss); ++x) {
                 g1_copy(mpk.mats[j].w[x], AWi[x]);
             }
         }
@@ -238,16 +237,16 @@ int main(int argc, char **argv) {
     struct secret_key_K_Lin sk;
     struct sk_tmp_vj vj;
     init_secret_key_K_Lin(N_ATTR, &sk);
-    init_sk_tmp_vj(N_ATTR, KSEC,&vj);
+    init_sk_tmp_vj(N_ATTR, kss,&vj);
 
 
     //TODO this way of setting up OpenAbe lsss seems to work as expected but maybe I am wrong. Check correctness again.
     //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
     L_OpenABELSSS *lsss_1 = new L_OpenABELSSS(1);
-    lsss_1 = (L_OpenABELSSS *) malloc((N_ATTR * (KSEC + 1)) * sizeof(L_OpenABELSSS));
+    lsss_1 = (L_OpenABELSSS *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSS));
 
     L_OpenABELSSSRowMap *lsss_row = new L_OpenABELSSSRowMap;
-    lsss_row = (L_OpenABELSSSRowMap *) malloc((N_ATTR * (KSEC + 1)) * sizeof(L_OpenABELSSSRowMap) * sizeof(L_OpenABELSSS));
+    lsss_row = (L_OpenABELSSSRowMap *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSSRowMap) * sizeof(L_OpenABELSSS));
     L_OpenABEPolicy *policy;
 
     funcInput = L_createPolicyTree(encInput);
@@ -266,8 +265,8 @@ int main(int argc, char **argv) {
     for (int no = 0; no < NTESTS; no++) {
         t[no] = cpucycles();
 
-        //For all KSEC+1 secrets in v:
-        for (int i = 0; i < (KSEC + 1); ++i) {
+        //For all kss+1 secrets in v:
+        for (int i = 0; i < (kss + 1); ++i) {
             L_ZP s_aux;
             s_aux.isOrderSet = true;
             bn_copy(s_aux.order, order);
@@ -278,37 +277,35 @@ int main(int argc, char **argv) {
             lsss_row[i] = lsss_1[i].l_getRows();
 
             bn_t *Wr;
-            bn_t output1[KSEC + 1];
-            bn_t output2[KSEC + 1];
-            int w_rows = (KSEC + 1); int w_cols = KSEC; int r_rows = KSEC;
+            bn_t output1[kss + 1];
+            bn_t output2[kss + 1];
+            int w_rows = (kss + 1); int w_cols = kss; int r_rows = kss;
 
             int h = 0;
             for (auto it = lsss_row[i].begin(); it != lsss_row[i].end(); ++it) {
                 //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
-                for (int k = 0; k < (KSEC); k++) {
+                for (int k = 0; k < (kss); k++) {
                     bn_rand_mod(vj.rj[h].vec_rj[k], order);
                     g2_mul_fix(sk.sk[h].sk_two[k], t_pre_h, vj.rj[h].vec_rj[k]);
                 }
-                //Sets the vj's to contain the j shares for the (KSEC+1) secrets of v.
-                //To clarify each vj is a vector of size (KSEC+1) and there are a total of j vectors.
+                //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
+                //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
                 bn_copy(vj.vj[h].vec_j[i], it->second.element().m_ZP);
                 h++;
             }
 
-
-
             bn_t *v_plus_w;
-            bn_t output1_v_plus_w[KSEC + 1];
+            bn_t output1_v_plus_w[kss + 1];
 
             int gh = 0;
             for (int kj = 0; kj < N_ATTR; kj++) {
                 //Computes W_j * rj by matrix-vector multiplication.
                 Wr = matrix_mul_vector(output1, msk.atts[gh+1].w, vj.rj[gh].vec_rj, w_rows, w_cols, r_rows, order);
-                v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[gh].vec_j, Wr, (KSEC + 1), (KSEC + 1), order);
+                v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[gh].vec_j, Wr, (kss + 1), (kss + 1), order);
 
 
                 //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
-                for (int u = 0; u < (KSEC + 1); ++u) {
+                for (int u = 0; u < (kss + 1); ++u) {
                     //bn_t_add(output2[u], vj.vj[h].vec_j[u], Wr[u], order);
                     g2_mul_fix(sk.sk[gh].sk_one[u], t_pre_h, v_plus_w[u]);
                 }
@@ -322,8 +319,8 @@ int main(int argc, char **argv) {
     /* Encryption */
     //Initialize ciphertext struct
     struct ciphertext_K_Lin CT_A;
-    init_ciphertext_K_Lin(N_ATTR, KSEC, &CT_A);
-    bn_t rnd_s[KSEC];
+    init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
+    bn_t rnd_s[kss];
 
     for (int qo = 0; qo < NTESTS; qo++) {
         t[qo] = cpucycles();
@@ -338,7 +335,7 @@ int main(int argc, char **argv) {
         fp12_set_dig(CT_A.M, 1);
 
         //Sample random vector s of size k and set c_3
-        for (int i = 0; i < KSEC; ++i) {
+        for (int i = 0; i < kss; ++i) {
             bn_rand_mod(rnd_s[i], order);
             gt_exp(gt_mul_test, mpk.e_mat[i], rnd_s[i]);
             gt_mul(gt_st_test, gt_st_test, gt_mul_test);
@@ -349,13 +346,13 @@ int main(int argc, char **argv) {
 
         //set ct_1
         g1_t *ct_1;
-        g1_t output[KSEC + 1];
+        g1_t output[kss + 1];
 
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-        ct_1 = vector_trans_mul_matrix_g1(output, rnd_s, mpk.a_mat, KSEC, KSEC+1, KSEC);
+        ct_1 = vector_trans_mul_matrix_g1(output, rnd_s, mpk.a_mat, kss, kss+1, kss);
 
         //Finishing ct_1 by doing the exponentiation of g.
-        for (int t = 0; t < (KSEC +1); ++t) {
+        for (int t = 0; t < (kss +1); ++t) {
             //g1_mul_fix(CT_A.C_1[t], t_pre_g, ct_1[t]);
             g1_copy(CT_A.C_1[t], ct_1[t]);
         }
@@ -364,17 +361,16 @@ int main(int argc, char **argv) {
         //For all N_ATTR + 1 calculate sTAW_i and the reason for doing it over N_ATTR+1 opposed to N_ATTR is because W_0 = 0 and is done to support that the lsss map can be rho(j) = 0.
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
-            g1_t output[KSEC];
-            ct2_i = vector_trans_mul_matrix_g1(output, rnd_s, mpk.mats[a].w, KSEC, KSEC, KSEC);
+            g1_t output[kss];
+            ct2_i = vector_trans_mul_matrix_g1(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
-            for (int v = 0; v < KSEC; ++v) {
+            for (int v = 0; v < kss; ++v) {
                 //g1_mul_fix(CT_A.C_2[a].c_2_mat[v], t_pre_g, ct2_i[v]);
                 g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
             }
         }
     }
-
 
     print_results("Results encryption():           ", t, NTESTS);
     //TODO start/complete decryption.
@@ -383,111 +379,70 @@ int main(int argc, char **argv) {
     printf("\n");
 
     //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
-    //List of all the wj coefficients since j = N_ATTR and because we have (KSEC+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (KSEC+1).
-    bn_t pack_coef[N_ATTR * (KSEC+1)];
+    //List of all the wj coefficients since j = N_ATTR and because we have (kss+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (kss+1).
+    bn_t pack_coef[N_ATTR];
 
     //Two lists used for the pp_map_sim_oatep_k12 operation.
-    //Since ct2j and sk2j are vectors of size (KSEC) and ct1 and sk1j are vectors of size (KSEC+1) we need to do ((KSEC+1)+KSEC) component wise operations.
-    g1_t pair_g1[(KSEC+1) + KSEC];
-    g2_t pair_g2[(KSEC+1) + KSEC];
+    //Since ct2j and sk2j are vectors of size (kss) and ct1 and sk1j are vectors of size (kss+1) we need to do ((kss+1)+kss) component wise operations.
+    g1_t pair_g1[(kss+1) + kss];
+    g2_t pair_g2[(kss+1) + kss];
 
-    //Two temporary list that is holding intermediate values of the calculations. The size is related to amount of secret of v and is therefore (KSEC+1).
-    gt_t tmp_exp_list[KSEC+1];
-    gt_t tmp_mul_list[KSEC+1];
+    gt_t exp_val; gt_t prod;
+    gt_null(exp_val); gt_new(exp_val);
+    gt_null(prod); gt_new(prod);
 
     //Temporary variable supposed to hold intermediate result of the calculations.
     gt_t tmp_res; gt_null(tmp_res); gt_new(tmp_res);
 
-    //Initializes the list of coefficients which should yield a size of N_ATTR * (KSEC+1)
+    //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
     int p = 0;
-    for (int k = 0; k < (KSEC + 1); ++k) {
-        for (auto it = lsss_row[k].begin(); it != lsss_row[k].end(); ++it) {
-            bn_null(pack_coef[p]);
-            bn_new(pack_coef[p]);
-            p++;
-        }
+    for (auto it = lsss_row[0].begin(); it != lsss_row[0].end(); ++it) {
+        bn_null(pack_coef[p]);
+        bn_new(pack_coef[p]);
+        p++;
     }
 
     for (int go = 0; go < NTESTS; go++) {
         t[go] = cpucycles();
-
-        //TODO should map_sim be reset after every iteration?
         gt_t map_sim; gt_null(map_sim); gt_new(map_sim);
 
         int wj = 0;
+        //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
+        fp12_set_dig(prod, 1);
 
-        //Initializes the temporary lists.
-        for (int r = 0; r < (KSEC+1); ++r) {
-            //printf("\n");
-            gt_null(tmp_exp_list[r]);
-            gt_new(tmp_exp_list[r]);
-            gt_null(tmp_mul_list[r]);
-            gt_new(tmp_mul_list[r]);
+        //Sets tmp_res to one so that the final multiplications starts out correct.
+        fp12_set_dig(tmp_res, 1);
 
-            //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
-            //TODO if not here decryption fails, however seems wrong to reset to one for each iteration of the outer loop.
-            fp12_set_dig(tmp_mul_list[r], 1);
+        //Using OpenABE recover method to get the (N_ATTR * (kss+1)) coefficients
+        lsss_1[0].l_recoverCoefficients(policy, attrList);
+        lsss_row[0] = lsss_1[0].l_getRows();
 
-            bn_t tt_mul_2; bn_null(tt_mul_2); bn_new(tt_mul_2);
-            bn_t tt_add_2; bn_null(tt_add_2); bn_new(tt_add_2);
+        int j = 0;
 
-            //Sets tmp_res to one so that the final multiplications starts out correct.
-            //TODO if not here decryption fails, however seems wrong to reset to one for each iteration since we then dont get the full product and dont use all coefficients.
-            fp12_set_dig(tmp_res, 1);
-
-            //Using OpenABE recover method to get the (N_ATTR * (KSEC+1)) coefficients
-            //TODO this way of using OpenABE lsss/recoverCoefficients seems to work but some strange things is observed here.
-            //TODO Observation: The first j=N_ATTR recovered coefficients are identical to the next j=N_ATTR recovered coefficients, and again they are identical the the next set of coefficients.
-            //TODO Seems to be a OpenABE recoverCoefficients related issue as no matter the original secret and different shares the coefficients always seems identical.
-            lsss_1[r].l_recoverCoefficients(policy, attrList);
-            lsss_row[r] = lsss_1[r].l_getRows();
-
-            //int sd = r;
-            int j = 0;
-
-            //For all Attributes, set up the two lists used for the pp_map_sim_oatep_k12 operation.
-            for (auto it = lsss_row[r].begin(); it != lsss_row[r].end(); ++it) {
-                //Copy all the coefficients to the pack_coef list.
-                bn_copy(pack_coef[wj], it->second.element().m_ZP);
-
-                //TODO Uncomment these lines below to observe that the coefficients are identical.
-                //printf("Coefs for secret v_%d: \n", r);
-                //bn_print(pack_coef[wj]);
-
-                    //Set up the two lists used for the pp_map_sim_oatep_k12 operation
-                    for (int jk = 0; jk < ((KSEC + 1) + KSEC); ++jk) {
-                        if (jk < (KSEC + 1)) {
-                            g1_neg(pair_g1[jk], CT_A.C_1[jk]);
-                            g2_copy(pair_g2[jk], sk.sk[j].sk_one[jk]);
-                        } else {
-                            g1_copy(pair_g1[jk], CT_A.C_2[j + 1].c_2_mat[(jk+1) % KSEC]);
-                            g2_copy(pair_g2[jk], sk.sk[j].sk_two[(jk+1) % KSEC]);
-                        }
-                    }
-                    //TODO maybe exponentiating map_sim with wj (of size k+1) in here and add outside
-                    pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((KSEC + 1) + KSEC));
-
-                    //Not necessary for decryption itself, this calculation is used to test if we can recover the secrets manually using the coefficients. AND WE CAN!
-                    bn_t_mul(tt_mul_2, pack_coef[wj], vj.vj[j].vec_j[r], order);
-                    bn_t_add(tt_add_2, tt_add_2, tt_mul_2, order);
-
-                    //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-                    gt_exp(tmp_exp_list[r], map_sim,pack_coef[wj]);
-                    //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
-                    //TODO seems like the product here is not calculated correctly as we are resetting tmp_mul_list every iteration in the outer loop
-                    //TODO despite this, decryption still works?
-                    gt_mul(tmp_mul_list[r], tmp_mul_list[r], tmp_exp_list[r]);
-
-                //sd += (KSEC + 1);
-                wj++;
-                j++;
+        //For all Attributes, set up the two lists used for the pp_map_sim_oatep_k12 operation.
+        for (auto it = lsss_row[0].begin(); it != lsss_row[0].end(); ++it) {
+            //Copy all the coefficients to the pack_coef list.
+            bn_copy(pack_coef[wj], it->second.element().m_ZP);
+            //Set up the two lists used for the pp_map_sim_oatep_k12 operation
+            for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
+                if (jk < (kss + 1)) {
+                    g1_neg(pair_g1[jk], CT_A.C_1[jk]);
+                    g2_copy(pair_g2[jk], sk.sk[j].sk_one[jk]);
+                } else {
+                    g1_copy(pair_g1[jk], CT_A.C_2[j + 1].c_2_mat[(jk+1) % kss]);
+                    g2_copy(pair_g2[jk], sk.sk[j].sk_two[(jk+1) % kss]);
+                }
             }
-            //Here we complete the product of [-sTAv_j]^(wj)
-            //TODO since we reset tmp_res this product seem to not be fully correct, we are basically just return the last iteration's product.
-            //TODO Despite this, decryption still works?
-            //TODO Best guess: OpenABE lsss recover coefficients are identical.
-            gt_mul(tmp_res, tmp_res, tmp_mul_list[r]);
+            pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
+            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+            gt_exp(exp_val, map_sim,pack_coef[wj]);
+            //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
+            gt_mul(prod, prod, exp_val);
+            wj++;
+            j++;
         }
+        //Here we complete the product of [-sTAv_j]^(wj)
+        gt_mul(tmp_res, tmp_res, prod);
 
         //Printouts for correctness.
         gt_t final_final_res;
@@ -509,10 +464,10 @@ int main(int argc, char **argv) {
     printf("]\n");
 
     //Test if msk and mpk is initialized correctly:
-    //print_msk(&msk, N_ATTR, KSEC);
-    //print_mpk(&mpk, N_ATTR, KSEC);
-    //print_sk(&sk, &vj, N_ATTR, KSEC);
-    //print_ct(&CT_A, N_ATTR, KSEC);
+    //print_msk(&msk, N_ATTR, kss);
+    //print_mpk(&mpk, N_ATTR, kss);
+    //print_sk(&sk, &vj, N_ATTR, kss);
+    //print_ct(&CT_A, N_ATTR, kss);
 
     return 0;
 }

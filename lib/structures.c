@@ -1231,11 +1231,11 @@ int init_ciphertext_kp_gpsw_lu(const uint32_t n_attr, struct ciphertext_kp_gpsw_
     return EXIT_SUCCESS;
 }
 
-int init_master_key_k_lin(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin *m) {
+int init_master_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin *m) {
     m->N_ATTR = n_attr;
-    m->N_SEC = k;
+    m->N_SEC = kss;
     m->atts = (struct k_lin_att * ) malloc ((n_attr + 1) * sizeof(struct k_lin_att));
-    m->v_share = (bn_t * ) malloc ((k+1) * sizeof(bn_t));
+    m->v_share = (bn_t * ) malloc ((kss+1) * sizeof(bn_t));
 
     if (m->atts == NULL || m->v_share == NULL) {
         return EXIT_FAILURE;
@@ -1244,12 +1244,12 @@ int init_master_key_k_lin(const uint32_t n_attr, const uint32_t k, struct master
     }
 }
 
-int init_public_key_k_lin(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin *p) {
+int init_public_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin *p) {
     p->N_ATTR = n_attr;
-    p->K_SEC = k;
+    p->K_SEC = kss;
     p->mats = (struct k_lin_mat * ) malloc ((2 * (n_attr + 1)) * sizeof(struct k_lin_mat));
-    p->a_mat = (g1_t * ) malloc ((k*(k+1)) * sizeof(g1_t));
-    p->e_mat = (gt_t * ) malloc (k * sizeof(gt_t));
+    p->a_mat = (g1_t * ) malloc ((kss*(kss+1)) * sizeof(g1_t));
+    p->e_mat = (gt_t * ) malloc (kss * sizeof(gt_t));
 
     if (p->mats == NULL || p->a_mat == NULL || p->e_mat == NULL) {
         return EXIT_FAILURE;
@@ -1260,7 +1260,7 @@ int init_public_key_k_lin(const uint32_t n_attr, const uint32_t k, struct public
 
 int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s) {
     s->N_ATTR = n_attr;
-    s->sk = (struct k_lin_secret_key * ) malloc (((n_attr + 1) * (k+1)) * sizeof(struct k_lin_secret_key));
+    s->sk = (struct k_lin_secret_key * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct k_lin_secret_key));
 
     if (s->sk == NULL) {
         return EXIT_FAILURE;
@@ -1269,11 +1269,11 @@ int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s) {
     }
 }
 
-int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vj *v) {
+int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vj *v) {
     v->N_ATTR = n_attr;
-    v->K_SEC = k;
-    v->vj = (struct tmp_vj * ) malloc (((n_attr + 1) * (k+1)) * sizeof(struct tmp_vj));
-    v->rj = (struct tmp_rj * ) malloc (((n_attr + 1) * (k+1)) * sizeof(struct tmp_rj));
+    v->K_SEC = kss;
+    v->vj = (struct tmp_vj * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct tmp_vj));
+    v->rj = (struct tmp_rj * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct tmp_rj));
 
     if (v->vj == NULL || v->rj == NULL) {
         return EXIT_FAILURE;
@@ -1282,11 +1282,11 @@ int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vj *v)
     }
 }
 
-int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin *c) {
+int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin *c) {
     c->N_ATTR = n_attr;
-    c->K_SEC = k;
+    c->K_SEC = kss;
     c->C_2 = (struct c_attribute_K_Lin * ) malloc ((n_attr + 1) * sizeof(struct c_attribute_K_Lin));
-    c->C_1 = (g1_t * ) malloc ((k+1) * sizeof(g1_t));
+    c->C_1 = (g1_t * ) malloc ((kss+1) * sizeof(g1_t));
 
     if (c->C_2 == NULL || c->C_1 == NULL) {
         return EXIT_FAILURE;
@@ -1297,14 +1297,14 @@ int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t k, struct cipher
 
 
 //Stuff for klin large universe:
-int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin_lu *m) {
+int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_lu *m) {
     m->N_ATTR = n_attr;
-    m->N_SEC = k;
+    m->N_SEC = kss;
 
-    m->W_matrix = (bn_t * ) malloc ((((2*k)+1)*k) * sizeof(bn_t));
-    m->W0_matrix = (bn_t * ) malloc ((((2*k)+1)*k) * sizeof(bn_t));
-    m->W1_matrix = (bn_t * ) malloc ((((2*k)+1)*k) * sizeof(bn_t));
-    m->v_secret = (bn_t * ) malloc (((2*k)+1) * sizeof(bn_t));
+    m->W_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W0_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W1_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->v_secret = (bn_t * ) malloc (((2*kss)+1) * sizeof(bn_t));
 
     if (m->W_matrix == NULL || m->v_secret == NULL || m->W0_matrix == NULL || m->W1_matrix == NULL) {
         return EXIT_FAILURE;
@@ -1313,15 +1313,15 @@ int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct mas
     }
 }
 
-int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin_lu *p) {
+int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_lu *p) {
     p->N_ATTR = n_attr;
-    p->K_SEC = k;
+    p->K_SEC = kss;
 
-    p->A1_mat = (g1_t * ) malloc ((((2*k)+1)*k) * sizeof(g1_t));
-    p->AW_mat = (g1_t * ) malloc ((k*k) * sizeof(g1_t));
-    p->AW0_mat = (g1_t * ) malloc ((k*k) * sizeof(g1_t));
-    p->AW1_mat = (g1_t * ) malloc ((k*k) * sizeof(g1_t));
-    p->e_mat = (gt_t * ) malloc (k * sizeof(gt_t));
+    p->A1_mat = (g1_t * ) malloc ((((2*kss)+1)*kss) * sizeof(g1_t));
+    p->AW_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->AW0_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->AW1_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->e_mat = (gt_t * ) malloc (kss * sizeof(gt_t));
 
     if (p->A1_mat == NULL  || p->AW_mat == NULL  || p->AW0_mat == NULL  || p->AW1_mat == NULL  || p->e_mat == NULL) {
         return EXIT_FAILURE;
@@ -1332,8 +1332,8 @@ int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct pub
 
 int init_secret_key_K_Lin_lu(const uint32_t n_attr, struct secret_key_K_Lin_lu *s) {
     s->N_ATTR = n_attr;
-    s->sk13 = (struct k_lin_secret_key_lu_13 * ) malloc (((n_attr) * 2*((2*k)+1) + k) * sizeof(struct k_lin_secret_key_lu_13));
-    s->sk4 = (struct k_lin_secret_key_lu_4 * ) malloc (((n_attr) * ((2*k)+1)) * sizeof(struct k_lin_secret_key_lu_4));
+    s->sk13 = (struct k_lin_secret_key_lu_13 * ) malloc (((n_attr) * 2*((2*kss)+1) + kss) * sizeof(struct k_lin_secret_key_lu_13));
+    s->sk4 = (struct k_lin_secret_key_lu_4 * ) malloc (((n_attr) * 2*((2*kss)+1)) * sizeof(struct k_lin_secret_key_lu_4));
 
     if (s->sk13 == NULL || s->sk4 == NULL) {
         return EXIT_FAILURE;
@@ -1342,12 +1342,12 @@ int init_secret_key_K_Lin_lu(const uint32_t n_attr, struct secret_key_K_Lin_lu *
     }
 }
 
-int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vectors_lu *v) {
+int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vectors_lu *v) {
     v->N_ATTR = n_attr;
-    v->K_SEC = k;
+    v->K_SEC = kss;
 
-    v->vj = (struct tmp_vj_lu * ) malloc (((n_attr) * ((2*k)+1)) * sizeof(struct tmp_vj_lu));
-    v->rj = (struct tmp_rj_lu * ) malloc (((n_attr) * ((2*k)+1)) * sizeof(struct tmp_rj_lu));
+    v->vj = (struct tmp_vj_lu * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_vj_lu));
+    v->rj = (struct tmp_rj_lu * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_rj_lu));
 
     if (v->vj == NULL || v->rj == NULL) {
         return EXIT_FAILURE;
@@ -1356,12 +1356,12 @@ int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t k, struct sk_tm
     }
 }
 
-int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin_lu *c) {
+int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin_lu *c) {
     c->N_ATTR = n_attr;
-    c->K_SEC = k;
+    c->K_SEC = kss;
 
-    c->C_23 = (struct c_attribute_K_Lin_lu_c23 * ) malloc ((n_attr * (((2*k)+1)+k)) * sizeof(struct c_attribute_K_Lin_lu_c23));
-    c->C_1 = (g1_t * ) malloc (((2*k)+1) * sizeof(g1_t));
+    c->C_23 = (struct c_attribute_K_Lin_lu_c23 * ) malloc ((n_attr * (((2*kss)+1)+kss)) * sizeof(struct c_attribute_K_Lin_lu_c23));
+    c->C_1 = (g1_t * ) malloc (((2*kss)+1) * sizeof(g1_t));
 
     if (c->C_23 == NULL || c->C_1 == NULL) {
         return EXIT_FAILURE;
@@ -1370,11 +1370,11 @@ int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t k, struct cip
     }
 }
 
-int init_tmp_si_lu(const uint32_t n_attr, const uint32_t k, struct tmp_si_lu *si) {
+int init_tmp_si_lu(const uint32_t n_attr, const uint32_t kss, struct tmp_si_lu *si) {
     si->N_ATTR = n_attr;
-    si->K_SEC = k;
+    si->K_SEC = kss;
 
-    si->si = (struct si_lu * ) malloc ((n_attr * k) * sizeof(struct si_lu));
+    si->si = (struct si_lu * ) malloc ((n_attr * kss) * sizeof(struct si_lu));
 
     if (si->si == NULL) {
         return EXIT_FAILURE;

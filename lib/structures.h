@@ -17,6 +17,7 @@
 
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
+const int kss = 1;                                                    //Here kss=1 means (SXLIN) and kss=2 means (DLIN)
 
 #include <stdint.h>
 
@@ -755,7 +756,7 @@ struct ciphertext_kp_gpsw_lu {
     gt_t E_prime;
     g1_t E_prime_prime;
     g2_t *E_values;
-}; 
+};
 
 int init_master_key_kp_gpsw_lu(const uint32_t n_attr, struct master_key_kp_gpsw_lu *m);
 int init_public_key_kp_gpsw_lu(const uint32_t n_attr, struct public_key_kp_gpsw_lu *p);
@@ -764,35 +765,36 @@ int init_ciphertext_kp_gpsw_lu(const uint32_t n_attr, struct ciphertext_kp_gpsw_
 
 
 //Stuff used for the K_LIN scheme.
-const int k = 2;                                     //Here k=1 means (SXLIN) and k=2 means (DLIN)
+//const int k = 2;                                     //Here k=1 means (SXLIN) and k=2 means (DLIN)
+
 //TODO factor out the constant k such that it is set at compile time.
 struct k_lin_att {
     uint32_t attr;
-    bn_t w[(k+1)*k];                                 //Matrix w has size ((k+1) * k)
+    bn_t w[(kss+1)*kss];                                 //Matrix w has size ((k+1) * k)
 };
 
 struct k_lin_mat {
     uint32_t attr;
-    g1_t w[k*k];                                      //Matrix AW_i will have size k*k after matrix multiplication.
+    g1_t w[kss*kss];                                      //Matrix AW_i will have size k*k after matrix multiplication.
 };
 
 struct k_lin_secret_key {
     uint32_t attr;
-    g2_t sk_one[k+1];                                //SK1 will be a vector of k+1 since matrix-vector multiplication yields a vector of size k. Then addition of two vectors must have same dimensions, so we finally get a vector of size k+1
-    g2_t sk_two[k];                                  //SK2 is a vector of size k.
+    g2_t sk_one[kss+1];                                //SK1 will be a vector of k+1 since matrix-vector multiplication yields a vector of size k. Then addition of two vectors must have same dimensions, so we finally get a vector of size k+1
+    g2_t sk_two[kss];                                  //SK2 is a vector of size k.
 };
 
 struct tmp_vj {
-    bn_t vec_j[k+1];                                 //The vj-vector will have size k+1 otherwise we can't do vector addition for SK1.
+    bn_t vec_j[kss+1];                                 //The vj-vector will have size k+1 otherwise we can't do vector addition for SK1.
 };
 
 struct tmp_rj {
-    bn_t vec_rj[k];                                  //The rj-vector has size k.
+    bn_t vec_rj[kss];                                  //The rj-vector has size k.
 };
 
 struct c_attribute_K_Lin {
     uint32_t attr;
-    g1_t c_2_mat[k];                                 //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
+    g1_t c_2_mat[kss];                                 //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
 };
 
 struct master_key_k_lin {
@@ -832,11 +834,11 @@ struct ciphertext_K_Lin {
 
 };
 
-int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin *c);
+int init_ciphertext_K_Lin(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin *c);
 int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s);
-int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vj *v);
-int init_master_key_k_lin(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin *m);
-int init_public_key_k_lin(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin *p);
+int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vj *v);
+int init_master_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin *m);
+int init_public_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin *p);
 
 
 //Stuff used for KLin large universe
@@ -845,21 +847,21 @@ int init_public_key_k_lin(const uint32_t n_attr, const uint32_t k, struct public
 
 struct c_attribute_K_Lin_lu_c23 {
     uint32_t attr;
-    g1_t c_2_vec[k];                                                            //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
-    g1_t c_3_vec[(2*k)+1];
+    g1_t c_2_vec[kss];                                                            //Each CT_2 will be a vector of size k, since AWi yields a k*k matrix and that multiplied with a transposed vector of size k will yield a vector of size k.
+    g1_t c_3_vec[(2*kss)+1];
 };
 
 
 struct tmp_vj_lu {
-    bn_t vec_j[(2*k)+1];                                                           //The vj-vector will have size 2k+1 otherwise we can't do vector addition for SK1.
+    bn_t vec_j[(2*kss)+1];                                                           //The vj-vector will have size 2k+1 otherwise we can't do vector addition for SK1.
 };
 
 struct tmp_rj_lu {
-    bn_t vec_rj[k];                                                             //The rj-vector has size k.
+    bn_t vec_rj[kss];                                                             //The rj-vector has size k.
 };
 
 struct si_lu {
-    bn_t si_vec[k];                                                             //The rj-vector has size k.
+    bn_t si_vec[kss];                                                             //The rj-vector has size k.
 };
 
 struct sk_tmp_vectors_lu {
@@ -879,14 +881,14 @@ struct tmp_si_lu {
 
 struct k_lin_secret_key_lu_13 {
     uint32_t attr;
-    g2_t sk_one[(2*k)+1];                                                      //sk1 is a vector of size 2k+1
-    g2_t sk_two[k];                                                         //sk2 is a vector of size k
-    g2_t sk_three[(2*k)+1];                                                    //sk3 is a vector of size 2k+1 not exactly sure what rho(j)!=0 is and how it works for pure and gates
+    g2_t sk_one[(2*kss)+1];                                                      //sk1 is a vector of size 2k+1
+    g2_t sk_two[kss];                                                         //sk2 is a vector of size k
+    g2_t sk_three[(2*kss)+1];                                                    //sk3 is a vector of size 2k+1 not exactly sure what rho(j)!=0 is and how it works for pure and gates
 };
 
 struct k_lin_secret_key_lu_4 {
     uint32_t attr;
-    g2_t sk_four[(2*k)+1];                                                     //sk4 is a vector of size 2k+1 and again not sure about rho(j)=0.
+    g2_t sk_four[(2*kss)+1];                                                     //sk4 is a vector of size 2k+1 and again not sure about rho(j)=0.
 };
 
 
@@ -929,11 +931,11 @@ struct ciphertext_K_Lin_lu {
 
 };
 
-int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t k, struct ciphertext_K_Lin_lu *c);
+int init_ciphertext_K_Lin_lu(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin_lu *c);
 int init_secret_key_K_Lin_lu(const uint32_t n_attr, struct secret_key_K_Lin_lu *s);
-int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t k, struct sk_tmp_vectors_lu *v);
-int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct master_key_k_lin_lu *m);
-int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t k, struct public_key_k_lin_lu *p);
-int init_tmp_si_lu(const uint32_t n_attr, const uint32_t k, struct tmp_si_lu *si);
+int init_sk_tmp_vectors_lu(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vectors_lu *v);
+int init_master_key_k_lin_lu(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_lu *m);
+int init_public_key_k_lin_lu(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_lu *p);
+int init_tmp_si_lu(const uint32_t n_attr, const uint32_t kss, struct tmp_si_lu *si);
 
 #endif
