@@ -102,3 +102,8 @@ struct TreeUnsatisfiableException : public std::exception {
     }
 };
 
+/**
+ * Constructs a policy tree with attributes (attr1, attr2... etc), in recursive fashion of structure AND(attr1, AND(attr2, AND(...)))
+ * @param[in] size			- pointer to root of the access tree
+ */
+std::string or_tree_formula(size_t size);

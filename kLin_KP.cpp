@@ -86,8 +86,16 @@ int main(int argc, char **argv) {
 
     keyInputWrong = "attr1|attr2|attr3|attr4";
 
+    bn_t attributes[test_attr];
+    for (int i = 0; i < N_ATTR ; ++i) {
+        bn_null(attributes[i]);
+        bn_new(attributes[i]);
+        bn_set_dig(attributes[i], i + 1);
+    }
+
+
     std::cout << keyInput;
-    std::cout << keyInputWrong;
+    //std::cout << keyInputWrong;
 
     struct master_key_k_lin msk;
     struct public_key_k_lin mpk;
@@ -108,22 +116,20 @@ int main(int argc, char **argv) {
     //test_matrix_mul_matrix(kss, order);
     //test_vector_dot_product(kss, order);
 
-    std::unique_ptr <L_OpenABEFunctionInput> keyFuncInput = nullptr;
-    keyFuncInput = L_createAttributeList(keyInput);
+    //std::unique_ptr <L_OpenABEFunctionInput> keyFuncInput = nullptr;
+    //keyFuncInput = L_createAttributeList(keyInput);
 
-    if (keyFuncInput == nullptr) {
-        printf("Invalid attribute key input\n");
-        return -1;
-    }
+    //if (keyFuncInput == nullptr) {
+        //printf("Invalid attribute key input\n");
+        //return -1;
+    //}
 
-    L_OpenABEAttributeList *attrList = nullptr;
+    //L_OpenABEAttributeList *attrList = nullptr;
 
-    if ((attrList = dynamic_cast<L_OpenABEAttributeList *>(keyFuncInput.get())) == nullptr) {
-        printf("Error in attribute list\n");
-        exit(-1);
-    }
-
-
+    //if ((attrList = dynamic_cast<L_OpenABEAttributeList *>(keyFuncInput.get())) == nullptr) {
+        //printf("Error in attribute list\n");
+        //exit(-1);
+    //}
 
 
 
@@ -131,20 +137,22 @@ int main(int argc, char **argv) {
 
 
 
-    std::unique_ptr <L_OpenABEFunctionInput> keyFuncInputLOL = nullptr;
-    keyFuncInputLOL = L_createAttributeList(keyInputWrong);
 
-    if (keyFuncInputLOL == nullptr) {
-        printf("Invalid attribute key input\n");
-        return -1;
-    }
 
-    L_OpenABEAttributeList *attrListLOL = nullptr;
+    //std::unique_ptr <L_OpenABEFunctionInput> keyFuncInputLOL = nullptr;
+    //keyFuncInputLOL = L_createAttributeList(keyInputWrong);
 
-    if ((attrListLOL = dynamic_cast<L_OpenABEAttributeList *>(keyFuncInputLOL.get())) == nullptr) {
-        printf("Error in attribute list\n");
-        exit(-1);
-    }
+    //if (keyFuncInputLOL == nullptr) {
+        //printf("Invalid attribute key input\n");
+        //return -1;
+    //}
+
+    //L_OpenABEAttributeList *attrListLOL = nullptr;
+
+    //if ((attrListLOL = dynamic_cast<L_OpenABEAttributeList *>(keyFuncInputLOL.get())) == nullptr) {
+        //printf("Error in attribute list\n");
+        //exit(-1);
+    //}
 
 
     /* Generate pre-computation tables for g, h */
@@ -232,7 +240,7 @@ int main(int argc, char **argv) {
     print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
-    std::unique_ptr <L_OpenABEFunctionInput> funcInput = nullptr;
+    //std::unique_ptr <L_OpenABEFunctionInput> funcInput = nullptr;
 
     struct secret_key_K_Lin sk;
     struct sk_tmp_vj vj;
@@ -242,45 +250,52 @@ int main(int argc, char **argv) {
 
     //TODO this way of setting up OpenAbe lsss seems to work as expected but maybe I am wrong. Check correctness again.
     //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
-    L_OpenABELSSS *lsss_1 = new L_OpenABELSSS(1);
-    lsss_1 = (L_OpenABELSSS *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSS));
+    //L_OpenABELSSS *lsss_1 = new L_OpenABELSSS(1);
+    //lsss_1 = (L_OpenABELSSS *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSS));
 
-    L_OpenABELSSSRowMap *lsss_row = new L_OpenABELSSSRowMap;
-    lsss_row = (L_OpenABELSSSRowMap *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSSRowMap) * sizeof(L_OpenABELSSS));
-    L_OpenABEPolicy *policy;
+    //L_OpenABELSSSRowMap *lsss_row = new L_OpenABELSSSRowMap;
+    //lsss_row = (L_OpenABELSSSRowMap *) malloc((N_ATTR * (kss + 1)) * sizeof(L_OpenABELSSSRowMap) * sizeof(L_OpenABELSSS));
+    //L_OpenABEPolicy *policy;
 
-    funcInput = L_createPolicyTree(encInput);
-    if (!funcInput) {
-        printf("Create policy error in encryption\n");
-        return -1;
-    }
+    //funcInput = L_createPolicyTree(encInput);
+    struct node tree_root;
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    std::vector<policy_coefficient> res;
 
-    policy = dynamic_cast< L_OpenABEPolicy *>(funcInput.get());
 
-    if (policy == nullptr) {
-        printf("Error in input policy\n");
-        return -1;
-    }
+    //if (!funcInput) {
+        //printf("Create policy error in encryption\n");
+        //return -1;
+    //}
+
+    //policy = dynamic_cast< L_OpenABEPolicy *>(funcInput.get());
+
+    //if (policy == nullptr) {
+        //printf("Error in input policy\n");
+        //return -1;
+    //}
 
     for (int no = 0; no < NTESTS; no++) {
         t[no] = cpucycles();
 
         //For all kss+1 secrets in v:
         for (int i = 0; i < (kss + 1); ++i) {
-            L_ZP s_aux;
-            s_aux.isOrderSet = true;
-            bn_copy(s_aux.order, order);
-            bn_copy(s_aux.m_ZP, msk.v_share[i]);
+            //L_ZP s_aux;
+            //s_aux.isOrderSet = true;
+            //bn_copy(s_aux.order, order);
+            //bn_copy(s_aux.m_ZP, msk.v_share[i]);
+            share_secret(&tree_root, msk.v_share[i], order, res, true);
 
             //Obtain the j shares for each secret in v. Here we j = N_ATT because the policy consists of only AND gates and so all nodes of the policy tree adds exactly a single share.
-            lsss_1[i].l_shareSecret(policy,s_aux);
-            lsss_row[i] = lsss_1[i].l_getRows();
+            //lsss_1[i].l_shareSecret(policy,s_aux);
+            //lsss_row[i] = lsss_1[i].l_getRows();
 
             bn_t *Wr;
             bn_t output1[kss + 1];
             bn_t output2[kss + 1];
             int w_rows = (kss + 1); int w_cols = kss; int r_rows = kss;
 
+            /*
             int h = 0;
             for (auto it = lsss_row[i].begin(); it != lsss_row[i].end(); ++it) {
                 //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
@@ -293,6 +308,22 @@ int main(int argc, char **argv) {
                 bn_copy(vj.vj[h].vec_j[i], it->second.element().m_ZP);
                 h++;
             }
+            */
+
+            //int h1 = 0;
+            for (auto it2 = res.begin(); it2 != res.end(); ++it2) {
+                //printf("index %lu \n", it2->leaf_index);
+                //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
+                for (int k = 0; k < (kss); k++) {
+                    bn_rand_mod(vj.rj[it2->leaf_index-1].vec_rj[k], order);
+                    g2_mul_fix(sk.sk[it2->leaf_index-1].sk_two[k], t_pre_h, vj.rj[it2->leaf_index-1].vec_rj[k]);
+                }
+                //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
+                //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
+                bn_copy(vj.vj[it2->leaf_index-1].vec_j[i], it2->share);
+                //h1++;
+            }
+
 
             bn_t *v_plus_w;
             bn_t output1_v_plus_w[kss + 1];
@@ -396,9 +427,9 @@ int main(int argc, char **argv) {
 
     //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
     int p = 0;
-    for (auto it = lsss_row[0].begin(); it != lsss_row[0].end(); ++it) {
-        bn_null(pack_coef[p]);
-        bn_new(pack_coef[p]);
+    for (auto it = res.begin(); it != res.end(); ++it) {
+        bn_null(pack_coef[it->leaf_index-1]);
+        bn_new(pack_coef[it->leaf_index-1]);
         p++;
     }
 
@@ -406,7 +437,8 @@ int main(int argc, char **argv) {
         t[go] = cpucycles();
         gt_t map_sim; gt_null(map_sim); gt_new(map_sim);
 
-        int wj = 0;
+        //int wj = 0;
+        //int wje = 0;
         //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
         fp12_set_dig(prod, 1);
 
@@ -414,9 +446,19 @@ int main(int argc, char **argv) {
         fp12_set_dig(tmp_res, 1);
 
         //Using OpenABE recover method to get the (N_ATTR * (kss+1)) coefficients
-        lsss_1[0].l_recoverCoefficients(policy, attrList);
-        lsss_row[0] = lsss_1[0].l_getRows();
+        //lsss_1[0].l_recoverCoefficients(policy, attrList);
+        //lsss_row[0] = lsss_1[0].l_getRows();
 
+        try {
+            check_satisfiability(&tree_root, attributes, N_ATTR);
+        } catch (struct TreeUnsatisfiableException *e) {
+            printf("Fail");
+        }
+
+        res = std::vector<policy_coefficient>();
+        res = recover_coefficients(&tree_root, attributes, N_ATTR);
+
+        /*
         int j = 0;
 
         //For all Attributes, set up the two lists used for the pp_map_sim_oatep_k12 operation.
@@ -440,6 +482,32 @@ int main(int argc, char **argv) {
             gt_mul(prod, prod, exp_val);
             wj++;
             j++;
+        }
+        */
+
+        //int je = 0;
+        for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+            //Copy all the coefficients to the pack_coef list.
+            bn_copy(pack_coef[it3->leaf_index-1], it3->coeff);
+            //bn_print(it3->coeff);
+            //std::cout<<it3->leaf_index<< std::endl;
+            //Set up the two lists used for the pp_map_sim_oatep_k12 operation
+            for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
+                if (jk < (kss + 1)) {
+                    g1_neg(pair_g1[jk], CT_A.C_1[jk]);
+                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index-1].sk_one[jk]);
+                } else {
+                    g1_copy(pair_g1[jk], CT_A.C_2[(it3->leaf_index-1) + 1].c_2_mat[(jk+1) % kss]);
+                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index-1].sk_two[(jk+1) % kss]);
+                }
+            }
+            pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
+            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+            gt_exp(exp_val, map_sim,pack_coef[it3->leaf_index-1]);
+            //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
+            gt_mul(prod, prod, exp_val);
+            //wje++;
+            //je++;
         }
         //Here we complete the product of [-sTAv_j]^(wj)
         gt_mul(tmp_res, tmp_res, prod);
