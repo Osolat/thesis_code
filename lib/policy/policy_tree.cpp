@@ -255,6 +255,7 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<po
             policy_coefficient p = policy_coefficient();
             p.leaf_index = global_leaf_idx;
             tree_root->leaf_index = global_leaf_idx;
+            bn_copy(tree_root->share, secret);
             bn_null(p.coeff);
             bn_new(p.coeff);
             bn_null(p.share);

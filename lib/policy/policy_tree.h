@@ -32,7 +32,6 @@ struct policy_coefficient {
     bn_t share;
 };
 
-
 /**
  * Initialises a tree from a boolean formula.
  * @param[in] formula			- "AND(OR(A), OR(B), OR(OR(C), OR(D))" = A AND B AND (C OR D)
@@ -101,4 +100,3 @@ struct TreeUnsatisfiableException : public std::exception {
         return "Access policy tree could not be satisfied by attempted attributes";
     }
 };
-
