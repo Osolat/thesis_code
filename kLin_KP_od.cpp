@@ -1,4 +1,8 @@
 //
+// Created by jonas on 3/22/22.
+//
+
+//
 // Created by jonas on 2/18/22.
 //
 
@@ -319,10 +323,33 @@ int main(int argc, char **argv) {
         g1_t pair_g1[(kss + 1) + kss];
         g2_t pair_g2[(kss + 1) + kss];
 
+        g1_t pack_C1_g1[kss+1];
+        g1_t pack_C2_g1[kss];
+        g2_t pack_K1_g2[kss+1];
+        g2_t pack_K2_g2[kss];
+
+        g1_t pairing_g1[N_ATTR];
+        g2_t pairing_g2[N_ATTR];
+
         gt_t exp_val;
         gt_t prod;
+        g1_t C1_prod;
+        g1_t C2_prod;
+        g2_t K1_prod;
+        g2_t K2_prod;
+
+        init_null_new_g1_t_var(C1_prod);
+        init_null_new_g1_t_var(C2_prod);
+        init_null_new_g2_t_var(K1_prod);
+        init_null_new_g2_t_var(K2_prod);
+
         init_null_new_gt_t_var(exp_val);
         init_null_new_gt_t_var(prod);
+
+        g1_set_infty(C1_prod);
+        g1_set_infty(C2_prod);
+        g2_set_infty(K1_prod);
+        g2_set_infty(K2_prod);
 
         //Temporary variable supposed to hold intermediate result of the calculations.
         gt_t tmp_res;
@@ -332,7 +359,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); ++it) {
             init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
         }
-
+        
         for (int go = 0; go < NTESTS; go++) {
             t[go] = cpucycles();
             gt_t map_sim;
@@ -356,22 +383,39 @@ int main(int argc, char **argv) {
             for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
                 //Copy all the coefficients to the pack_coef list.
                 bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
+
                 //Set up the two lists used for the pp_map_sim_oatep_k12 operation
                 for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
                     if (jk < (kss + 1)) {
-                        g1_neg(pair_g1[jk], CT_A.C_1[jk]);
-                        g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_one[jk]);
+                        g1_neg(pack_C1_g1[jk], CT_A.C_1[jk]);
+                        g2_copy(pack_K1_g2[jk], sk.sk[it3->leaf_index - 1].sk_one[jk]);
                     } else {
-                        g1_copy(pair_g1[jk], CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[(jk + 1) % kss]);
-                        g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_two[(jk + 1) % kss]);
+                        g1_copy(pack_C2_g1[jk], CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[(jk + 1) % kss]);
+                        g2_copy(pack_K2_g2[jk], sk.sk[it3->leaf_index - 1].sk_two[(jk + 1) % kss]);
                     }
                 }
-                pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
+
+
+
+                //pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
                 //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-                gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
+                //gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
                 //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
-                gt_mul(prod, prod, exp_val);
+                //gt_mul(prod, prod, exp_val);
             }
+
+            g1_mul_sim_lot(C1_prod, pack_C1_g1[jk], pack_coef, N_ATTR);
+            g1_mul_sim_lot(C2_prod, pack_C2_g1[jk], pack_coef, N_ATTR);
+            //g2_mul_sim_lot(K1_prod, pair_g2[jk], pack_coef, N_ATTR);
+            //g2_mul_sim_lot(K2_prod, pair_g2[jk], pack_coef, N_ATTR);
+
+            g1_neg(pairing_g1[0], K_prod);
+            g1_copy(pairing_g1[1], C2_prod);
+
+            g2_copy(pairing_g2[0], K1_prod);
+            g2_copy(pairing_g2[1], K2_prod);
+
+
             //Here we complete the product of [-sTAv_j]^(wj)
             gt_mul(tmp_res, tmp_res, prod);
 
@@ -402,3 +446,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+

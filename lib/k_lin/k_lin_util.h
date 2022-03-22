@@ -26,6 +26,11 @@ g1_t *matrix_add_matrix_g1(g1_t out[], g1_t A[], g1_t Wi[], int a_rows, int a_co
 g1_t *matrixG1_mul_vectorBN(g1_t out[], g1_t A[], bn_t v[], int a_rows, int a_cols, int v_rows);
 g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_cols, int w_rows, int w_cols, g1_t oneValue);
 
+void init_null_new_bn_t_var(bn_t var_name);
+void init_null_new_g1_t_var(g1_t var_name);
+void init_null_new_g2_t_var(g2_t var_name);
+void init_null_new_gt_t_var(gt_t var_name);
+
 void print_sk(struct secret_key_K_Lin *sk, struct sk_tmp_vj *shares, const uint32_t n, const uint32_t ksec);
 void print_msk(struct master_key_k_lin *msk, const uint32_t n, const uint32_t ksec);
 void print_mpk(struct public_key_k_lin *mpk, const uint32_t n, const uint32_t ksec);
