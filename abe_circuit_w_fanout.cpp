@@ -135,7 +135,7 @@ int main(int argc, char **argv){
     //    return(EXIT_FAILURE);
     //}
 
-    //cout << "Encryption input: " << attrList->l_toString() << "\n";
+
 
     g1_t big_es[N_ATTR];
     bn_t s; bn_null(s); bn_new(s)
@@ -176,7 +176,8 @@ int main(int argc, char **argv){
 
 
     struct node tree_root;
-    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    //tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    tree_from_string("AND(attr1,OR(attr2,attr3))", &tree_root);
     vector<policy_coefficient> vector;
     share_secret(&tree_root, y.m_ZP, order, vector, true);
 
@@ -194,6 +195,7 @@ int main(int argc, char **argv){
         bn_print(it -> share);
         //string label = it -> second.label();
         int attr_index = it -> leaf_index-1;
+        cout << "leaf index: " << it -> leaf_index << "\n"
         bn_null(shares[attr_index]); bn_new(shares[attr_index]);
         bn_copy(shares[attr_index], it -> share);
         g2_null(big_ds[attr_index); g2_new(big_ds[attr_index]);
@@ -225,6 +227,7 @@ int main(int argc, char **argv){
         //string label = it -> second.label();
         //attr_int = getAttrNumber(label);
         int attr_index = it -> leaf_index-1;
+        cout << "leaf index: " << it -> leaf_index << "\n"
         bn_null(reconCoeffs[attr_index]); bn_new(reconCoeffs[attr_index]);
         //cout << "recon element " << it -> second.element() << "\n";
         bn_copy(reconCoeffs[attr_index], it -> coeff);
@@ -243,7 +246,7 @@ int main(int argc, char **argv){
     pc_map_sim(r, e_reconstruct, big_ds, N_ATTR);
     cout << "r\n";
     gt_print(r);
-
+    /*
     bn_t res; bn_null(res); bn_new(res);
     gt_t gt_res; gt_null(gt_res); gt_new(gt_res);
     gt_t map_res; gt_null(map_res); gt_new(map_res);
@@ -304,6 +307,7 @@ int main(int argc, char **argv){
     //pp_map_sim_oatep_k12(blindingFactor, big_es, d_reconstruct, N_ATTR);
     cout << "Value of blinding factor before decrypt\n";
     gt_print(e_prime);
+    */
     cout << "Value of blinding factor after decrypt\n";
     gt_print(r);
 
