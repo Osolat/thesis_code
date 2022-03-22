@@ -255,7 +255,7 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<po
             policy_coefficient p = policy_coefficient();
             p.leaf_index = global_leaf_idx;
             tree_root->leaf_index = global_leaf_idx;
-            bn_copy(tree_root->share,secret);
+            bn_copy(tree_root->share, secret);
             bn_null(p.coeff);
             bn_new(p.coeff);
             bn_null(p.share);
@@ -432,11 +432,8 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
         bn_new(p.share);
 
         bn_set_dig(temp, 1);
-        //cout << "omega lu" << endl;
         bn_copy(p.coeff, temp);
         bn_copy(p.share, tree_root->share);
-        //cout << "omega lul" << endl;
-
         result.push_back(p);
         return result;
     }
