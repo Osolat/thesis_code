@@ -1240,6 +1240,12 @@ int init_master_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct mast
     if (m->atts == NULL || m->v_share == NULL) {
         return EXIT_FAILURE;
     } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            for (int j = 0; j <((kss+1) * kss) ; ++j) {
+                bn_null(m->atts[i].w[j]);
+                bn_new(m->atts[i].w[j]);
+            }
+        }
         return EXIT_SUCCESS;
     }
 }

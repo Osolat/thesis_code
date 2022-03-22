@@ -255,6 +255,7 @@ int share_secret(struct node* tree_root, bn_t secret, bn_t order, std::vector<po
             policy_coefficient p = policy_coefficient();
             p.leaf_index = global_leaf_idx;
             tree_root->leaf_index = global_leaf_idx;
+            bn_copy(tree_root->share,secret);
             bn_null(p.coeff);
             bn_new(p.coeff);
             bn_null(p.share);
@@ -431,8 +432,11 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
         bn_new(p.share);
 
         bn_set_dig(temp, 1);
+        //cout << "omega lu" << endl;
         bn_copy(p.coeff, temp);
         bn_copy(p.share, tree_root->share);
+        //cout << "omega lul" << endl;
+
         result.push_back(p);
         return result;
     }
@@ -553,6 +557,34 @@ std::string and_tree_formula(size_t size) {
 
     string num = to_string(size - 1);
     s.append("AND(OR(attr");
+    s.append(num);
+    num = to_string(size);
+    s.append("),OR(attr");
+    s.append(num);
+
+    for (size_t i = 0; i < size; i++) {
+        s.append(")");
+    }
+
+    return s;
+}
+
+std::string or_tree_formula(size_t size) {
+    string s;
+    if (size == 1) {
+        s.append("OR(attr1)");
+        return s;
+    }
+
+    for (size_t i = 0; i < size - 2; i++) {
+        string num = to_string(i + 1);
+        s.append("OR(OR(attr");
+        s.append(num);
+        s.append("),");
+    }
+
+    string num = to_string(size - 1);
+    s.append("OR(OR(attr");
     s.append(num);
     num = to_string(size);
     s.append("),OR(attr");
