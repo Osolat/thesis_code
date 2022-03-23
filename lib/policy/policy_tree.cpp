@@ -565,3 +565,31 @@ std::string and_tree_formula(size_t size) {
 
     return s;
 }
+
+std::string or_tree_formula(size_t size) {
+    string s;
+    if (size == 1) {
+        s.append("OR(attr1)");
+        return s;
+    }
+
+    for (size_t i = 0; i < size - 2; i++) {
+        string num = to_string(i + 1);
+        s.append("OR(OR(attr");
+        s.append(num);
+        s.append("),");
+    }
+
+    string num = to_string(size - 1);
+    s.append("OR(OR(attr");
+    s.append(num);
+    num = to_string(size);
+    s.append("),OR(attr");
+    s.append(num);
+
+    for (size_t i = 0; i < size; i++) {
+        s.append(")");
+    }
+
+    return s;
+}

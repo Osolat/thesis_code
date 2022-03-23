@@ -11,6 +11,26 @@
 #include "../g2_arith.h"
 #include "../gt_arith.h"
 
+void init_null_new_bn_t_var(bn_t var_name){
+    bn_null(var_name);
+    bn_new(var_name);
+}
+
+void init_null_new_g1_t_var(g1_t var_name){
+    g1_null(var_name);
+    g1_new(var_name);
+}
+
+void init_null_new_g2_t_var(g2_t var_name){
+    g2_null(var_name);
+    g2_new(var_name);
+}
+
+void init_null_new_gt_t_var(gt_t var_name){
+    gt_null(var_name);
+    gt_new(var_name);
+}
+
 bn_t *vector_trans_mul_matrix(bn_t out[], bn_t v[], bn_t A[], int v_cols, int A_cols, int A_rows, bn_t ord) {
     if (v_cols != A_rows) {
         printf("Error in matrix - trans vector dimensions! \n");
@@ -18,8 +38,8 @@ bn_t *vector_trans_mul_matrix(bn_t out[], bn_t v[], bn_t A[], int v_cols, int A_
     }
 
     bn_t tmp; bn_t tmp_add;
-    bn_null(tmp); bn_new(tmp);
-    bn_null(tmp_add); bn_new(tmp_add);
+    init_null_new_bn_t_var(tmp);
+    init_null_new_bn_t_var(tmp_add);
 
     int ctr = 0;
     int z = 0;
@@ -45,8 +65,8 @@ bn_t *matrix_mul_vector(bn_t out[], bn_t A[], bn_t v[], int a_rows, int a_cols, 
     }
 
     bn_t tmp; bn_t tmp_add;
-    bn_null(tmp); bn_new(tmp);
-    bn_null(tmp_add); bn_new(tmp_add);
+    init_null_new_bn_t_var(tmp);
+    init_null_new_bn_t_var(tmp_add);
     int z = 0;
     int cter = 0;
     int h = 0;
@@ -72,8 +92,8 @@ bn_t *matrixA_mul_matrixW(bn_t out[], bn_t A[], bn_t Wi[], int a_rows, int a_col
     }
 
     bn_t tmp; bn_t tmp_add;
-    bn_null(tmp); bn_new(tmp);
-    bn_null(tmp_add); bn_new(tmp_add);
+    init_null_new_bn_t_var(tmp);
+    init_null_new_bn_t_var(tmp_add);
 
     int ctt = 0;
     int z = 0;
@@ -106,10 +126,9 @@ bn_t *matrixA_mul_matrixW(bn_t out[], bn_t A[], bn_t Wi[], int a_rows, int a_col
 
 bn_t *matrix_mul_scalar(bn_t out[], bn_t A[], int scalar, int a_rows, int a_cols, bn_t o) {
     bn_t tmp_mul;
-    bn_null(tmp_mul); bn_new(tmp_mul);
-
+    init_null_new_bn_t_var(tmp_mul);
     bn_t scalarBn_t;
-    bn_null(scalarBn_t); bn_new(scalarBn_t);
+    init_null_new_bn_t_var(scalarBn_t);
     bn_set_dig(scalarBn_t, scalar);
 
     for (int i = 0; i < (a_rows * a_cols); ++i) {
@@ -126,7 +145,7 @@ bn_t *matrix_add_matrix(bn_t out[], bn_t A[], bn_t Wi[], int a_rows, int a_cols,
         exit(-1);
     }
     bn_t tmp_add;
-    bn_null(tmp_add); bn_new(tmp_add);
+    init_null_new_bn_t_var(tmp_add);
 
     for (int i = 0; i < (a_rows * a_cols); ++i) {
         bn_t_add(tmp_add, A[i], Wi[i], o);
@@ -143,12 +162,12 @@ bn_t *vector_add_vector(bn_t out[], bn_t v1[], bn_t v2[], int v1_size, int v2_si
         exit(-1);
     }
     bn_t tmp_add;
-    bn_null(tmp_add); bn_new(tmp_add);
-
+    init_null_new_bn_t_var(tmp_add);
     for (int i = 0; i < v1_size; ++i) {
         bn_t_add(tmp_add, v1[i], v2[i], order);
         bn_copy(out[i], tmp_add);
         bn_t_setzero(tmp_add);
+        //bn_null(tmp_add); bn_new(tmp_add);
     }
     return out;
 }
@@ -158,13 +177,10 @@ void vector_dot_product(bn_t out, bn_t v1[], bn_t v2[], int v1_size, int v2_size
         printf("Error in vector - dot - vector dimensions! \n");
         exit(-1);
     }
-
     bn_t tmp;
     bn_t tmp_add;
-    bn_new(tmp);
-    bn_new(tmp_add);
-    bn_null(tmp);
-    bn_null(tmp_add);
+    init_null_new_bn_t_var(tmp);
+    init_null_new_bn_t_var(tmp_add);
     for (int i = 0; i < v1_size; ++i) {
         bn_t_mul(tmp, v1[i], v2[i], o);
         bn_t_add(tmp_add, tmp_add, tmp, o);
@@ -183,8 +199,8 @@ g1_t *vector_trans_mul_matrix_g1(g1_t out[], bn_t v[], g1_t A[], int v_cols, int
     }
 
     g1_t tmp; g1_t tmp_add;
-    g1_null(tmp); g1_new(tmp);
-    g1_null(tmp_add); g1_new(tmp_add);
+    init_null_new_g1_t_var(tmp);
+    init_null_new_g1_t_var(tmp_add);
     g1_mul_dig(tmp_add, tmp_add, 0);
 
     int ctr = 0;
@@ -206,11 +222,11 @@ g1_t *vector_trans_mul_matrix_g1(g1_t out[], bn_t v[], g1_t A[], int v_cols, int
 
 g1_t *matrix_mul_scalar_g1(g1_t out[], g1_t A[], int scalar, int a_rows, int a_cols) {
     g1_t tmp_mul;
-    g1_null(tmp_mul); g1_new(tmp_mul);
+    init_null_new_g1_t_var(tmp_mul);
     g1_mul_dig(tmp_mul, tmp_mul, 0);
 
     bn_t scalarBn_t;
-    bn_null(scalarBn_t); bn_new(scalarBn_t);
+    init_null_new_bn_t_var(scalarBn_t);
     bn_set_dig(scalarBn_t, scalar);
 
     for (int i = 0; i < (a_rows * a_cols); ++i) {
@@ -227,7 +243,7 @@ g1_t *vector_add_vector_g1(g1_t out[], g1_t v1[], g1_t v2[], int v1_size, int v2
         exit(-1);
     }
     g1_t tmp_add;
-    g1_null(tmp_add); g1_new(tmp_add);
+    init_null_new_g1_t_var(tmp_add);
     g1_mul_dig(tmp_add, tmp_add, 0);
 
     for (int i = 0; i < v1_size; ++i) {
@@ -244,7 +260,7 @@ g1_t *matrix_add_matrix_g1(g1_t out[], g1_t A[], g1_t Wi[], int a_rows, int a_co
         exit(-1);
     }
     g1_t tmp_add;
-    g1_null(tmp_add); g1_new(tmp_add);
+    init_null_new_g1_t_var(tmp_add);
     g1_mul_dig(tmp_add, tmp_add, 0);
 
     for (int i = 0; i < (a_rows * a_cols); ++i) {
@@ -263,8 +279,8 @@ g1_t *matrixG1_mul_vectorBN(g1_t out[], g1_t A[], bn_t v[], int a_rows, int a_co
     }
 
     g1_t tmp; g1_t tmp_add;
-    g1_null(tmp); g1_new(tmp);
-    g1_null(tmp_add); g1_new(tmp_add);
+    init_null_new_g1_t_var(tmp);
+    init_null_new_g1_t_var(tmp_add);
     g1_mul_dig(tmp_add, tmp_add, 0);
 
     int z = 0;
@@ -292,8 +308,8 @@ g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_c
     }
 
     g1_t tmp; g1_t tmp_add;
-    g1_null(tmp); g1_new(tmp);
-    g1_null(tmp_add); g1_new(tmp_add);
+    init_null_new_g1_t_var(tmp);
+    init_null_new_g1_t_var(tmp_add);
     g1_mul_dig(tmp_add, tmp_add, 0);
 
     int ctt = 0;
@@ -441,15 +457,15 @@ void print_ct(struct ciphertext_K_Lin *CT_A, const uint32_t n, const uint32_t ks
 
 void test_matrix_mul_vector(const uint32_t ksec, bn_t o){
     bn_t one;
-    bn_null(one); bn_new(one);
+    init_null_new_bn_t_var(one);
     bn_set_dig(one, 55);
 
     bn_t five;
-    bn_null(five); bn_new(five);
+    init_null_new_bn_t_var(five);
     bn_set_dig(five, 130);
 
     bn_t eleven;
-    bn_null(eleven); bn_new(eleven);
+    init_null_new_bn_t_var(eleven);
     bn_set_dig(eleven, 110);
 
     printf("\n");
@@ -463,7 +479,7 @@ void test_matrix_mul_vector(const uint32_t ksec, bn_t o){
 
 
     for (int i = 1; i < (matrixSize + 1); ++i) {
-        bn_null(matrix[i-1]); bn_new(matrix[i-1]);
+        init_null_new_bn_t_var(matrix[i-1]);
         bn_set_dig(matrix[i-1], i);
         bn_print(matrix[i-1]);
     }
@@ -471,7 +487,7 @@ void test_matrix_mul_vector(const uint32_t ksec, bn_t o){
     printf("\n");
 
     for (int i = 1; i < (vectorSize + 1); ++i) {
-        bn_null(vector[i-1]); bn_new(vector[i-1]);
+        init_null_new_bn_t_var(vector[i-1]);
         bn_set_dig(vector[i-1], i);
         bn_print(vector[i-1]);
     }
@@ -495,20 +511,19 @@ void test_matrix_mul_vector(const uint32_t ksec, bn_t o){
     printf("comparisons \n");
     bn_print(one);
     bn_print(five);
-    //bn_print(eleven);
 }
 
 void test_vector_trans_mul_matrix(const uint32_t ksec, bn_t o) {
     bn_t two_two;
-    bn_null(two_two); bn_new(two_two);
+    init_null_new_bn_t_var(two_two);
     bn_set_dig(two_two, 7);
 
     bn_t two_eight;
-    bn_null(two_eight); bn_new(two_eight);
+    init_null_new_bn_t_var(two_eight);
     bn_set_dig(two_eight, 10);
 
     bn_t two_ten;
-    bn_null(two_ten); bn_new(two_ten);
+    init_null_new_bn_t_var(two_ten);
     bn_set_dig(two_ten, 110);
 
     printf("\n");
@@ -520,7 +535,7 @@ void test_vector_trans_mul_matrix(const uint32_t ksec, bn_t o) {
     bn_t s_vector[vectorSize];
 
     for (int i = 1; i < (matrixSize + 1); ++i) {
-        bn_null(matrix[i-1]); bn_new(matrix[i-1]);
+        init_null_new_bn_t_var(matrix[i-1]);
         bn_set_dig(matrix[i-1], i);
         bn_print(matrix[i-1]);
     }
@@ -528,7 +543,7 @@ void test_vector_trans_mul_matrix(const uint32_t ksec, bn_t o) {
     printf("\n");
 
     for (int i = 1; i < (vectorSize + 1); ++i) {
-        bn_null(s_vector[i-1]); bn_new(s_vector[i-1]);
+        init_null_new_bn_t_var(s_vector[i-1]);
         bn_set_dig(s_vector[i-1], i);
         bn_print(s_vector[i-1]);
     }
@@ -555,51 +570,51 @@ void test_vector_trans_mul_matrix(const uint32_t ksec, bn_t o) {
 
 void test_matrix_mul_matrix(const uint32_t ksec, bn_t o) {
     bn_t two_two;
-    bn_null(two_two); bn_new(two_two);
+    init_null_new_bn_t_var(two_two);
     bn_set_dig(two_two, 38);
 
     bn_t two_eight;
-    bn_null(two_eight); bn_new(two_eight);
+    init_null_new_bn_t_var(two_eight);
     bn_set_dig(two_eight, 44);
 
     bn_t two_ten;
-    bn_null(two_ten); bn_new(two_ten);
+    init_null_new_bn_t_var(two_ten);
     bn_set_dig(two_ten, 50);
 
     bn_t two_twelve;
-    bn_null(two_twelve); bn_new(two_twelve);
+    init_null_new_bn_t_var(two_twelve);
     bn_set_dig(two_twelve, 56);
 
     bn_t six;
-    bn_null(six); bn_new(six);
+    init_null_new_bn_t_var(six);
     bn_set_dig(six, 83);
 
     bn_t fifteen;
-    bn_null(fifteen); bn_new(fifteen);
+    init_null_new_bn_t_var(fifteen);
     bn_set_dig(fifteen, 98);
 
     bn_t x1;
-    bn_null(x1); bn_new(x1);
+    init_null_new_bn_t_var(x1);
     bn_set_dig(x1, 113);
 
     bn_t x2;
-    bn_null(x2); bn_new(x2);
+    init_null_new_bn_t_var(x2);
     bn_set_dig(x2, 128);
 
     bn_t x3;
-    bn_null(x3); bn_new(x3);
+    init_null_new_bn_t_var(x3);
     bn_set_dig(x3, 128);
 
     bn_t x4;
-    bn_null(x4); bn_new(x4);
+    init_null_new_bn_t_var(x4);
     bn_set_dig(x4, 152);
 
     bn_t x5;
-    bn_null(x5); bn_new(x5);
+    init_null_new_bn_t_var(x5);
     bn_set_dig(x5, 176);
 
     bn_t x6;
-    bn_null(x6); bn_new(x6);
+    init_null_new_bn_t_var(x6);
     bn_set_dig(x6, 200);
 
 
@@ -614,7 +629,7 @@ void test_matrix_mul_matrix(const uint32_t ksec, bn_t o) {
 
 
     for (int i = 1; i < (matrix1Size + 1); ++i) {
-        bn_null(matrix1[i-1]); bn_new(matrix1[i-1]);
+        init_null_new_bn_t_var(matrix1[i-1]);
         bn_set_dig(matrix1[i-1], i);
         bn_print(matrix1[i-1]);
     }
@@ -622,7 +637,7 @@ void test_matrix_mul_matrix(const uint32_t ksec, bn_t o) {
     printf("\n");
 
     for (int i = 1; i < (matrix2Size + 1); ++i) {
-        bn_null(matrix2[i-1]); bn_new(matrix2[i-1]);
+        init_null_new_bn_t_var(matrix2[i-1]);
         bn_set_dig(matrix2[i-1], i);
         bn_print(matrix2[i-1]);
     }
@@ -666,7 +681,7 @@ void test_matrix_mul_matrix(const uint32_t ksec, bn_t o) {
 
     for (int w = 1; w <= 100; ++w) {
         bn_t tmp_dig;
-        bn_null(tmp_dig); bn_new(tmp_dig);
+        init_null_new_bn_t_var(tmp_dig);
         bn_set_dig(tmp_dig, w);
         printf("Bn_t value of the integer: %d: ", w);
         bn_print(tmp_dig);
@@ -676,7 +691,7 @@ void test_matrix_mul_matrix(const uint32_t ksec, bn_t o) {
 
 void test_vector_dot_product(const uint32_t ksec, bn_t o) {
     bn_t res;
-    bn_null(res); bn_new(res);
+    init_null_new_bn_t_var(res);
     bn_set_dig(res, 204);
 
 
@@ -691,7 +706,7 @@ void test_vector_dot_product(const uint32_t ksec, bn_t o) {
 
 
     for (int i = 1; i < (vector1size + 1); ++i) {
-        bn_null(vector_1[i-1]); bn_new(vector_1[i-1]);
+        init_null_new_bn_t_var(vector_1[i-1]);
         bn_set_dig(vector_1[i-1], i);
         bn_print(vector_1[i-1]);
     }
@@ -699,7 +714,7 @@ void test_vector_dot_product(const uint32_t ksec, bn_t o) {
     printf("\n");
 
     for (int i = 1; i < (vector2size + 1); ++i) {
-        bn_null(vector_2[i-1]); bn_new(vector_2[i-1]);
+        init_null_new_bn_t_var(vector_2[i-1]);
         bn_set_dig(vector_2[i-1], i);
         bn_print(vector_2[i-1]);
     }
@@ -707,7 +722,8 @@ void test_vector_dot_product(const uint32_t ksec, bn_t o) {
     printf("\n");
 
 
-    bn_t dot; bn_null(dot); bn_new(dot);
+    bn_t dot;
+    init_null_new_bn_t_var(dot);
     vector_dot_product(dot, vector_1, vector_2, vector1size, vector2size, o);
 
     printf("results \n");
@@ -719,43 +735,43 @@ void test_vector_dot_product(const uint32_t ksec, bn_t o) {
 
 void test_matrix_mul_scalar(const uint32_t ksec, bn_t o) {
     bn_t x1;
-    bn_null(x1); bn_new(x1);
+    init_null_new_bn_t_var(x1);
     bn_set_dig(x1, 2);
 
     bn_t x2;
-    bn_null(x2); bn_new(x2);
+    init_null_new_bn_t_var(x2);
     bn_set_dig(x2, 4);
 
     bn_t x3;
-    bn_null(x3); bn_new(x3);
+    init_null_new_bn_t_var(x3);
     bn_set_dig(x3, 6);
 
     bn_t x4;
-    bn_null(x4); bn_new(x4);
+    init_null_new_bn_t_var(x4);
     bn_set_dig(x4, 8);
 
     bn_t x5;
-    bn_null(x5); bn_new(x5);
+    init_null_new_bn_t_var(x5);
     bn_set_dig(x5, 10);
 
     bn_t x6;
-    bn_null(x6); bn_new(x6);
+    init_null_new_bn_t_var(x6);
     bn_set_dig(x6, 12);
 
     bn_t x7;
-    bn_null(x7); bn_new(x7);
+    init_null_new_bn_t_var(x7);
     bn_set_dig(x7, 14);
 
     bn_t x8;
-    bn_null(x8); bn_new(x8);
+    init_null_new_bn_t_var(x8);
     bn_set_dig(x8, 16);
 
     bn_t x9;
-    bn_null(x9); bn_new(x9);
+    init_null_new_bn_t_var(x9);
     bn_set_dig(x9, 18);
 
     bn_t x10;
-    bn_null(x10); bn_new(x10);
+    init_null_new_bn_t_var(x10);
     bn_set_dig(x10, 20);
 
 
@@ -763,7 +779,7 @@ void test_matrix_mul_scalar(const uint32_t ksec, bn_t o) {
     bn_t matrix1[matrixSize];
 
     for (int i = 1; i < (matrixSize + 1); ++i) {
-        bn_null(matrix1[i-1]); bn_new(matrix1[i-1]);
+        init_null_new_bn_t_var(matrix1[i-1]);
         bn_set_dig(matrix1[i-1], i);
         bn_print(matrix1[i-1]);
     }
@@ -803,43 +819,43 @@ void test_matrix_mul_scalar(const uint32_t ksec, bn_t o) {
 
 void test_matrix_add_matrix(const uint32_t ksec, bn_t o) {
     bn_t x1;
-    bn_null(x1); bn_new(x1);
+    init_null_new_bn_t_var(x1);
     bn_set_dig(x1, 2);
 
     bn_t x2;
-    bn_null(x2); bn_new(x2);
+    init_null_new_bn_t_var(x2);
     bn_set_dig(x2, 4);
 
     bn_t x3;
-    bn_null(x3); bn_new(x3);
+    init_null_new_bn_t_var(x3);
     bn_set_dig(x3, 6);
 
     bn_t x4;
-    bn_null(x4); bn_new(x4);
+    init_null_new_bn_t_var(x4);
     bn_set_dig(x4, 8);
 
     bn_t x5;
-    bn_null(x5); bn_new(x5);
+    init_null_new_bn_t_var(x5);
     bn_set_dig(x5, 10);
 
     bn_t x6;
-    bn_null(x6); bn_new(x6);
+    init_null_new_bn_t_var(x6);
     bn_set_dig(x6, 12);
 
     bn_t x7;
-    bn_null(x7); bn_new(x7);
+    init_null_new_bn_t_var(x7);
     bn_set_dig(x7, 14);
 
     bn_t x8;
-    bn_null(x8); bn_new(x8);
+    init_null_new_bn_t_var(x8);
     bn_set_dig(x8, 16);
 
     bn_t x9;
-    bn_null(x9); bn_new(x9);
+    init_null_new_bn_t_var(x9);
     bn_set_dig(x9, 18);
 
     bn_t x10;
-    bn_null(x10); bn_new(x10);
+    init_null_new_bn_t_var(x10);
     bn_set_dig(x10, 20);
 
 
@@ -849,7 +865,7 @@ void test_matrix_add_matrix(const uint32_t ksec, bn_t o) {
     bn_t matrix2[matrix2Size];
 
     for (int i = 1; i < (matrix1Size + 1); ++i) {
-        bn_null(matrix1[i-1]); bn_new(matrix1[i-1]);
+        init_null_new_bn_t_var(matrix1[i-1]);
         bn_set_dig(matrix1[i-1], i);
         bn_print(matrix1[i-1]);
     }
@@ -857,7 +873,7 @@ void test_matrix_add_matrix(const uint32_t ksec, bn_t o) {
     printf("\n");
 
     for (int i = 1; i < (matrix2Size + 1); ++i) {
-        bn_null(matrix2[i-1]); bn_new(matrix2[i-1]);
+        init_null_new_bn_t_var(matrix2[i-1]);
         bn_set_dig(matrix2[i-1], i);
         bn_print(matrix2[i-1]);
     }
@@ -893,23 +909,23 @@ void test_matrix_add_matrix(const uint32_t ksec, bn_t o) {
 
 void test_vector_add_vector(const uint32_t ksec, bn_t o) {
     bn_t x1;
-    bn_null(x1); bn_new(x1);
+    init_null_new_bn_t_var(x1);
     bn_set_dig(x1, 2);
 
     bn_t x2;
-    bn_null(x2); bn_new(x2);
+    init_null_new_bn_t_var(x2);
     bn_set_dig(x2, 4);
 
     bn_t x3;
-    bn_null(x3); bn_new(x3);
+    init_null_new_bn_t_var(x3);
     bn_set_dig(x3, 6);
 
     bn_t x4;
-    bn_null(x4); bn_new(x4);
+    init_null_new_bn_t_var(x4);
     bn_set_dig(x4, 8);
 
     bn_t x5;
-    bn_null(x5); bn_new(x5);
+    init_null_new_bn_t_var(x5);
     bn_set_dig(x5, 10);
 
 
@@ -919,7 +935,7 @@ void test_vector_add_vector(const uint32_t ksec, bn_t o) {
     bn_t vector2[vector2Size];
 
     for (int i = 1; i < (vector1Size + 1); ++i) {
-        bn_null(vector1[i-1]); bn_new(vector1[i-1]);
+        init_null_new_bn_t_var(vector1[i-1]);
         bn_set_dig(vector1[i-1], i);
         bn_print(vector1[i-1]);
     }
@@ -927,7 +943,7 @@ void test_vector_add_vector(const uint32_t ksec, bn_t o) {
     printf("\n");
 
     for (int i = 1; i < (vector2Size + 1); ++i) {
-        bn_null(vector2[i-1]); bn_new(vector2[i-1]);
+        init_null_new_bn_t_var(vector2[i-1]);
         bn_set_dig(vector2[i-1], i);
         bn_print(vector2[i-1]);
     }
