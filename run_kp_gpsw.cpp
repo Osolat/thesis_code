@@ -57,7 +57,6 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
-
     std::string keyInput = "";
     std::string encInput = "";
 
@@ -81,7 +80,6 @@ int main(int argc, char **argv) {
 
         d++;
     }
-
     struct master_key_kp_gpsw msk;
     struct public_key_kp_gpsw mpk;
 
