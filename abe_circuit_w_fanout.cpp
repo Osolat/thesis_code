@@ -176,8 +176,7 @@ int main(int argc, char **argv){
 
 
     struct node tree_root;
-    //tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-    tree_from_string("AND(attr1,OR(attr2,attr3))", &tree_root);
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     vector<policy_coefficient> vector;
     share_secret(&tree_root, y.m_ZP, order, vector, true);
 
@@ -195,7 +194,6 @@ int main(int argc, char **argv){
         bn_print(it -> share);
         //string label = it -> second.label();
         int attr_index = it -> leaf_index-1;
-        cout << "leaf index: " << it -> leaf_index << "\n"
         bn_null(shares[attr_index]); bn_new(shares[attr_index]);
         bn_copy(shares[attr_index], it -> share);
         g2_null(big_ds[attr_index); g2_new(big_ds[attr_index]);
