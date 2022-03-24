@@ -106,12 +106,19 @@ int main(int argc, char **argv) {
         g1_mul_gen(temp_g1, x[i]);
     }
     print_results("Results gen param():           ", t, NTESTS);
-    
+
+    // g_i + g_j
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        g1_add(temp_g1, g1_gen_vars[i], g1_gen_vars[(i + 1) % NTESTS]);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
     for (size_t i = 0; i < NTESTS; i++) {
         bn_free(x[i]);
         g1_free(g1_gen_vars[i]);
     }
-    
+
     bn_t x_mult_2[NTESTS][2];
     g1_t g1_mult_2[NTESTS][2];
 
@@ -120,7 +127,7 @@ int main(int argc, char **argv) {
 
     bn_t x_mult_100[NTESTS][100];
     g1_t g1_mult_100[NTESTS][100];
-    
+
     for (size_t i = 0; i < NTESTS; i++) {
         for (size_t j = 0; j < 2; j++) {
             bn_null(x_mult_2[i][j]);
@@ -147,7 +154,7 @@ int main(int argc, char **argv) {
             g1_rand(g1_mult_100[i][j]);
         }
     }
-    
+
     // g1^x1 * g2^x2
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
@@ -205,7 +212,7 @@ int main(int argc, char **argv) {
         memcpy(char_arrays_32[i], (void *)memcpy + i, 32);
     }
 
-     // Map random 8 byte arrays
+    // Map random 8 byte arrays
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         g1_map(temp_g1, char_arrays_8[i], 8);
@@ -258,6 +265,13 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         g2_mul_gen(temp_g2, x[i]);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
+     // g_i + g_j
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        g2_add(temp_g2, g2_gen_vars[i], g2_gen_vars[(i + 1) % NTESTS]);
     }
     print_results("Results gen param():           ", t, NTESTS);
 
@@ -407,7 +421,7 @@ int main(int argc, char **argv) {
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
-    
+
     std::cout << "GT operations" << std::endl;
     gt_t gt_gen_vars[NTESTS];
 
@@ -462,7 +476,7 @@ int main(int argc, char **argv) {
             bn_free(x_mult_2[i][j]);
         }
     }
-    printf("]\n"); 
+    printf("]\n");
     core_clean();
     return 0;
 }
