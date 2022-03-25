@@ -36,7 +36,7 @@ main:
 	cc $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) -fPIC  -O3 -DSSL_LIB_INIT  -Wno-implicit-function-declaration  -c legacy/arith/l_zelement.c -o l_zelement.o
 	g++ $(CXXFLAGS) -c legacy/arith/l_zelement_bp.cpp -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c legacy/lsss/l_zlsss.cpp -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(LEGACY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(LEGACY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o	
 
 policy_tree:
@@ -44,7 +44,11 @@ policy_tree:
 	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)
 	$(CXX) -o objects/main $(CXXFLAGS) $(POLICY_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) test_access_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
-
+	
+benchmarks_ops:
+	$(info ************  Benchmark for operations    ************)
+	$(CXX) -o objects/main $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) bench_operations.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	rm *.o
 failing_comp:
 	$(info ************  Compiling Policy Tree Test************)
 	$(CXX) -o objects/main $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) test_access_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp

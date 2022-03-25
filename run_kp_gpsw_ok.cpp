@@ -52,7 +52,6 @@ unsigned long long t[NTESTS];
 int main(int argc, char **argv) {
     if (argc == 1) {
         printf("Need to give argument\n");
-        printf("I did it. LOL EASY PEASY, I AM COMPILED WITH OPENABE POLICIES! \n");
         return 0;
     }
 
@@ -128,34 +127,43 @@ int main(int argc, char **argv) {
 
     /*Y = e(g,g)^y*/
     pp_map_oatep_k12(mpk.Y, g, h);
+    pc_map(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
     /*MPK = (T_i, Y)*/
 
     /*KeyGeneration*/
     struct secret_key_kp_gpsw sk;
-    init_secret_key_kp_gpsw(N_ATTR, &sk);
-
-    for (int i = 0; i < N_ATTR; i++) {
-        g1_new(sk.D_values[i]);
-        g1_null(sk.D_values[i]);
-    }
-
-    /*Secret sharing of y, according to policy tree*/
     struct node tree_root;
-    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     std::vector<policy_coefficient> res;
-    share_secret(&tree_root, msk.y, order, res, true);
-    bn_t temp;
-    bn_new(temp);
-    bn_null(temp);
+    
 
-    /*Accessing q_leaf(0) <= second.element().m_ZP*/
-    /*Dx = g^(q_x(0)/t_x)*/
-    for (auto it = res.begin(); it != res.end(); it++) {
-        bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
-        bn_mul(temp, temp, it->share);
-        g1_mul(sk.D_values[it->leaf_index - 1], g, temp);
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        init_secret_key_kp_gpsw(N_ATTR, &sk);
+        for (int i = 0; i < N_ATTR; i++) {
+            g1_new(sk.D_values[i]);
+            g1_null(sk.D_values[i]);
+        }
+
+        /*Secret sharing of y, according to policy tree*/
+        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+        res = std::vector<policy_coefficient>();
+        share_secret(&tree_root, msk.y, order, res, true);
+        bn_t temp;
+        bn_new(temp);
+        bn_null(temp);
+
+        /*Accessing q_leaf(0) <= second.element().m_ZP*/
+        /*Dx = g^(q_x(0)/t_x)*/
+
+        for (auto it = res.begin(); it != res.end(); it++) {
+            bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
+            bn_mul(temp, temp, it->share);
+            g1_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+        }
     }
+    printf("[");
+    print_results("Results gen param():           ", t, NTESTS);
 
     /* Encryption */
     // TODO: Fix message construction.
@@ -163,23 +171,27 @@ int main(int argc, char **argv) {
     gt_new(message);
     gt_null(message);
     gt_rand(message);
-    gt_print(message);
+    // gt_print(message);
 
     bn_t s;
     bn_new(s);
     bn_null(s);
-    bn_rand_mod(s, order);
-
     struct ciphertext_kp_gpsw E;
-    init_ciphertext_kp_gpsw(test_attr, &E);
-    gt_exp(E.E_prime, mpk.Y, s);
-    gt_mul(E.E_prime, E.E_prime, message);
-    for (int i = 0; i < test_attr; i++) {
-        g1_new(E.E_values[i]);
-        g1_null(E.E_values[i]);
-        // TODO: Should this be mul? need T^s.
-        g2_mul(E.E_values[i], mpk.T_values[i], s);
+
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+
+        bn_rand_mod(s, order);
+        init_ciphertext_kp_gpsw(test_attr, &E);
+        gt_exp(E.E_prime, mpk.Y, s);
+        gt_mul(E.E_prime, E.E_prime, message);
+        for (int i = 0; i < test_attr; i++) {
+            g1_new(E.E_values[i]);
+            g1_null(E.E_values[i]);
+            g2_mul(E.E_values[i], mpk.T_values[i], s);
+        }
     }
+    print_results("Results gen param():           ", t, NTESTS);
 
     /*Decryption(E,D) -> message*/
 
@@ -189,41 +201,60 @@ int main(int argc, char **argv) {
         bn_new(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
-
-    try {
-        check_satisfiability(&tree_root, attributes, N_ATTR);
-        std::cout << "Satisfiable with correct attributes" << std::endl;
-    } catch (struct TreeUnsatisfiableException *e) {
-        std::cout << e->what() << std::endl;
-    }
-
-    res = std::vector<policy_coefficient>();
-    res = recover_coefficients(&tree_root, attributes, N_ATTR);
-
     gt_t F_root;
     gt_new(F_root);
     gt_null(F_root);
-    // TODO: Is this legal? fp12_set_dig
-    fp12_set_dig(F_root, 1);
-    gt_t mapping;
-    gt_new(mapping);
-    gt_null(mapping);
-
-    for (auto it = res.begin(); it != res.end(); it++) {
-        pp_map_oatep_k12(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-        gt_exp(mapping, mapping, it->coeff);
-        gt_mul(F_root, F_root, mapping);
-    }
 
     gt_t result;
     gt_new(result);
     gt_null(result);
 
-    gt_inv(F_root, F_root);
-    gt_mul(result, F_root, E.E_prime);
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        try {
+            check_satisfiability(&tree_root, attributes, N_ATTR);
+        } catch (struct TreeUnsatisfiableException *e) {
+            std::cout << e->what() << std::endl;
+        }
 
-    printf("------------------ \n");
-    gt_print(result);
+        res = recover_coefficients(&tree_root, attributes, N_ATTR);
+
+        // TODO: Is this legal? fp12_set_dig
+        fp12_set_dig(F_root, 1);
+        gt_t mapping;
+        gt_new(mapping);
+        gt_null(mapping);
+
+        g1_t g1_temp;
+        g1_new(g1_temp);
+        g1_null(g1_temp);
+
+        g1_t D_vals[res.size()];
+        g2_t E_vals[res.size()];
+        for (auto it = res.begin(); it != res.end(); it++) {
+            g1_new(D_vals[it->leaf_index - 1]);
+            g1_null(D_vals[it->leaf_index - 1]);
+            g2_new(E_vals[it->leaf_index - 1]);
+            g2_null(E_vals[it->leaf_index - 1]);
+            g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
+            g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
+        }
+
+        /* for (auto it = res.begin(); it != res.end(); it++) {
+           g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
+           pp_map_oatep_k12(mapping, g1_temp, E.E_values[it->leaf_index - 1]);
+           // gt_exp(mapping, mapping, it->coeff);
+           gt_mul(F_root, F_root, mapping);
+       }  */
+        pc_map_sim(F_root, D_vals, E_vals, res.size());
+
+        gt_inv(F_root, F_root);
+        gt_mul(result, F_root, E.E_prime);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+    printf("]\n");
+    /* printf("------------------ \n");
+    gt_print(result); */
     printf("----------------------\n");
     printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
 
