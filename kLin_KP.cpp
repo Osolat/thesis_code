@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     int test_attr = atoi(argv[1]);
 
-    for (int iters = 1; iters < (test_attr+1); ++iters) {
+    for (int iters = 50; iters < (test_attr+50); ++iters) {
         srand(time(NULL));
         std::string keyInput = "";
         std::string encInput = "";
@@ -147,21 +147,11 @@ int main(int argc, char **argv) {
                 bn_rand_mod(A_tmp[d], order);
                 g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
             }
-            //Define dimensions of matrix A and vector v and calculate the matrix-vector product Av.
-            int a_rows = kss;
-            int a_cols = kss + 1;
-            int v_rows = kss + 1;
 
             bn_t *Av;
             bn_t output[kss];
-            Av = matrix_mul_vector(output, A_tmp, msk.v_share, a_rows, a_cols, v_rows, order);
+            Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
             gt_t map_tmp[kss];
-
-            for (int k = 0; k < kss; k++) {
-                //Initialize the gt entries of the e-mapping matrix doing matrix multiplications exponent-wise.
-                pp_map_oatep_k12(map_tmp[k], group1, group2);
-                gt_exp(mpk.e_mat[k], map_tmp[k], Av[k]);
-            }
 
             //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
             //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
@@ -170,28 +160,23 @@ int main(int argc, char **argv) {
                     if (j != 0) {
                         //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                         bn_rand_mod(msk.atts[j].w[m], order);
+                    } else if (m < kss) {
+                        pp_map_oatep_k12(map_tmp[m], group1, group2);
+                        gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                     } else {
                         //Set all entries in W0 to be zero
                         bn_zero(msk.atts[j].w[m]);
                     }
                 }
                 //Here matrix multiplication is being calculated.
-
-                bn_t one_as_bn;
-                init_null_new_bn_t_var(one_as_bn);
-                bn_set_dig(one_as_bn, 1);
-
-                g1_t one_as_g1;
-                init_null_new_g1_t_var(one_as_g1);
-                g1_mul_fix(one_as_g1, t_pre_g, one_as_bn);
-
-                g1_t *AWi;
-                g1_t output[kss * kss];
-                AWi = matrixG1_mul_matrixBN(output, mpk.a_mat, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss,one_as_g1);
+                bn_t *AWi;
+                bn_t output[kss * kss];
+                AWi = matrixA_mul_matrixW(output, A_tmp, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss, order);
 
                 //Initializes the "n" AW_i (masker public key).
                 for (int x = 0; x < (kss * kss); ++x) {
-                    g1_copy(mpk.mats[j].w[x], AWi[x]);
+                    //g1_copy(mpk.mats[j].w[x], AWi[x]);
+                    g1_mul_fix(mpk.mats[j].w[x], t_pre_g, AWi[x]);
                 }
             }
         }
@@ -202,20 +187,20 @@ int main(int argc, char **argv) {
         /* Key Generation */
         struct secret_key_K_Lin sk;
         struct sk_tmp_vj vj;
+
+        struct node tree_root;
+        std::vector <policy_coefficient> res;
+
         init_secret_key_K_Lin(N_ATTR, &sk);
         init_sk_tmp_vj(N_ATTR, kss, &vj);
 
-        struct node tree_root;
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-        std::vector <policy_coefficient> res;
-
         for (int no = 0; no < NTESTS; no++) {
             t[no] = cpucycles();
+            tree_root = node();
+            tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+
             bn_t *Wr;
             bn_t output1[kss + 1];
-            int w_rows = (kss + 1);
-            int w_cols = kss;
-            int r_rows = kss;
 
             //For all kss+1 secrets in v:
             for (int i = 0; i < (kss + 1); ++i) {
@@ -238,7 +223,7 @@ int main(int argc, char **argv) {
 
             for (int kj = 0; kj < N_ATTR; kj++) {
                 //Computes W_j * rj by matrix-vector multiplication.
-                Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, w_rows, w_cols, r_rows,order);
+                Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, (kss + 1), kss, kss,order);
                 v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[kj].vec_j, Wr, (kss + 1), (kss + 1), order);
 
                 //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
@@ -308,7 +293,7 @@ int main(int argc, char **argv) {
         //TODO start/complete decryption.
 
         /* Decryption */
-        printf("\n");
+        //printf("\n");
 
         //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
         //List of all the wj coefficients since j = N_ATTR and because we have (kss+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (kss+1).
@@ -329,9 +314,9 @@ int main(int argc, char **argv) {
         init_null_new_gt_t_var(tmp_res);
 
         //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
-        for (auto it = res.begin(); it != res.end(); ++it) {
-            init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
-        }
+        //for (auto it = res.begin(); it != res.end(); ++it) {
+            //init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
+        //}
 
         for (int go = 0; go < NTESTS; go++) {
             t[go] = cpucycles();
@@ -355,6 +340,7 @@ int main(int argc, char **argv) {
 
             for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
                 //Copy all the coefficients to the pack_coef list.
+                init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
                 bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
                 //Set up the two lists used for the pp_map_sim_oatep_k12 operation
                 for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {

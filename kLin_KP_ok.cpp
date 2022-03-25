@@ -50,7 +50,7 @@ unsigned long long t[NTESTS];
 
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_OK\n";
 
 
     if (argc == 1) {
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     int test_attr = atoi(argv[1]);
 
-    for (int iters = 1; iters < (test_attr+1); ++iters) {
+    for (int iters = 50; iters < (test_attr+50); ++iters) {
         srand(time(NULL));
         std::string keyInput = "";
         std::string encInput = "";
@@ -147,21 +147,11 @@ int main(int argc, char **argv) {
                 bn_rand_mod(A_tmp[d], order);
                 g2_mul_fix(mpk.a_mat[d], t_pre_h, A_tmp[d]);
             }
-            //Define dimensions of matrix A and vector v and calculate the matrix-vector product Av.
-            int a_rows = kss;
-            int a_cols = kss + 1;
-            int v_rows = kss + 1;
 
             bn_t *Av;
             bn_t output[kss];
-            Av = matrix_mul_vector(output, A_tmp, msk.v_share, a_rows, a_cols, v_rows, order);
+            Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
             gt_t map_tmp[kss];
-
-            for (int k = 0; k < kss; k++) {
-                //Initialize the gt entries of the e-mapping matrix doing matrix multiplications exponent-wise.
-                pp_map_oatep_k12(map_tmp[k], group1, group2);
-                gt_exp(mpk.e_mat[k], map_tmp[k], Av[k]);
-            }
 
             //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
             //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
@@ -170,28 +160,23 @@ int main(int argc, char **argv) {
                     if (j != 0) {
                         //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                         bn_rand_mod(msk.atts[j].w[m], order);
+                    } else if (m < kss) {
+                        pp_map_oatep_k12(map_tmp[m], group1, group2);
+                        gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                     } else {
                         //Set all entries in W0 to be zero
                         bn_zero(msk.atts[j].w[m]);
                     }
                 }
                 //Here matrix multiplication is being calculated.
-
-                bn_t one_as_bn;
-                init_null_new_bn_t_var(one_as_bn);
-                bn_set_dig(one_as_bn, 1);
-
-                g2_t one_as_g2;
-                init_null_new_g2_t_var(one_as_g2);
-                g2_mul_fix(one_as_g2, t_pre_h, one_as_bn);
-
-                g2_t *AWi;
-                g2_t output[kss * kss];
-                AWi = matrixG2_mul_matrixBN(output, mpk.a_mat, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss,one_as_g2);
+                bn_t *AWi;
+                bn_t output[kss * kss];
+                AWi = matrixA_mul_matrixW(output, A_tmp, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss, order);
 
                 //Initializes the "n" AW_i (masker public key).
                 for (int x = 0; x < (kss * kss); ++x) {
-                    g2_copy(mpk.mats[j].w[x], AWi[x]);
+                    //g2_copy(mpk.mats[j].w[x], AWi[x]);
+                    g2_mul_fix(mpk.mats[j].w[x], t_pre_h, AWi[x]);
                 }
             }
         }
@@ -329,9 +314,9 @@ int main(int argc, char **argv) {
         init_null_new_gt_t_var(tmp_res);
 
         //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
-        for (auto it = res.begin(); it != res.end(); ++it) {
-            init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
-        }
+        //for (auto it = res.begin(); it != res.end(); ++it) {
+            //init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
+        //}
 
         for (int go = 0; go < NTESTS; go++) {
             t[go] = cpucycles();
@@ -353,22 +338,25 @@ int main(int argc, char **argv) {
             res = std::vector<policy_coefficient>();
             res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
+            int idx = 0;
             for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+                idx = it3->leaf_index - 1;
                 //Copy all the coefficients to the pack_coef list.
-                bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
+                init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
+                bn_copy(pack_coef[idx], it3->coeff);
                 //Set up the two lists used for the pp_map_sim_oatep_k12 operation
                 for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
                     if (jk < (kss + 1)) {
                         g2_neg(pair_g2[jk], CT_A.C_1[jk]);
-                        g1_copy(pair_g1[jk], sk.sk[it3->leaf_index - 1].sk_one[jk]);
+                        g1_copy(pair_g1[jk], sk.sk[idx].sk_one[jk]);
                     } else {
-                        g2_copy(pair_g2[jk], CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[(jk + 1) % kss]);
-                        g1_copy(pair_g1[jk], sk.sk[it3->leaf_index - 1].sk_two[(jk + 1) % kss]);
+                        g2_copy(pair_g2[jk], CT_A.C_2[idx + 1].c_2_mat[(jk + 1) % kss]);
+                        g1_copy(pair_g1[jk], sk.sk[idx].sk_two[(jk + 1) % kss]);
                     }
                 }
                 pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
                 //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-                gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
+                gt_exp(exp_val, map_sim, pack_coef[idx]);
                 //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
                 gt_mul(prod, prod, exp_val);
             }

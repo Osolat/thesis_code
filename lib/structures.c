@@ -1459,3 +1459,75 @@ int init_ciphertext_K_Lin_ok(const uint32_t n_attr, const uint32_t kss, struct c
         return EXIT_SUCCESS;
     }
 }
+
+//Stuff for optimised decryption
+//TODO move stuff around in groups, move ct1 to h and sk1 to g. Other changes may be needed.
+int init_master_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_od *m) {
+    m->N_ATTR = n_attr;
+    m->N_SEC = kss;
+    m->atts = (struct k_lin_att_od * ) malloc ((n_attr + 1) * sizeof(struct k_lin_att_od));
+    m->v_share = (bn_t * ) malloc ((kss+1) * sizeof(bn_t));
+
+    if (m->atts == NULL || m->v_share == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            for (int j = 0; j <((kss+1) * kss) ; ++j) {
+                bn_null(m->atts[i].w[j]);
+                bn_new(m->atts[i].w[j]);
+            }
+        }
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_public_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_od *p) {
+    p->N_ATTR = n_attr;
+    p->K_SEC = kss;
+    p->mats = (struct k_lin_mat_od * ) malloc ((2 * (n_attr + 1)) * sizeof(struct k_lin_mat_od));
+    p->a_mat = (g2_t * ) malloc ((kss*(kss+1)) * sizeof(g2_t));
+    p->e_mat = (gt_t * ) malloc (kss * sizeof(gt_t));
+
+    if (p->mats == NULL || p->a_mat == NULL || p->e_mat == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_K_Lin_od(const uint32_t n_attr, struct secret_key_K_Lin_od *s) {
+    s->N_ATTR = n_attr;
+    s->sk = (struct k_lin_secret_key_od * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct k_lin_secret_key_od));
+
+    if (s->sk == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_sk_tmp_vj_od(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vj_od *v) {
+    v->N_ATTR = n_attr;
+    v->K_SEC = kss;
+    v->vj = (struct tmp_vj_od * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct tmp_vj_od));
+    v->rj = (struct tmp_rj_od * ) malloc (((n_attr + 1) * (kss+1)) * sizeof(struct tmp_rj_od));
+
+    if (v->vj == NULL || v->rj == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_ciphertext_K_Lin_od(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin_od *c) {
+    c->N_ATTR = n_attr;
+    c->K_SEC = kss;
+    c->C_2 = (struct c_attribute_K_Lin_od * ) malloc ((n_attr + 1) * sizeof(struct c_attribute_K_Lin_od));
+    c->C_1 = (g2_t * ) malloc ((kss+1) * sizeof(g2_t));
+
+    if (c->C_2 == NULL || c->C_1 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
