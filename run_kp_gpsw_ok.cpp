@@ -127,6 +127,7 @@ int main(int argc, char **argv) {
 
     /*Y = e(g,g)^y*/
     pp_map_oatep_k12(mpk.Y, g, h);
+    pc_map(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
     /*MPK = (T_i, Y)*/
 
@@ -134,9 +135,9 @@ int main(int argc, char **argv) {
     struct secret_key_kp_gpsw sk;
     struct node tree_root;
     std::vector<policy_coefficient> res;
-    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    
 
-    for (size_t i = 0; i < 1; i++) {
+    for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         init_secret_key_kp_gpsw(N_ATTR, &sk);
         for (int i = 0; i < N_ATTR; i++) {
@@ -145,6 +146,7 @@ int main(int argc, char **argv) {
         }
 
         /*Secret sharing of y, according to policy tree*/
+        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
         bn_t temp;
@@ -157,7 +159,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g1_mul(sk.D_values[it->leaf_index - 1], g, temp);
+            g1_mul_gen(sk.D_values[it->leaf_index - 1], temp);
         }
     }
     printf("[");
@@ -176,7 +178,7 @@ int main(int argc, char **argv) {
     bn_null(s);
     struct ciphertext_kp_gpsw E;
 
-    for (size_t i = 0; i < 1; i++) {
+    for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
 
         bn_rand_mod(s, order);
@@ -227,7 +229,7 @@ int main(int argc, char **argv) {
         g1_new(g1_temp);
         g1_null(g1_temp);
 
-        /* g1_t D_vals[res.size()];
+        g1_t D_vals[res.size()];
         g2_t E_vals[res.size()];
         for (auto it = res.begin(); it != res.end(); it++) {
             g1_new(D_vals[it->leaf_index - 1]);
@@ -236,15 +238,15 @@ int main(int argc, char **argv) {
             g2_null(E_vals[it->leaf_index - 1]);
             g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-        } */
+        }
 
-         for (auto it = res.begin(); it != res.end(); it++) {
-            g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            pp_map_oatep_k12(mapping, g1_temp, E.E_values[it->leaf_index - 1]);
-            // gt_exp(mapping, mapping, it->coeff);
-            gt_mul(F_root, F_root, mapping);
-        } 
-        //pc_map_sim(F_root, D_vals, E_vals, res.size());
+        /* for (auto it = res.begin(); it != res.end(); it++) {
+           g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
+           pp_map_oatep_k12(mapping, g1_temp, E.E_values[it->leaf_index - 1]);
+           // gt_exp(mapping, mapping, it->coeff);
+           gt_mul(F_root, F_root, mapping);
+       }  */
+        pc_map_sim(F_root, D_vals, E_vals, res.size());
 
         gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
