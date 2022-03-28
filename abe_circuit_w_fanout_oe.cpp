@@ -56,7 +56,7 @@ int main(int argc, char **argv){
     t[0] = cpucycles();
     int test_attr;
     if (argc < 2){
-        test_attr = 5;
+        test_attr = 2;
     } else {
         test_attr = atoi(argv[1]);
     }
@@ -138,6 +138,10 @@ int main(int argc, char **argv){
             g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
             g1_mul(big_ts_g1[i], g1, exponents[i]);
 
+
+            bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
+
+
             //g2_mul_fix(big_ts_g2_inv[i], t_pre_g2, t_i_inv);
             //cout << "t_" << i << "\n";
             //bn_print(t_i);
@@ -151,6 +155,7 @@ int main(int argc, char **argv){
             //cout << "g2^(1/t_" << i << ")\n";
             //g2_print(big_ts_g2_inv[i]);
         }
+        bn_mod_inv_sim(inv_exponents, exponents, order, N_ATTR);
         pc_map(big_y, g1, g2);
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
@@ -190,12 +195,13 @@ int main(int argc, char **argv){
         for (int i = 0; i < N_ATTR; i++) {
             g1_null(big_es[i]); g1_new(big_es[i]);
             g1_mul(big_es[i], big_ts_g1[i], s);
-
+            /*
             cout << "Value of big_es[" << i << "]\n";
             g1_print(big_es[i]);
 
             cout << "Value of g1^t_" << i << "\n";
             g1_print(big_ts_g1[i]);
+            */
         }
         //ATM we just encrypt 1
         gt_exp(e_prime, big_y, s);
@@ -234,23 +240,26 @@ int main(int argc, char **argv){
     //lsssRows = lsss.l_getRows();
     g2_t big_ds[N_ATTR];
     int attr_int;
-    bn_t rSecret; bn_null(rSecret); bn_new(rSecret); bn_zero(rSecret);
     bn_t shares[N_ATTR];
     for (int j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
         share_secret(&tree_root, y, order, vector, true);
+
         for (auto it = vector.begin(); it != vector.end(); it++) {
+
             int attr_index = it -> leaf_index-1;
+            bn_t tmp; bn_null(tmp); bn_new(tmp); bn_zero(tmp);
             //bn_add(rSecret, rSecret, it -> share);
             //bn_null(shares[attr_index]); bn_new(shares[attr_index]);
             //bn_copy(shares[attr_index], it -> share);
-            bn_null(inv_exponents[attr_index]); bn_new(inv_exponents[attr_index]);
-            bn_mod_inv(inv_exponents[attr_index], exponents[attr_index], order);
-            bn_mul(inv_exponents[attr_index], inv_exponents[attr_index], it -> share);
-            bn_mod(inv_exponents[attr_index], inv_exponents[attr_index], order);
-            g2_null(big_ds[attr_index]); g2_new(big_ds[attr_index]);
-            g2_mul(big_ds[attr_index], g2, inv_exponents[attr_index]);
 
+            bn_mul(tmp, inv_exponents[attr_index], it -> share);
+            bn_mod(tmp, tmp, order);
+
+            g2_null(big_ds[attr_index]); g2_new(big_ds[attr_index]);
+
+            g2_mul(big_ds[attr_index], g2, tmp);
+            /*
             cout << "Share\n";
             bn_print(it -> share);
 
@@ -258,7 +267,10 @@ int main(int argc, char **argv){
             g2_print(big_ds[attr_index]);
 
             cout << "leaf index: " << it->leaf_index << "\n";
+            */
+
         }
+
     } print_results("Results key gen():           ", t, NTESTS);
     //cout << "y\n";
     //bn_print(y);
@@ -293,8 +305,9 @@ int main(int argc, char **argv){
             int attr_index = it->leaf_index - 1;
 
             g1_mul(e_reconstruct[attr_index], big_es[attr_index], it -> coeff);
-            cout << "e_reconstruct[" << attr_index << "]\n";
-            g1_print(e_reconstruct[attr_index]);
+
+            //cout << "e_reconstruct[" << attr_index << "]\n";
+            //g1_print(e_reconstruct[attr_index]);
 
             //pc_map(big_vas[attr_index], e_reconstruct[attr_index], big_ds[attr_index]);
             //cout << "big_vas[" << attr_index << "]\n";
@@ -307,9 +320,9 @@ int main(int argc, char **argv){
             //cout << "recon element " << it -> second.element() << "\n";
             //bn_print(reconCoeffs[attr_index]);
 
-            cout << "leaf index: " << it->leaf_index << "\n";
+            //cout << "leaf index: " << it->leaf_index << "\n";
         }
-        pc_map_sim(r, big_es, big_ds, N_ATTR);
+        pc_map_sim(r, e_reconstruct, big_ds, N_ATTR);
     } print_results("Results decryption():           ", t, NTESTS);
     cout << "]\n";
 
