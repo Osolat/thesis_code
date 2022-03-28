@@ -102,7 +102,6 @@ int tree_from_string(string formula, struct node* root) {
     if (arguments.substr(0, 5).find("attr") != string::npos) {
         // Formula was OR(attr...)
         // TODO: More stuff when we find a leaf node
-        cout << "Tree with only a leaf? Was that intended?" << endl;
         root->gate = LEAF;
         // Is LEAF gate
         string s = string(&formula[first + 5], &formula[last]);
@@ -112,6 +111,9 @@ int tree_from_string(string formula, struct node* root) {
         bn_set_dig(root->attribute_zp, stoull(s));
         return EXIT_SUCCESS;
     }
+    bn_null(root->share);
+    bn_new(root->share);
+    bn_zero(root->share);
     add_children(root, arguments);
 
     return EXIT_SUCCESS;
@@ -149,6 +151,9 @@ int add_children(struct node* parent, string formula) {
     leftmost_child->gate = g;
     parent->firstchild = leftmost_child;
     parent->children_num++;
+    bn_null(leftmost_child->share);
+    bn_new(leftmost_child->share);
+    bn_zero(leftmost_child->share);
     if (g == OR_GATE || g == AND_GATE) {
         add_children(leftmost_child, string(&formula[open + 1], &formula[closing]));
     } else {
@@ -190,6 +195,9 @@ int add_children(struct node* parent, string formula) {
         brother->gate = g;
         current_node->nextsibling = brother;
         parent->children_num++;
+        bn_null(brother->share);
+        bn_new(brother->share);
+        bn_zero(brother->share);
         if (g == OR_GATE || g == AND_GATE) {
             add_children(brother, string(&sibling_string[open + 1], &sibling_string[closing]));
         } else {
@@ -592,4 +600,24 @@ std::string or_tree_formula(size_t size) {
     }
 
     return s;
+}
+
+
+void free_tree(struct node* root) {
+    std::stack<struct node*> node_stack;
+    node_stack.push(root);
+    while (!node_stack.empty()) {
+        struct node* current_node = node_stack.top();
+        node_stack.pop();
+        struct node* bro = current_node->nextsibling;
+        while (bro != NULL) {
+            node_stack.push(bro);
+            bro = bro->nextsibling;
+        }
+        struct node* child = current_node->firstchild;
+        if (child != NULL) {
+            node_stack.push(child);
+        }
+        delete current_node;
+    }
 }
