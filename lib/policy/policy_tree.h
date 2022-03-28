@@ -106,3 +106,5 @@ struct TreeUnsatisfiableException : public std::exception {
  * @param[in] size			- pointer to root of the access tree
  */
 std::string or_tree_formula(size_t size);
+
+void free_tree(struct node *root);

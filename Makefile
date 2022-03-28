@@ -2,7 +2,7 @@
 # Compilation makefile for all curves, all schemes
 .PHONY: all clean
 
-CXXFLAGS = -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native 
+CXXFLAGS = -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native
 CXX = g++
 
 RELIC_LIB_BLS_12_381=/usr/local/lib/librelic_s.a
@@ -26,7 +26,7 @@ main:
 	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_oe_10000 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o	
 
 main_old:

@@ -134,16 +134,16 @@ int main(int argc, char **argv) {
     struct secret_key_kp_gpsw sk;
     struct node tree_root;
     std::vector<policy_coefficient> res;
-    
+    init_secret_key_kp_gpsw(N_ATTR, &sk);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        init_secret_key_kp_gpsw(N_ATTR, &sk);
         for (int i = 0; i < N_ATTR; i++) {
             g1_new(sk.D_values[i]);
             g1_null(sk.D_values[i]);
         }
         /*Secret sharing of y, according to policy tree*/
+        free_tree(&tree_root);
         tree_root = node();
         tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
@@ -174,12 +174,12 @@ int main(int argc, char **argv) {
     bn_new(s);
     bn_null(s);
     struct ciphertext_kp_gpsw E;
+    init_ciphertext_kp_gpsw(test_attr, &E);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
 
         bn_rand_mod(s, order);
-        init_ciphertext_kp_gpsw(test_attr, &E);
         gt_exp(E.E_prime, mpk.Y, s);
         gt_mul(E.E_prime, E.E_prime, message);
         for (int i = 0; i < test_attr; i++) {
@@ -250,10 +250,13 @@ int main(int argc, char **argv) {
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
+
+    free_tree(&tree_root);
     /* printf("------------------ \n");
     gt_print(result); */
-    printf("----------------------\n");
-    printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
+    if (!gt_cmp(message, result) == RLC_EQ) {
+        printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
+    }
 
     return 0;
 }
