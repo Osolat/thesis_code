@@ -243,12 +243,13 @@ int main(int argc, char **argv){
     bn_t shares[N_ATTR];
     for (int j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
+        vector = std::vector<policy_coefficient>();
         share_secret(&tree_root, y, order, vector, true);
 
         for (auto it = vector.begin(); it != vector.end(); it++) {
 
             int attr_index = it -> leaf_index-1;
-            bn_t tmp; bn_null(tmp); bn_new(tmp); bn_zero(tmp);
+            bn_t tmp; bn_null(tmp); bn_new(tmp); 
             //bn_add(rSecret, rSecret, it -> share);
             //bn_null(shares[attr_index]); bn_new(shares[attr_index]);
             //bn_copy(shares[attr_index], it -> share);
