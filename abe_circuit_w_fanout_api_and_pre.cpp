@@ -55,7 +55,7 @@ int getAttrNumber(string attr) {
 
 
 void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit oe, N_attr = %d", N_ATTR);
+    printf("N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -402,8 +402,8 @@ int main(int argc, char **argv) {
 
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    test_abe(2);
-    test_abe(8);
+    //test_abe(2);
+    //test_abe(8);
     //test_abe(16);
     return 0;
 }
