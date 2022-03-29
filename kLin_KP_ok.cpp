@@ -46,8 +46,46 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
     printf("%llu,", average(t, tlen - 1));
 }
 
+static void do_stuff(unsigned long long *t, size_t tlen){
+    size_t i;
+    for (i = 0; i < tlen - 1; i++) {
+        t[i] = t[i + 1] - t[i];
+    }
+}
+
+static void test_stuff(unsigned long long *array, int idx, unsigned long long *t, size_t tlen){
+    std::cout << std::endl;
+    size_t i;
+    for (i = 0; i < tlen - 1; i++) {
+        t[i] = t[i + 1] - t[i];
+    }
+    array[idx] = average(t, tlen-1);
+}
+
+static void progressBar(int width, float progress){
+    int barWidth = width;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0)+1 << " %\r";
+    std::cout.flush();
+}
+
+static void print_result_array(unsigned long long *array) {
+    std::cout << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        printf("%llu \n", array[i]);
+    }
+}
+
 unsigned long long t[NTESTS];
 
+unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
     std::cout << "Benchmarking KP-ABE from K-Lin_OK\n";
@@ -60,24 +98,25 @@ int main(int argc, char **argv) {
 
     int test_attr = atoi(argv[1]);
 
-    for (int iters = 50; iters < (test_attr+50); ++iters) {
+    //for (int iters = 2; iters < (test_attr+2); ++iters) {
+
         srand(time(NULL));
         std::string keyInput = "";
         std::string encInput = "";
-        std::string keyInputWrong = "";
+        //std::string keyInputWrong = "";
 
-        uint32_t N_ATTR = iters;
+        uint32_t N_ATTR = test_attr;
 
         uint32_t *attr_int_list = NULL;
-        attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * iters);
+        attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
 
         int d = 1;
 
-        for (int k = 0; k < iters; k++) {
+        for (int k = 0; k < test_attr; k++) {
             keyInput = keyInput + "attr" + std::to_string(d);
             encInput = encInput + "attr" + std::to_string(d);
 
-            if (k < iters - 1) {
+            if (k < test_attr - 1) {
                 keyInput = keyInput + "|";
                 encInput = encInput + " and ";
             }
@@ -85,9 +124,9 @@ int main(int argc, char **argv) {
             d++;
         }
 
-        keyInputWrong = "attr1|attr2|attr3|attr4";
+        //keyInputWrong = "attr1|attr2|attr3|attr4";
 
-        bn_t attributes[iters];
+        bn_t attributes[test_attr];
         for (int i = 0; i < N_ATTR; ++i) {
             init_null_new_bn_t_var(attributes[i]);
             bn_set_dig(attributes[i], i + 1);
@@ -123,6 +162,7 @@ int main(int argc, char **argv) {
             init_null_new_g1_t_var(t_pre_g[i]);
             init_null_new_g2_t_var(t_pre_h[i]);
         }
+
         g1_t group1;
         g2_t group2;
         init_null_new_g1_t_var(group1);
@@ -134,7 +174,9 @@ int main(int argc, char **argv) {
         g2_mul_pre(t_pre_h, group2);
 
         /* Setup */
+        //float progress = 0.0;
         for (int jo = 0; jo < NTESTS; jo++) {
+            //progressBar(100, progress);
             t[jo] = cpucycles();
             bn_t A_tmp[(kss + 1) * kss];
             //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
@@ -179,28 +221,32 @@ int main(int argc, char **argv) {
                     g2_mul_fix(mpk.mats[j].w[x], t_pre_h, AWi[x]);
                 }
             }
+            //progress = ((float) (jo+1) / NTESTS);
         }
+        //test_stuff(resultArray, 0, t, NTESTS);
 
         printf("[");
         print_results("Results gen param():           ", t, NTESTS);
 
         /* Key Generation */
+        //float progress2 = 0.0;
         struct secret_key_K_Lin_ok sk;
         struct sk_tmp_vj_ok vj;
         init_secret_key_K_Lin_ok(N_ATTR, &sk);
         init_sk_tmp_vj_ok(N_ATTR, kss, &vj);
 
         struct node tree_root;
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         std::vector <policy_coefficient> res;
 
         for (int no = 0; no < NTESTS; no++) {
+
+            //progressBar(100, progress2);
+
             t[no] = cpucycles();
+            tree_root = node();
+            tree_from_string(and_tree_formula(N_ATTR), &tree_root);
             bn_t *Wr;
             bn_t output1[kss + 1];
-            int w_rows = (kss + 1);
-            int w_cols = kss;
-            int r_rows = kss;
 
             //For all kss+1 secrets in v:
             for (int i = 0; i < (kss + 1); ++i) {
@@ -223,7 +269,7 @@ int main(int argc, char **argv) {
 
             for (int kj = 0; kj < N_ATTR; kj++) {
                 //Computes W_j * rj by matrix-vector multiplication.
-                Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, w_rows, w_cols, r_rows,order);
+                Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, (kss + 1), kss, kss,order);
                 v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[kj].vec_j, Wr, (kss + 1), (kss + 1), order);
 
                 //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
@@ -231,17 +277,24 @@ int main(int argc, char **argv) {
                     g1_mul_fix(sk.sk[kj].sk_one[u], t_pre_g, v_plus_w[u]);
                 }
             }
+
+            //progress2 = ((float) (no+1) / NTESTS);
         }
+        //test_stuff(resultArray, 1, t, NTESTS);
 
         print_results("Results keyGen():           ", t, NTESTS);
 
         /* Encryption */
         //Initialize ciphertext struct
+        //float progress3 = 0.0;
         struct ciphertext_K_Lin_ok CT_A;
         init_ciphertext_K_Lin_ok(N_ATTR, kss, &CT_A);
         bn_t rnd_s[kss];
 
         for (int qo = 0; qo < NTESTS; qo++) {
+
+            //progressBar(100, progress3);
+
             t[qo] = cpucycles();
             gt_t gt_mul_test;
             gt_t gt_st_test;
@@ -287,15 +340,14 @@ int main(int argc, char **argv) {
                     g2_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
                 }
             }
+
+            //progress3 = ((float) (qo+1) / NTESTS);
         }
+        //test_stuff(resultArray, 2, t, NTESTS);
 
         print_results("Results encryption():           ", t, NTESTS);
-        //TODO start/complete decryption.
 
         /* Decryption */
-        printf("\n");
-
-        //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
         //List of all the wj coefficients since j = N_ATTR and because we have (kss+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (kss+1).
         bn_t pack_coef[N_ATTR];
 
@@ -312,13 +364,11 @@ int main(int argc, char **argv) {
         //Temporary variable supposed to hold intermediate result of the calculations.
         gt_t tmp_res;
         init_null_new_gt_t_var(tmp_res);
-
-        //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
-        //for (auto it = res.begin(); it != res.end(); ++it) {
-            //init_null_new_bn_t_var(pack_coef[it->leaf_index - 1]);
-        //}
-
+        //float progress4 = 0.0;
         for (int go = 0; go < NTESTS; go++) {
+
+            //progressBar(100, progress4);
+
             t[go] = cpucycles();
             gt_t map_sim;
             init_null_new_gt_t_var(map_sim);
@@ -361,27 +411,22 @@ int main(int argc, char **argv) {
                 gt_mul(prod, prod, exp_val);
             }
             //Here we complete the product of [-sTAv_j]^(wj)
-            gt_mul(tmp_res, tmp_res, prod);
-
-            //Printouts for correctness.
-            gt_t final_final_res;
-            init_null_new_gt_t_var(final_final_res);
-
-            gt_mul(final_final_res, tmp_res, CT_A.C_3_one_val);
-            //printf("The final result \n");
-            //gt_print(final_final_res);
-
-            //printf("Message M: \n");
-            //gt_print(CT_A.M);
+            gt_mul(tmp_res, prod, CT_A.C_3_one_val);
 
             //Uncomment for correctness check;
-            assert(gt_cmp(final_final_res, CT_A.M) == RLC_EQ);
-            std::cout << "[*] PASSED" << std::endl;
+            //assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
+            //std::cout << "[*] PASSED" << std::endl;
+
+            //progress4 = ((float) (go+1) / NTESTS);
         }
 
+        //test_stuff(resultArray, 3, t, NTESTS);
         print_results("Results decryption():           ", t, NTESTS);
         printf("]\n");
-    }
+    //}
+
+    //print_result_array(resultArray);
+
     //Test if msk and mpk is initialized correctly:
     //print_msk(&msk, N_ATTR, kss);
     //print_mpk(&mpk, N_ATTR, kss);
