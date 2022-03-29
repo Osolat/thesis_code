@@ -2,7 +2,7 @@
 # Compilation makefile for all curves, all schemes
 .PHONY: all clean
 
-CXXFLAGS = -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native
+CXXFLAGS = -O3 -funroll-loops -fomit-frame-pointer -finline-small-functions -march=native -mtune=native -g
 CXX = g++
 
 RELIC_LIB_BLS_12_381=/usr/local/lib/librelic_s.a

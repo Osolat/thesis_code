@@ -145,6 +145,7 @@ int main(int argc, char **argv) {
         }
         /*Secret sharing of y, according to policy tree*/
         free_tree(&tree_root);
+
         tree_root = node();
         tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();

@@ -602,10 +602,10 @@ std::string or_tree_formula(size_t size) {
     return s;
 }
 
-
 void free_tree(struct node* root) {
     std::stack<struct node*> node_stack;
     node_stack.push(root);
+    bool first = true;
     while (!node_stack.empty()) {
         struct node* current_node = node_stack.top();
         node_stack.pop();
@@ -618,6 +618,12 @@ void free_tree(struct node* root) {
         if (child != NULL) {
             node_stack.push(child);
         }
-        delete current_node;
+        if (!first) {
+            if (current_node != NULL) {
+                delete current_node;
+                current_node = NULL;
+            }
+        }
+        first = false;
     }
 }
