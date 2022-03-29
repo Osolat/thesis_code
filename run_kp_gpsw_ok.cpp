@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
     core_init();
 
     bn_t order;
+    bn_new(order);
+    bn_null(order);
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
@@ -135,7 +137,6 @@ int main(int argc, char **argv) {
     struct node tree_root;
     std::vector<policy_coefficient> res;
     init_secret_key_kp_gpsw(N_ATTR, &sk);
-
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         for (int i = 0; i < N_ATTR; i++) {
@@ -143,11 +144,15 @@ int main(int argc, char **argv) {
             g1_null(sk.D_values[i]);
         }
         /*Secret sharing of y, according to policy tree*/
+
+        /* code */
         free_tree(&tree_root);
+
         tree_root = node();
         tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
+
         bn_t temp;
         bn_new(temp);
         bn_null(temp);
@@ -251,7 +256,7 @@ int main(int argc, char **argv) {
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
 
-    free_tree(&tree_root);
+    // free_tree(&tree_root);
     /* printf("------------------ \n");
     gt_print(result); */
     if (!gt_cmp(message, result) == RLC_EQ) {

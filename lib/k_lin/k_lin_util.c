@@ -343,6 +343,159 @@ g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_c
 }
 
 
+//g2 versions
+g2_t *vector_trans_mul_matrix_g2(g2_t out[], bn_t v[], g2_t A[], int v_cols, int A_cols, int A_rows) {
+    if (v_cols != A_rows) {
+        printf("Error in matrix - trans vector dimensions! \n");
+        exit(-1);
+    }
+
+    g2_t tmp; g2_t tmp_add;
+    init_null_new_g2_t_var(tmp);
+    init_null_new_g2_t_var(tmp_add);
+    g2_mul_dig(tmp_add, tmp_add, 0);
+
+    int ctr = 0;
+    int z = 0;
+    int h = 0;
+    for (int i = 0; i < A_cols; ++i) {
+        z = h;
+        for (int j = 0; j < v_cols; ++j, z += A_cols) {
+            g2_mul(tmp, A[z], v[j]);
+            g2_add(tmp_add, tmp_add, tmp);
+        }
+        h++;
+        g2_copy(out[ctr], tmp_add);
+        g2_mul_dig(tmp_add, tmp_add, 0);
+        ctr ++;
+    }
+    return out;
+}
+
+g2_t *matrix_mul_scalar_g2(g2_t out[], g2_t A[], int scalar, int a_rows, int a_cols) {
+    g2_t tmp_mul;
+    init_null_new_g2_t_var(tmp_mul);
+    g2_mul_dig(tmp_mul, tmp_mul, 0);
+
+    bn_t scalarBn_t;
+    init_null_new_bn_t_var(scalarBn_t);
+    bn_set_dig(scalarBn_t, scalar);
+
+    for (int i = 0; i < (a_rows * a_cols); ++i) {
+        g2_mul(tmp_mul, A[i], scalarBn_t);
+        g2_copy(out[i], tmp_mul);
+        g2_mul_dig(tmp_mul, tmp_mul, 0);
+    }
+    return out;
+}
+
+g2_t *vector_add_vector_g2(g2_t out[], g2_t v1[], g2_t v2[], int v1_size, int v2_size) {
+    if (v1_size != v2_size) {
+        printf("Error in vector add vector dimensions! \n");
+        exit(-1);
+    }
+    g2_t tmp_add;
+    init_null_new_g2_t_var(tmp_add);
+    g2_mul_dig(tmp_add, tmp_add, 0);
+
+    for (int i = 0; i < v1_size; ++i) {
+        g2_add(tmp_add, v1[i], v2[i]);
+        g2_copy(out[i], tmp_add);
+        g2_mul_dig(tmp_add, tmp_add, 0);
+    }
+    return out;
+}
+
+g2_t *matrix_add_matrix_g2(g2_t out[], g2_t A[], g2_t Wi[], int a_rows, int a_cols, int w_rows, int w_cols) {
+    if (a_rows != w_rows || a_cols != w_cols) {
+        printf("Error in matrix add matrix dimensions! \n");
+        exit(-1);
+    }
+    g2_t tmp_add;
+    init_null_new_g2_t_var(tmp_add);
+    g2_mul_dig(tmp_add, tmp_add, 0);
+
+    for (int i = 0; i < (a_rows * a_cols); ++i) {
+        g2_add(tmp_add, A[i], Wi[i]);
+        g2_copy(out[i], tmp_add);
+        g2_mul_dig(tmp_add, tmp_add, 0);
+    }
+
+    return out;
+}
+
+g2_t *matrixG2_mul_vectorBN(g2_t out[], g2_t A[], bn_t v[], int a_rows, int a_cols, int v_rows) {
+    if (a_cols != v_rows) {
+        printf("Error in matrix - vector dimensions! \n");
+        exit(-1);
+    }
+
+    g2_t tmp; g2_t tmp_add;
+    init_null_new_g2_t_var(tmp);
+    init_null_new_g2_t_var(tmp_add);
+    g2_mul_dig(tmp_add, tmp_add, 0);
+
+    int z = 0;
+    int cter = 0;
+    int h = 0;
+    for (int x = 0; x < (a_rows); x++, h += a_cols) {
+        z = h;
+        for (int y = 0; y < v_rows; ++y) {
+            g2_mul(tmp, A[z], v[y]);
+            g2_add(tmp_add, tmp_add, tmp);
+            z++;
+        }
+
+        g2_copy(out[cter], tmp_add);
+        g2_mul_dig(tmp_add, tmp_add, 0);
+        cter ++;
+    }
+    return out;
+}
+
+g2_t *matrixG2_mul_matrixBN(g2_t out[], g2_t A[], bn_t Wi[], int a_rows, int a_cols, int w_rows, int w_cols, g2_t oneValue) {
+    if (a_cols != w_rows) {
+        printf("Error in matrix - matrix dimensions! \n");
+        exit(-1);
+    }
+
+    g2_t tmp; g2_t tmp_add;
+    init_null_new_g2_t_var(tmp);
+    init_null_new_g2_t_var(tmp_add);
+    g2_mul_dig(tmp_add, tmp_add, 0);
+
+    int ctt = 0;
+    int z = 0;
+    int h = 0;
+    int k = 0;
+    int g = 0;
+    for (int x = 0; x < a_rows; x++, g += a_cols) {
+        //2x
+        h = 0;
+        for (int i = 0; i < w_cols; ++i) {
+            //2x
+            z = h;
+            k = g;
+            for (int j = 0; j < a_cols; ++j, z += w_cols) {
+                //x3
+                g2_mul(tmp, A[k], Wi[z]);
+                g2_add(tmp_add, tmp_add, tmp);
+                k++;
+            }
+            h++;
+            g2_copy(out[ctt], tmp_add);
+            g2_mul_dig(tmp_add, tmp_add, 0);
+            ctt ++;
+        }
+        g2_mul_dig(tmp, tmp, 0);
+        g2_add(tmp, tmp, oneValue);
+        g2_mul_dig(tmp_add, tmp_add, 0);
+    }
+    return out;
+}
+
+
+
 void print_sk(struct secret_key_K_Lin *sk, struct sk_tmp_vj *shares, const uint32_t n, const uint32_t ksec) {
     for (int j = 0; j < (n + 1); ++j) {
         printf("sk_1_%d: \n", j);
