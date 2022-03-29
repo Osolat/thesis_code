@@ -599,3 +599,29 @@ std::string or_tree_formula(size_t size) {
 
     return s;
 }
+
+void free_tree(struct node* root) {
+    std::stack<struct node*> node_stack;
+    node_stack.push(root);
+    bool first = true;
+    while (!node_stack.empty()) {
+        struct node* current_node = node_stack.top();
+        node_stack.pop();
+        struct node* bro = current_node->nextsibling;
+        while (bro != NULL) {
+            node_stack.push(bro);
+            bro = bro->nextsibling;
+        }
+        struct node* child = current_node->firstchild;
+        if (child != NULL) {
+            node_stack.push(child);
+        }
+        if (!first) {
+            if (current_node != NULL) {
+                delete current_node;
+                current_node = NULL;
+            }
+        }
+        first = false;
+    }
+}

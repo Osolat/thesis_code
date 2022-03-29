@@ -713,6 +713,12 @@ struct public_key_kp_gpsw {
     g2_t *T_values;
 };
 
+struct public_key_kp_gpsw_oe {
+    uint32_t N_ATTR;
+    gt_t Y;
+    g1_t *T_values;
+};
+
 struct master_key_kp_gpsw {
     uint32_t N_ATTR;
     struct attribute *attributes;
@@ -724,16 +730,30 @@ struct secret_key_kp_gpsw {
     g1_t *D_values;
 };
 
+struct secret_key_kp_gpsw_oe {
+    g2_t *D_values;
+};
+
 struct ciphertext_kp_gpsw {
     bn_t gamma;
     gt_t E_prime;
     g2_t *E_values;
 };
 
+struct ciphertext_kp_gpsw_oe {
+    bn_t gamma;
+    gt_t E_prime;
+    g1_t *E_values;
+};
+
 int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m);
 int init_public_key_kp_gpsw(const uint32_t n_attr, struct public_key_kp_gpsw *p);
+int init_public_key_kp_gpsw_oe(const uint32_t n_attr, struct public_key_kp_gpsw_oe *p);
 int init_secret_key_kp_gpsw(const uint32_t n_attr, struct secret_key_kp_gpsw *sk);
+int init_secret_key_kp_gpsw_oe(const uint32_t n_attr, struct secret_key_kp_gpsw_oe *sk);
+
 int init_ciphertext_kp_gpsw(const uint32_t n_attr, struct ciphertext_kp_gpsw *E);
+int init_ciphertext_kp_gpsw_oe(const uint32_t n_attr, struct ciphertext_kp_gpsw_oe *E);
 
 struct master_key_kp_gpsw_lu {
     bn_t y;
