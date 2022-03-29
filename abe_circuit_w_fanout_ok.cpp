@@ -62,7 +62,7 @@ void test_abe(uint32_t N_ATTR) {
     std::string encInput = "";
 
     uint32_t *attr_int_list = NULL;
-    attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * N_ATTR);
+    attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
 
     int d = 1;
     for (int k = 0; k < N_ATTR; k++) {
@@ -109,7 +109,7 @@ void test_abe(uint32_t N_ATTR) {
     gt_t big_y;
     gt_null(big_y);
     gt_new(big_y);
-    g1_t big_ts_g1[N_ATTR];
+    g1_t big_ts_g2[N_ATTR];
     bn_t exponents[N_ATTR];
     bn_t inv_exponents[N_ATTR];
 
@@ -127,8 +127,8 @@ void test_abe(uint32_t N_ATTR) {
             bn_null(exponents[i]); bn_new(exponents[i]);
             bn_rand_mod(exponents[i], order);
 
-            g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
-            g1_mul(big_ts_g1[i], g1, exponents[i]);
+            g2_null(big_ts_g1[i]); g2_new(big_ts_g1[i]);
+            g2_mul(big_ts_g1[i], g1, exponents[i]);
 
 
             bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
