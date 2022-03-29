@@ -28,8 +28,8 @@ main:
 	$(CXX) -o objects/gpsw_oe_10000 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
-main_old:
-	$(info ************  Compiling ************)
+kLin_KP:
+	$(info ************  Compiling K-LIN ************)
 	g++ $(CXXFLAGS) -c lib/k_lin/k_lin_util.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/zp_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
@@ -38,18 +38,7 @@ main_old:
 	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
-	g++ $(CXXFLAGS) -c legacy/l_zobject.cpp
-	g++ $(CXXFLAGS) -c legacy/l_zfunctioninput.cpp 
-	g++ $(CXXFLAGS) -c legacy/l_zattributelist.cpp  
-	g++ $(CXXFLAGS) -c legacy/l_zpolicy.cpp
-	g++ $(CXXFLAGS) -c legacy/parser/l_zdriver.cpp
-	g++ $(CXXFLAGS) -c legacy/parser/zscanner.cpp 
-	g++ $(CXXFLAGS) -c legacy/parser/zparser.tab.cc
-	g++ $(CXXFLAGS) -c legacy/arith/l_zgroup.cpp
-	cc $(CXXFLAGS) -I$(RELIC_INCLUDE_BLS_12_381) -fPIC  -O3 -DSSL_LIB_INIT  -Wno-implicit-function-declaration  -c legacy/arith/l_zelement.c -o l_zelement.o
-	g++ $(CXXFLAGS) -c legacy/arith/l_zelement_bp.cpp -I$(RELIC_INCLUDE_BLS_12_381)
-	g++ $(CXXFLAGS) -c legacy/lsss/l_zlsss.cpp -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/main $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(LEGACY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) run_kp_gpsw_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_10000 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
 abe_circuit:
