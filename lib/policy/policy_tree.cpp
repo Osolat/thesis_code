@@ -245,7 +245,6 @@ void print_tree(struct node* root) {
     if (root->firstchild != NULL) {
         cout << "child" << endl;
         bn_print(root->firstchild->share);
-
         print_tree(root->firstchild);
     }
     if (root->nextsibling != NULL) {
@@ -472,7 +471,6 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     while (!node_stack.empty()) {
         current_node = node_stack.top();
         bn_copy(temp, *coefficients.top());
-
         node_stack.pop();
         coefficients.pop();
 
