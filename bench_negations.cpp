@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 10
+#define NTESTS 10000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -55,6 +55,8 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
+    int operands = atoi(argv[1]);
+
     core_init();
 
     bn_t order;
@@ -65,83 +67,56 @@ int main(int argc, char **argv) {
     pc_param_print();
     pc_get_ord(order);
 
-    g1_t g1_gen_var;
-    g2_t g2_gen_var;
+    gt_t m;
+    gt_new(m);
+    gt_null(m);
 
-    g1_null(g1_gen_var);
-    g1_new(g1_gen_var);
+    g1_t g1_operands[operands];
+    g1_t g1_operands_neg[operands];
 
-    g2_null(g2_gen_var);
-    g2_new(g2_gen_var);
+    g2_t g2_operands[operands];
 
-    g1_t g1_gen_vars[NTESTS];
-
-    std::cout << "G1 operations" << std::endl;
-    for (size_t i = 0; i < NTESTS; i++) {
-        g1_null(g1_gen_vars[i]);
-        g1_new(g1_gen_vars[i]);
-        g1_rand(g1_gen_vars[i]);
+    for (size_t i = 0; i < operands; i++) {
+        g1_new(g1_operands[i]);
+        g1_null(g1_operands[i]);
+        g1_new(g1_operands_neg[i]);
+        g1_null(g1_operands_neg[i]);
+        g1_rand(g1_operands[i]);
+        g2_new(g2_operands[i]);
+        g2_null(g2_operands[i]);
+        g2_rand(g2_operands[i]);
     }
 
-    g1_t temp_g1;
-    g1_null(temp_g1);
-    g1_new(temp_g1);
+    gt_t temp;
+    gt_new(temp);
+    gt_null(temp);
 
-    // g_i + g_j
+    gt_t prod;
+    gt_new(prod);
+    gt_null(prod);
     for (size_t i = 0; i < NTESTS; i++) {
+        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        g1_add(temp_g1, g1_gen_vars[i], g1_gen_vars[(i + 1) % NTESTS]);
+        for (size_t j = 0; j < operands; j++) {
+            pc_map(temp, g1_operands[j], g2_operands[j]);
+            gt_mul(prod, prod, temp);
+        }
+        gt_inv(prod, prod);
     }
+    printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
-        g1_free(g1_gen_vars[i]);
-    }
-
-    std::cout << "G2 operations" << std::endl;
-    // G2 tests
-    g2_t g2_gen_vars[NTESTS];
-
-    for (size_t i = 0; i < NTESTS; i++) {
-        g2_null(g2_gen_vars[i]);
-        g2_new(g2_gen_vars[i]);
-        g2_rand(g2_gen_vars[i]);
-    }
-
-    g2_t temp_g2;
-    g2_null(temp_g2);
-    g2_new(temp_g2);
-
-    // g_i + g_j
-    for (size_t i = 0; i < NTESTS; i++) {
+        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        g2_add(temp_g2, g2_gen_vars[i], g2_gen_vars[(i + 1) % NTESTS]);
-    }
-    print_results("Results gen param():           ", t, NTESTS);
-
-    for (size_t i = 0; i < NTESTS; i++) {
-        g2_free(g2_gen_vars[i]);
-    }
-
-    gt_t gt_gen_vars[NTESTS];
-    gt_t gt_temp;
-    gt_new(gt_temp);
-    gt_null(gt_temp);
-
-    for (size_t i = 0; i < NTESTS; i++) {
-        gt_null(gt_gen_vars[i]);
-        gt_new(gt_gen_vars[i]);
-        gt_rand(gt_gen_vars[i]);
-    }
-
-    // g_i + g_j
-    for (size_t i = 0; i < NTESTS; i++) {
-        t[i] = cpucycles();
-        gt_mul(gt_temp, gt_gen_vars[i], gt_gen_vars[(i + 1) % NTESTS]);
+        for (size_t j = 0; j < operands; j++) {
+            g1_neg(g1_operands_neg[j], g1_operands[j]);
+            pc_map(temp, g1_operands_neg[j], g2_operands[j]);
+            gt_mul(prod, prod, temp);
+        }
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
-
     core_clean();
     return 0;
 }

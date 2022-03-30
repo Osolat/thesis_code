@@ -97,15 +97,28 @@ int main(int argc, char **argv) {
     /* Setup */
 
     /*Generator of G1*/
+    /*Cyclical group so all elements are generators*/
     g1_t g;
     g1_new(g);
     g1_null(g);
-    g1_get_gen(g);
+    g1_rand(g);
 
     g2_t h;
     g2_new(h);
     g2_null(h);
-    g2_get_gen(h);
+    g2_rand(h);
+
+    g1_t pre_g[RLC_EP_TABLE_MAX];
+    g2_t pre_h[RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        /* code */
+        g1_new(pre_g[i]);
+        g1_null(pre_g[i]);
+        g2_new(pre_h[i]);
+        g2_null(pre_h[i]);
+    }
+    g1_mul_pre(pre_g, g);
+    g2_mul_pre(pre_h, h);
 
     /*For each attribute, t_i random*/
     for (int i = 0; i < N_ATTR; i++) {
@@ -124,7 +137,18 @@ int main(int argc, char **argv) {
     for (int i = 0; i < N_ATTR; i++) {
         g2_new(mpk.T_values[i]);
         g2_null(mpk.T_values[i]);
-        g2_mul(mpk.T_values[i], h, msk.t_values[i]);
+        g2_mul_fix(mpk.T_values[i], pre_h, msk.t_values[i]);
+    }
+
+    g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_new(pre_T[i][j]);
+            g2_null(pre_T[i][j]);
+        }
+        g2_mul_pre(pre_T[i], mpk.T_values[i]);
     }
 
     /*Y = e(g,g)^y*/
@@ -144,8 +168,6 @@ int main(int argc, char **argv) {
             g1_null(sk.D_values[i]);
         }
         /*Secret sharing of y, according to policy tree*/
-
-        /* code */
         free_tree(&tree_root);
 
         tree_root = node();
@@ -161,7 +183,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g1_mul(sk.D_values[it->leaf_index - 1], g, temp);
+            g1_mul_fix(sk.D_values[it->leaf_index - 1], pre_g, temp);
         }
     }
     printf("[");
@@ -190,7 +212,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < test_attr; i++) {
             g2_new(E.E_values[i]);
             g2_null(E.E_values[i]);
-            g2_mul(E.E_values[i], mpk.T_values[i], s);
+            g2_mul_fix(E.E_values[i], pre_T[i], s);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
