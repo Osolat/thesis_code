@@ -55,7 +55,7 @@ int getAttrNumber(string attr) {
 
 
 void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit base, N_attr = %d", N_ATTR);
+    printf("abe circuit pre, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -120,8 +120,8 @@ void test_abe(uint32_t N_ATTR) {
     for(int j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
 
-        //g1_mul_pre(t_pre_g1, g1);
-        //g2_mul_pre(t_pre_g2, g2);
+        g1_mul_pre(t_pre_g1, g1);
+        g2_mul_pre(t_pre_g2, g2);
 
 
         bn_rand_mod(y, order);
@@ -132,8 +132,9 @@ void test_abe(uint32_t N_ATTR) {
             bn_rand_mod(exponents[i], order);
 
             g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
-            g1_mul(big_ts_g1[i], g1, exponents[i]);
-            //g1_mul_pre(t_pre_g1_exp[i], big_ts_g1[i]);
+            g1_mul_fix(big_ts_g1[i], t_pre_g1, exponents[i]);
+            g1_mul_pre(t_pre_g1_exp[i], big_ts_g1[i]);
+            
 
             bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
 
@@ -156,6 +157,7 @@ void test_abe(uint32_t N_ATTR) {
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
     //Encryption
+    //cout << "sheesh 1\n";
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -180,7 +182,7 @@ void test_abe(uint32_t N_ATTR) {
         bn_rand_mod(s, order);
         for (int i = 0; i < N_ATTR; i++) {
             g1_null(big_es[i]); g1_new(big_es[i]);
-            g1_mul(big_es[i], big_ts_g1[i], s);
+            g1_mul_fix(big_es[i], t_pre_g1_exp[i], s);
             /*
             cout << "Value of big_es[" << i << "]\n";
             g1_print(big_es[i]);
@@ -245,7 +247,7 @@ void test_abe(uint32_t N_ATTR) {
 
             g2_null(big_ds[attr_index]); g2_new(big_ds[attr_index]);
 
-            g2_mul(big_ds[attr_index], g2, tmp);
+            g2_mul_fix(big_ds[attr_index], t_pre_g2, tmp);
             /*
             cout << "Share\n";
             bn_print(it -> share);
@@ -296,6 +298,8 @@ void test_abe(uint32_t N_ATTR) {
             //cout << "e_reconstruct[" << attr_index << "]\n";
             //g1_print(e_reconstruct[attr_index]);
 
+            pc_map(big_vas[attr_index], big_es[attr_index], d_reconstruct[attr_index]);
+            gt_mul(r, r, big_vas[attr_index]);
             //cout << "big_vas[" << attr_index << "]\n";
             //gt_print(big_vas[attr_index]);
 
@@ -308,7 +312,7 @@ void test_abe(uint32_t N_ATTR) {
 
             //cout << "leaf index: " << it->leaf_index << "\n";
         }
-        pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
+        //pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
     } print_results("Results decryption():           ", t, NTESTS);
     cout << "]\n";
 

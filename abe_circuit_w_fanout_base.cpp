@@ -296,6 +296,8 @@ void test_abe(uint32_t N_ATTR) {
             //cout << "e_reconstruct[" << attr_index << "]\n";
             //g1_print(e_reconstruct[attr_index]);
 
+            pc_map(big_vas[attr_index], big_es[attr_index], d_reconstruct[attr_index]);
+            gt_mul(r, r, big_vas[attr_index]);
             //cout << "big_vas[" << attr_index << "]\n";
             //gt_print(big_vas[attr_index]);
 
@@ -308,7 +310,7 @@ void test_abe(uint32_t N_ATTR) {
 
             //cout << "leaf index: " << it->leaf_index << "\n";
         }
-        pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
+        //pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
     } print_results("Results decryption():           ", t, NTESTS);
     cout << "]\n";
 

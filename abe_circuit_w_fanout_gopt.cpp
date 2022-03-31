@@ -156,6 +156,7 @@ void test_abe(uint32_t N_ATTR) {
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
     //Encryption
+
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -276,7 +277,7 @@ void test_abe(uint32_t N_ATTR) {
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
-    g2_t d_reconstruct[N_ATTR];
+    g1_t e_reconstruct[N_ATTR];
     bn_t reconCoeffs[N_ATTR];
     gt_t r;
     for (int j = 0; j < NTESTS; j++) {
@@ -288,14 +289,16 @@ void test_abe(uint32_t N_ATTR) {
             //string label = it -> second.label();
             //attr_int = getAttrNumber(label);
             int attr_index = it->leaf_index - 1;
-            g2_null(d_reconstruct[attr_index]); g2_new(d_reconstruct[attr_index]);
+            g1_null(e_reconstruct[attr_index]); g1_new(e_reconstruct[attr_index]);
             gt_null(big_vas[attr_index]); gt_new(big_vas[attr_index]);
 
-            g2_mul(d_reconstruct[attr_index], big_ds[attr_index], it -> coeff);
+            g1_mul(e_reconstruct[attr_index], big_es[attr_index], it -> coeff);
 
             //cout << "e_reconstruct[" << attr_index << "]\n";
             //g1_print(e_reconstruct[attr_index]);
 
+            pc_map(big_vas[attr_index], e_reconstruct[attr_index], big_ds[attr_index]);
+            gt_mul(r, r, big_vas[attr_index]);
             //cout << "big_vas[" << attr_index << "]\n";
             //gt_print(big_vas[attr_index]);
 
@@ -308,7 +311,7 @@ void test_abe(uint32_t N_ATTR) {
 
             //cout << "leaf index: " << it->leaf_index << "\n";
         }
-        pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
+        //pc_map_sim(r, big_es, d_reconstruct, N_ATTR);
     } print_results("Results decryption():           ", t, NTESTS);
     cout << "]\n";
 

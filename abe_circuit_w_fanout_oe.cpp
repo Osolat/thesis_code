@@ -156,15 +156,8 @@ void test_abe(uint32_t N_ATTR) {
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
     //Encryption
-    L_OpenABEAttributeList *attrList = nullptr;
 
-    unique_ptr<L_OpenABEFunctionInput> encFuncInput = nullptr;
-    encFuncInput = L_createAttributeList(encInput);
 
-    if (encFuncInput == nullptr) {
-        printf("Invalid attribute encryption input\n");
-        return;
-    }
     //cout << "sheesh 1\n";
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -403,7 +396,7 @@ int main(int argc, char **argv) {
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
     test_abe(2);
-    test_abe(8);
+    //test_abe(8);
     //test_abe(16);
     return 0;
 }
