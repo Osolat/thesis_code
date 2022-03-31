@@ -55,7 +55,7 @@ int getAttrNumber(string attr) {
 
 
 void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit base, N_attr = %d", N_ATTR);
+    printf("abe circuit gopt, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -377,24 +377,33 @@ void test_abe(uint32_t N_ATTR) {
     //pp_map_sim_oatep_k12(blindingFactor, big_es, d_reconstruct, N_ATTR);
      */
     //
-    cout << "[*] Correctness check r = E': " << (gt_cmp(r, e_prime) == RLC_EQ) << endl;
-
-    cout << "Value of blinding factor before decrypt\n";
-    gt_print(e_prime);
-    cout << "Value of blinding factor after decrypt\n";
-    gt_print(r);
+    int cmp = gt_cmp(r, e_prime) == RLC_EQ; 
+    cout << "[*] Correctness check r = E': " << cmp << "\n";
+    if (cmp != 1) {
+        cout << "Value of blinding factor before decrypt\n";
+        gt_print(e_prime);
+        cout << "Value of blinding factor after decrypt\n";
+        gt_print(r);
+    }
 }
 
 int main(int argc, char **argv) {
     t[0] = cpucycles();
-    int test_attr;
 
 
-    uint32_t N_ATTR = test_attr;
-
+    //uint32_t N_ATTR = test_attr;
+    int *test_attrs;
+    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
+        test_attrs = (int *) malloc(sizeof(int) * argc-2);
+        for (int i = 2; i < argc; i++){
+            test_abe(atoi(argv[i]));
+        }
+    } else {
+        test_abe(2);
+    }
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    test_abe(2);
+    //test_abe(2);
     //test_abe(8);
     //test_abe(16);
     return 0;

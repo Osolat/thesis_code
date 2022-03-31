@@ -287,18 +287,19 @@ void test_abe(uint32_t N_ATTR) {
         vector = std::vector<policy_coefficient>();
         vector = recover_coefficients(&tree_root, attributes, N_ATTR);
         for (auto it = vector.begin(); it != vector.end(); it++) {
-            //string label = it -> second.label();
+             //string label = it -> second.label();
             //attr_int = getAttrNumber(label);
             int attr_index = it->leaf_index - 1;
-            g2_null(d_reconstruct[attr_index]); g2_new(d_reconstruct[attr_index]);
+            //g2_null(d_reconstruct[attr_index]); g2_new(d_reconstruct[attr_index]);
             gt_null(big_vas[attr_index]); gt_new(big_vas[attr_index]);
 
-            g2_mul(d_reconstruct[attr_index], big_ds[attr_index], it -> coeff);
+            //g2_mul(d_reconstruct[attr_index], big_ds[attr_index], it -> coeff);
 
             //cout << "e_reconstruct[" << attr_index << "]\n";
             //g1_print(e_reconstruct[attr_index]);
 
-            pc_map(big_vas[attr_index], big_es[attr_index], d_reconstruct[attr_index]);
+            pc_map(big_vas[attr_index], big_es[attr_index], big_ds[attr_index]);
+            gt_exp(big_vas[attr_index], big_vas[attr_index], it -> coeff);
             gt_mul(r, r, big_vas[attr_index]);
             //cout << "big_vas[" << attr_index << "]\n";
             //gt_print(big_vas[attr_index]);
@@ -378,24 +379,40 @@ void test_abe(uint32_t N_ATTR) {
     //pp_map_sim_oatep_k12(blindingFactor, big_es, d_reconstruct, N_ATTR);
      */
     //
-    cout << "[*] Correctness check r = E': " << (gt_cmp(r, e_prime) == RLC_EQ) << endl;
-
-    cout << "Value of blinding factor before decrypt\n";
-    gt_print(e_prime);
-    cout << "Value of blinding factor after decrypt\n";
-    gt_print(r);
+    int cmp = gt_cmp(r, e_prime) == RLC_EQ; 
+    cout << "[*] Correctness check r = E': " << cmp << "\n";
+    if (cmp != 1) {
+        cout << "Value of blinding factor before decrypt\n";
+        gt_print(e_prime);
+        cout << "Value of blinding factor after decrypt\n";
+        gt_print(r);
+    }
 }
 
 int main(int argc, char **argv) {
     t[0] = cpucycles();
-    int test_attr;
 
 
-    uint32_t N_ATTR = test_attr;
-
+    //uint32_t N_ATTR = test_attr;
+    int *test_attrs;
+    if (argc > 2 && (strcmp("default", argv[1]) == 0 || strcmp("-d", argv[1]) == 0)) {
+        cout << "how the fluuf\n";
+        int n_attr_set[4] = {2, 32, 512, 1024};
+        for (int i = 0; i < 4; i++) {
+            test_abe(n_attr_set[i]);
+        } 
+    }
+    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
+        test_attrs = (int *) malloc(sizeof(int) * argc-2);
+        for (int i = 2; i < argc; i++){
+            test_abe(atoi(argv[i]));
+        }
+    } else {
+        test_abe(2);
+    }
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    test_abe(2);
+    //test_abe(2);
     //test_abe(8);
     //test_abe(16);
     return 0;

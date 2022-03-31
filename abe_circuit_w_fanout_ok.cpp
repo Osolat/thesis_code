@@ -119,8 +119,8 @@ void test_abe(uint32_t N_ATTR) {
     for(int j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
 
-        g1_mul_pre(t_pre_g1, g1);
-        g2_mul_pre(t_pre_g2, g2);
+        //g1_mul_pre(t_pre_g1, g1);
+        //g2_mul_pre(t_pre_g2, g2);
 
 
         bn_rand_mod(y, order);
@@ -131,7 +131,7 @@ void test_abe(uint32_t N_ATTR) {
             bn_rand_mod(exponents[i], order);
 
             g1_null(big_ts_g2[i]); g1_new(big_ts_g2[i]);
-            g2_mul_fix(big_ts_g2[i], t_pre_g2, exponents[i]);
+            g2_mul_gen(big_ts_g2[i], exponents[i]);
             g2_mul_pre(t_pre_g2_exp[i], big_ts_g2[i]);
 
             bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
@@ -245,7 +245,7 @@ void test_abe(uint32_t N_ATTR) {
 
             g1_null(big_ds[attr_index]); g1_new(big_ds[attr_index]);
 
-            g1_mul_fix(big_ds[attr_index], t_pre_g1, tmp);
+            g1_mul_gen(big_ds[attr_index], tmp);
             /*
             cout << "Share\n";
             bn_print(it -> share);
@@ -375,24 +375,33 @@ void test_abe(uint32_t N_ATTR) {
     //pp_map_sim_oatep_k12(blindingFactor, big_es, d_reconstruct, N_ATTR);
      */
     //
-    cout << "[*] Correctness check r = E': " << (gt_cmp(r, e_prime) == RLC_EQ) << endl;
-
-    cout << "Value of blinding factor before decrypt\n";
-    gt_print(e_prime);
-    cout << "Value of blinding factor after decrypt\n";
-    gt_print(r);
+    int cmp = gt_cmp(r, e_prime) == RLC_EQ; 
+    cout << "[*] Correctness check r = E': " << cmp << "\n";
+    if (cmp != 1) {
+        cout << "Value of blinding factor before decrypt\n";
+        gt_print(e_prime);
+        cout << "Value of blinding factor after decrypt\n";
+        gt_print(r);
+    }
 }
 
 int main(int argc, char **argv) {
     t[0] = cpucycles();
-    int test_attr;
 
-
-    uint32_t N_ATTR = test_attr;
-
+    cout << "sheeshyeesh\n";
+    //uint32_t N_ATTR = test_attr;
+    int *test_attrs;
+    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
+        test_attrs = (int *) malloc(sizeof(int) * argc-2);
+        for (int i = 2; i < argc; i++){
+            test_abe(atoi(argv[i]));
+        }
+    } else {
+        test_abe(2);
+    }
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    test_abe(2);
+    //test_abe(2);
     //test_abe(8);
     //test_abe(16);
     return 0;

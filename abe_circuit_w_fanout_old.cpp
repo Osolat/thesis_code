@@ -52,24 +52,33 @@ int getAttrNumber(string attr) {
 }
 
 
+int main(int argc, char **argv){
+    t[0] = cpucycles();
+    int test_attr;
+    if (argc < 2){
+        test_attr = 5;
+        printf("sheesh \n");
+    } else {
+        test_attr = atoi(argv[1]);
+        printf("yeesh \n");
+    }
 
-
-void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit GAP, N_attr = %d", N_ATTR);
-
-
+    printf("N_attr = %d", test_attr);
     std::string keyInput = "";
     std::string encInput = "";
 
+    uint32_t N_ATTR = test_attr;
+
     uint32_t *attr_int_list = NULL;
-    attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * N_ATTR);
+    attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
 
     int d = 1;
-    for (int k = 0; k < N_ATTR; k++) {
+
+    for (int k = 0; k < test_attr; k++) {
         keyInput = keyInput + "attr" + std::to_string(d);
         encInput = encInput + "attr" + std::to_string(d);
 
-        if (k < N_ATTR - 1) {
+        if (k < test_attr - 1) {
             keyInput = keyInput + " and ";
             encInput = encInput + "|";
         }
@@ -79,6 +88,7 @@ void test_abe(uint32_t N_ATTR) {
         d++;
 
     }
+
     core_init();
 
     //Public params
@@ -88,75 +98,74 @@ void test_abe(uint32_t N_ATTR) {
     pc_param_print();
     pc_get_ord(order);
 
+    printf("yeet\n");
+
 
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g1_new(g2);
 
     g1_get_gen(g1);
-    //cout << "g1\n";
-    //g1_print(g1);
+    cout << "g1\n";
+    g1_print(g1);
     g2_get_gen(g2);
-    //cout << "g2\n";
-    //g2_print(g2);
+    cout << "g2\n";
+    g2_print(g2);
 
     g1_t t_pre_g1[RLC_EP_TABLE_MAX];
     g2_t t_pre_g2[RLC_EP_TABLE_MAX];
-    g1_t t_pre_g1_exp[N_ATTR][RLC_EP_TABLE_MAX];
     for (int i = 0; i < RLC_EP_TABLE; i++) {
         g1_new(t_pre_g1[i]);
         g2_new(t_pre_g2[i]);
-        for (int j = 0; j < N_ATTR; j++){
-            g1_new(t_pre_g1_exp[j][i])
-        }
     }
-    bn_t y; bn_null(y); bn_new(y);
-    gt_t big_y;
-    gt_null(big_y);
-    gt_new(big_y);
+    gt_t gt; gt_null(gt); gt_new(gt);
+    pc_map(gt, g1, g2);
+    cout << "gt\n";
+    gt_print(gt);
+
+
+
+    L_ZP y; bn_null(y.m_ZP); bn_new(y.m_ZP);
+    y.isOrderSet = true;
+    bn_copy(y.order, order);
+    bn_rand_mod(y.m_ZP, order);
+
+    gt_t big_y; gt_null(big_y); gt_new(big_y);
     g1_t big_ts_g1[N_ATTR];
-    bn_t exponents[N_ATTR];
-    bn_t inv_exponents[N_ATTR];
+    g2_t big_ts_g2_inv[N_ATTR];
 
-    for(int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-
-        //g1_mul_pre(t_pre_g1, g1);
-        //g2_mul_pre(t_pre_g2, g2);
-
-
-        bn_rand_mod(y, order);
-
-
-        for (int i = 0; i < N_ATTR; i++) {
-            bn_null(exponents[i]); bn_new(exponents[i]);
-            bn_rand_mod(exponents[i], order);
-
-            g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
-            g1_mul_gen(big_ts_g1[i], exponents[i]);
-            g1_mul_pre(t_pre_g1_exp[i], big_ts_g1[i]);
-
-            bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
-
-
-            //g2_mul_fix(big_ts_g2_inv[i], t_pre_g2, t_i_inv);
-            //cout << "t_" << i << "\n";
-            //bn_print(t_i);
-
-            //cout << "1/t_" << i << "\n";
-            //bn_print(t_i_inv);
-
-            //cout << "g1^t_" << i << "\n";
-            //g1_print(big_ts_g1[i]);
-
-            //cout << "g2^(1/t_" << i << ")\n";
-            //g2_print(big_ts_g2_inv[i]);
-        }
-        bn_mod_inv_sim(inv_exponents, exponents, order, N_ATTR);
-        pc_map(big_y, g1, g2);
-        gt_exp(big_y, big_y, y);
-    } printf("["); print_results("Results gen param():           ", t, NTESTS);
+    for (int i = 0; i < N_ATTR; i++) {
+        bn_t t_i; bn_null(t_i); bn_new(t_i);
+        bn_t t_i_inv; bn_null(t_i_inv); bn_new(t_i_inv);
+        bn_rand_mod(t_i, order);
+        cout << "t_" << i << "\n";
+        bn_print(t_i);
+        bn_mod_inv(t_i_inv, t_i, order);
+        cout << "1/t_" << i << "\n";
+        bn_print(t_i_inv);
+        g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
+        g2_null(big_ts_g2_inv[i]); g2_new(big_ts_g2_inv[i]);
+        g1_mul(big_ts_g1[i], g1, t_i);
+        cout << "g1^t_" << i << "\n";
+        g1_print(big_ts_g1[i]);
+        g2_mul(big_ts_g2_inv[i], g2, t_i_inv);
+        cout << "g2^(1/t_" << i << ")\n";
+        g2_print(big_ts_g2_inv[i]);
+    }
+    gt_exp(big_y, gt, y.m_ZP);
+    cout << "big_y\n";
+    gt_print(big_y);
     //Encryption
-    bn_t attributes[N_ATTR];
+    L_OpenABEAttributeList *attrList = nullptr;
+
+    unique_ptr<L_OpenABEFunctionInput> encFuncInput = nullptr;
+    encFuncInput = L_createAttributeList(encInput);
+
+    if (encFuncInput == nullptr) {
+        printf("Invalid attribute encryption input\n");
+        return(EXIT_FAILURE);
+    }
+    cout << "sheesh 1\n";
+    bn_t attributes[test_attr];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
         bn_new(attributes[i]);
@@ -171,28 +180,21 @@ void test_abe(uint32_t N_ATTR) {
 
     g1_t big_es[N_ATTR];
     bn_t s; bn_null(s); bn_new(s)
+    bn_rand_mod(s, order);
+    cout << "s\n";
+    bn_print(s);
+    for (int i = 0; i < N_ATTR; i++) {
+        g1_null(big_es[i]); g1_new(big_es[i]);
+        cout << "Value of g1^t_" << i << "\n";
+        g1_print(big_ts_g1[i]);
+        g1_copy(big_es[i], big_ts_g1[i]);
+        g1_mul(big_es[i], big_es[i], s);
+        cout << "Value of big_es[" << i << "]\n";
+        g1_print(big_es[i]);
+    }
     gt_t e_prime; gt_null(e_prime); gt_new(e_prime);
-
-    //cout << "s\n";
-    //bn_print(s);
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-        bn_rand_mod(s, order);
-        for (int i = 0; i < N_ATTR; i++) {
-            g1_null(big_es[i]); g1_new(big_es[i]);
-            g1_mul_fix(big_es[i], t_pre_g1_exp[i], s);
-            /*
-            cout << "Value of big_es[" << i << "]\n";
-            g1_print(big_es[i]);
-
-            cout << "Value of g1^t_" << i << "\n";
-            g1_print(big_ts_g1[i]);
-            */
-        }
-        //ATM we just encrypt 1
-        gt_exp(e_prime, big_y, s);
-    } print_results("Results encryption():           ", t, NTESTS);
-
+    //ATM we just encrypt 1
+    gt_exp(e_prime, big_y, s);
     //KeyGen
     //L_OpenABEPolicy *policy;
     //L_OpenABELSSS lsss(1);
@@ -217,53 +219,40 @@ void test_abe(uint32_t N_ATTR) {
     struct node tree_root;
     //cout << or_tree_formula(N_ATTR) << "\n";
     //cout << and_tree_formula(N_ATTR) << "\n";
-    vector<policy_coefficient> vector;
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-    //cout << "Key input\n";
-    //print_tree(&tree_root);
-    //cout << "shuus\n";
+    vector<policy_coefficient> vector;
+    share_secret(&tree_root, y.m_ZP, order, vector, true);
+
+    cout << "Key input\n";
+    print_tree(&tree_root);
+    cout << "shuus\n";
     //lsss.l_shareSecret(policy, y);
     //lsssRows = lsss.l_getRows();
     g2_t big_ds[N_ATTR];
     int attr_int;
+    bn_t rSecret; bn_null(rSecret); bn_new(rSecret); bn_zero(rSecret);
     bn_t shares[N_ATTR];
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-        vector = std::vector<policy_coefficient>();
-        share_secret(&tree_root, y, order, vector, true);
+    for (auto it = vector.begin(); it != vector.end(); it++) {
+        //My name is Deez
+        cout << "Share\n";
+        bn_print(it -> share);
+        //string label = it -> second.label();
+        int attr_index = it -> leaf_index-1;
+        bn_add(rSecret, rSecret, it -> share);
+        bn_null(shares[attr_index]); bn_new(shares[attr_index]);
+        bn_copy(shares[attr_index], it -> share);
+        g2_null(big_ds[attr_index); g2_new(big_ds[attr_index]);
+        g2_mul(big_ds[attr_index], big_ts_g2_inv[attr_index], shares[attr_index]);
+        cout << "D(" << attr_index<< ")\n";
+        g2_print(big_ds[attr_index]);
+    }
+    cout << "y\n";
+    bn_print(y.m_ZP);
+    bn_mod(rSecret, rSecret, order);
+    cout << "sum of shares\n";
+    bn_print(rSecret);
 
-        for (auto it = vector.begin(); it != vector.end(); it++) {
 
-            int attr_index = it -> leaf_index-1;
-            bn_t tmp; bn_null(tmp); bn_new(tmp);
-            //bn_add(rSecret, rSecret, it -> share);
-            //bn_null(shares[attr_index]); bn_new(shares[attr_index]);
-            //bn_copy(shares[attr_index], it -> share);
-
-            bn_mul(tmp, inv_exponents[attr_index], it -> share);
-            bn_mod(tmp, tmp, order);
-
-            g2_null(big_ds[attr_index]); g2_new(big_ds[attr_index]);
-
-            g2_mul_gen(big_ds[attr_index], tmp);
-            /*
-            cout << "Share\n";
-            bn_print(it -> share);
-
-            cout << "D(" << attr_index<< ")\n";
-            g2_print(big_ds[attr_index]);
-
-            cout << "leaf index: " << it->leaf_index << "\n";
-            */
-
-        }
-
-    } print_results("Results key gen():           ", t, NTESTS);
-    //cout << "y\n";
-    //bn_print(y);
-    //bn_mod(rSecret, rSecret, order);
-    //cout << "sum of shares\n";
-    //bn_print(rSecret);
 
 
     //Decryption
@@ -272,48 +261,37 @@ void test_abe(uint32_t N_ATTR) {
     //lsssRows = lsss.l_getRows();
     try {
         check_satisfiability(&tree_root, attributes, N_ATTR);
-        //std::cout << "Satisfiable with correct attributes" << std::endl;
+        std::cout << "Satisfiable with correct attributes" << std::endl;
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
     g1_t e_reconstruct[N_ATTR];
     bn_t reconCoeffs[N_ATTR];
-
+    vector = std::vector<policy_coefficient>();
+    vector = recover_coefficients(&tree_root, attributes, N_ATTR);
+    for (auto it = vector.begin(); it != vector.end(); it++) {
+        gt_null(big_vas[N_ATTR]); gt_new(big_vas[N_ATTR]);
+        cout << "recon coefficient\n";
+        bn_print(it -> coeff);
+        //string label = it -> second.label();
+        //attr_int = getAttrNumber(label);
+        int attr_index = it -> leaf_index-1;
+        cout << "leaf index: " << it -> leaf_index << "\n"
+        bn_null(reconCoeffs[attr_index]); bn_new(reconCoeffs[attr_index]);
+        //cout << "recon element " << it -> second.element() << "\n";
+        bn_copy(reconCoeffs[attr_index], it -> coeff);
+        //cout << "recon element zp " << attr_index << "\n";
+        //bn_print(reconCoeffs[attr_index]);
+        g1_mul(big_es[attr_index], big_es[attr_index], reconCoeffs[attr_index]);
+        //cout << "e_reconstruct[" << attr_index << "]\n";
+        //g1_print(e_reconstruct[attr_index]);
+        //pc_map(big_vas[attr_index], e_reconstruct[attr_index], big_ds[attr_index]);
+        //cout << "big_vas[" << attr_index << "]\n";
+        //gt_print(big_vas[attr_index]);
+    }
     gt_t r; gt_null(r); gt_new(r);
-    for (int j = 0; j < NTESTS; j++) {
-        t[j] = cpucycles();
-        vector = std::vector<policy_coefficient>();
-        vector = recover_coefficients(&tree_root, attributes, N_ATTR);
-        for (auto it = vector.begin(); it != vector.end(); it++) {
-            g1_null(e_reconstruct[N_ATTR]); g1_new(e_reconstruct[N_ATTR]);
-
-            //string label = it -> second.label();
-            //attr_int = getAttrNumber(label);
-            int attr_index = it->leaf_index - 1;
-
-            g1_mul(e_reconstruct[attr_index], big_es[attr_index], it -> coeff);
-
-            //cout << "e_reconstruct[" << attr_index << "]\n";
-            //g1_print(e_reconstruct[attr_index]);
-
-            //pc_map(big_vas[attr_index], e_reconstruct[attr_index], big_ds[attr_index]);
-            //cout << "big_vas[" << attr_index << "]\n";
-            //gt_print(big_vas[attr_index]);
-
-            //bn_null(reconCoeffs[attr_index]);bn_new(reconCoeffs[attr_index]);
-            //cout << "recon coefficient\n";
-            //bn_print(it->coeff);
-
-            //cout << "recon element " << it -> second.element() << "\n";
-            //bn_print(reconCoeffs[attr_index]);
-
-            //cout << "leaf index: " << it->leaf_index << "\n";
-        }
-        pc_map_sim(r, e_reconstruct, big_ds, N_ATTR);
-    } print_results("Results decryption():           ", t, NTESTS);
-    cout << "]\n";
-
-
+    gt_set_unity(r);
+    pc_map_sim(r, big_es, big_ds, N_ATTR);
     /*
     bn_t res; bn_null(res); bn_new(res);
     gt_t gt_res; gt_null(gt_res); gt_new(gt_res);
@@ -360,7 +338,7 @@ void test_abe(uint32_t N_ATTR) {
     }
     bn_mod(res, res, order);
     cout << "Secret before recon\n";
-    bn_print(y);
+    bn_print(y.m_ZP);
     cout << "Secret after recon\n";
     bn_print(res);
     cout << "pow(gt,res*s)\n";
@@ -374,35 +352,24 @@ void test_abe(uint32_t N_ATTR) {
     gt_print(map_res);
     //pp_map_sim_oatep_k12(blindingFactor, big_es, d_reconstruct, N_ATTR);
      */
-    //
-    int cmp = gt_cmp(r, e_prime) == RLC_EQ; 
-    cout << "[*] Correctness check r = E': " << cmp << "\n";
-    if (cmp != 1) {
-        cout << "Value of blinding factor before decrypt\n";
-        gt_print(e_prime);
-        cout << "Value of blinding factor after decrypt\n";
-        gt_print(r);
-    }
-}
-
-int main(int argc, char **argv) {
-    t[0] = cpucycles();
+    cout << "Value of blinding factor before decrypt\n";
+    gt_print(e_prime);
+    cout << "Value of blinding factor after decrypt\n";
+    gt_print(r);
 
 
-    //uint32_t N_ATTR = test_attr;
-    int *test_attrs;
-    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
-        test_attrs = (int *) malloc(sizeof(int) * argc-2);
-        for (int i = 2; i < argc; i++){
-            test_abe(atoi(argv[i]));
-        }
-    } else {
-        test_abe(2);
-    }
-    //uint32_t *attr_int_list = NULL;
-    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    //test_abe(2);
-    //test_abe(8);
-    //test_abe(16);
+
+
+
+
+
+
+    //printf("Testing CP-ABE context\n");
+    //cout << "\tkeyInput: " << keyInput << endl;
+
+
+
+
     return 0;
+
 }
