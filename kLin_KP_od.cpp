@@ -231,6 +231,7 @@ int main(int argc, char **argv) {
         for (int no = 0; no < NTESTS; no++) {
             //progressBar(100,progress2);
             t[no] = cpucycles();
+            free_tree(&tree_root);
             tree_root = node();
             tree_from_string(and_tree_formula(N_ATTR), &tree_root);
             bn_t *Wr;
@@ -306,7 +307,7 @@ int main(int argc, char **argv) {
             g2_t output[kss + 1];
 
             //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-            ct_1 = vector_trans_mul_matrix_g2(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
+            ct_1 = vector_trans_mul_matrix_g2_sim(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
 
             //Finishing ct_1 by doing the exponentiation of g.
             for (int t = 0; t < (kss + 1); ++t) {
@@ -318,7 +319,7 @@ int main(int argc, char **argv) {
             for (int a = 0; a < (N_ATTR + 1); ++a) {
                 g1_t *ct2_i;
                 g1_t output[kss];
-                ct2_i = vector_trans_mul_matrix_g1(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
+                ct2_i = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
                 //Finishing c_2i, by doing the exponentiation of g.
                 for (int v = 0; v < kss; ++v) {
@@ -330,18 +331,15 @@ int main(int argc, char **argv) {
 
         //test_stuff(resultArray, 2, t, NTESTS);
         print_results("Results encryption():           ", t, NTESTS);
-        //TODO start/complete decryption.
 
         /* Decryption */
         //printf("\n");
 
-        //TODO for policies with OR gates this size needs to be changed, according to the K_Lin paper the size would be <=2*N_ATTR
-        //List of all the wj coefficients since j = N_ATTR and because we have (kss+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (kss+1).
         //float progress4 = 0.0;
         bn_t pack_coef[N_ATTR];
         g1_t pair_g1_test_2[kss];
         g2_t pair_g2_test_2[kss];
-        g2_t neg_ct[kss+1];
+        g1_t neg_ct[kss+1];
         //g1_t pairing_g1_fin[N_ATTR];
         //g2_t pairing_g2_fin[N_ATTR];
 
@@ -356,7 +354,7 @@ int main(int argc, char **argv) {
         for (int hg = 0; hg < kss+1; ++hg) {
             init_null_new_g1_t_var(K1_prod[hg]);
             init_null_new_g1_t_var(sk1_tmp[hg]);
-            init_null_new_g2_t_var(neg_ct[hg]);
+            init_null_new_g1_t_var(neg_ct[hg]);
             g1_set_infty(K1_prod[hg]);
         }
 
@@ -392,17 +390,14 @@ int main(int argc, char **argv) {
             res = std::vector<policy_coefficient>();
             res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-            int ctr = 0;
             for (int po = 0; po < kss + 1; ++po) {
                 int idx2 = 0;
                 for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
                     idx2 = it5->leaf_index - 1;
-                    //printf("Enter here k+1*n times per pass\n");
                     if (po == 0) {
                         bn_copy(pack_coef[idx2], it5->coeff);                                                                   //Same as std.
                         //g1_copy(ct2_tmp[idx2], CT_A.C_2[idx2 + 1].c_2_mat[po % kss]);
                         for (int jk2 = 0; jk2 < kss; ++jk2) {
-                            //printf("what = %d and jk2 = %d\n",(jk2 + 1) % kss, jk2);
                             g1_mul(pair_g1_test_2[jk2], CT_A.C_2[idx2 + 1].c_2_mat[jk2], pack_coef[idx2]);
                             g2_copy(pair_g2_test_2[jk2], sk.sk[idx2].sk_two[jk2]);
                         }
@@ -411,20 +406,18 @@ int main(int argc, char **argv) {
                         gt_mul(prod_test2, prod_test2, map_sim_test_2);
                     }
                     g1_copy(sk1_tmp[idx2], sk.sk[idx2].sk_one[po]);
-                    ctr++;
                 }
                 g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-                g2_neg(neg_ct[po], CT_A.C_1[po]);
+                g1_neg(neg_ct[po], K1_prod[po]);
             }
-
-            pp_map_sim_oatep_k12(map_sim_test_1, K1_prod, neg_ct, (kss+1));
+            pp_map_sim_oatep_k12(map_sim_test_1, neg_ct, CT_A.C_1, (kss+1));
             //pp_map_sim_oatep_k12(map_test, pairing_g1_fin, pairing_g2_fin, ((kss + 1) + kss));
             gt_mul(test_res, map_sim_test_1, prod_test2);
             gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
             //Uncomment for correctness check;
-            //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
-            //std::cout << "[*] PASSED" << std::endl;
+            assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
+            std::cout << "[*] PASSED" << std::endl;
             //progress4 = ((float) (go+1) / NTESTS);
         }
 

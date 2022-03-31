@@ -232,14 +232,15 @@ int main(int argc, char **argv) {
         g1_null(g1_temp);
 
         for (auto it = res.begin(); it != res.end(); it++) {
-            // g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            pc_map(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            gt_exp(mapping, mapping, it->coeff);
+            g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
+            g1_neg(g1_temp, g1_temp);
+            pc_map(mapping, g1_temp, E.E_values[it->leaf_index - 1]);
+            //gt_exp(mapping, mapping, it->coeff);
             gt_mul(F_root, F_root, mapping);
         }
-        // pc_map_sim(F_root, D_vals, E_vals, res.size());
+        //pc_map_sim(F_root, D_vals, E_vals, res.size());
 
-        gt_inv(F_root, F_root);
+        //gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);

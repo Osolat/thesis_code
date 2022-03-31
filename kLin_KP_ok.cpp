@@ -243,6 +243,7 @@ int main(int argc, char **argv) {
             //progressBar(100, progress2);
 
             t[no] = cpucycles();
+            free_tree(&tree_root);
             tree_root = node();
             tree_from_string(and_tree_formula(N_ATTR), &tree_root);
             bn_t *Wr;
@@ -321,7 +322,7 @@ int main(int argc, char **argv) {
             g2_t output[kss + 1];
 
             //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-            ct_1 = vector_trans_mul_matrix_g2(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
+            ct_1 = vector_trans_mul_matrix_g2_sim(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
 
             //Finishing ct_1 by doing the exponentiation of g.
             for (int t = 0; t < (kss + 1); ++t) {
@@ -333,7 +334,7 @@ int main(int argc, char **argv) {
             for (int a = 0; a < (N_ATTR + 1); ++a) {
                 g2_t *ct2_i;
                 g2_t output[kss];
-                ct2_i = vector_trans_mul_matrix_g2(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
+                ct2_i = vector_trans_mul_matrix_g2_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
                 //Finishing c_2i, by doing the exponentiation of g.
                 for (int v = 0; v < kss; ++v) {
@@ -414,8 +415,8 @@ int main(int argc, char **argv) {
             gt_mul(tmp_res, prod, CT_A.C_3_one_val);
 
             //Uncomment for correctness check;
-            //assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
-            //std::cout << "[*] PASSED" << std::endl;
+            assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
+            std::cout << "[*] PASSED" << std::endl;
 
             //progress4 = ((float) (go+1) / NTESTS);
         }
