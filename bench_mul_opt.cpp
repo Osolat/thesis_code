@@ -72,48 +72,60 @@ int main(int argc, char **argv) {
     gt_null(m);
 
     g1_t g1_operands[operands];
-    g1_t g1_operands_neg[operands];
-
     g2_t g2_operands[operands];
-
+    bn_t x[operands];
     for (size_t i = 0; i < operands; i++) {
-        g1_new(g1_operands[i]);
         g1_null(g1_operands[i]);
-        g1_new(g1_operands_neg[i]);
-        g1_null(g1_operands_neg[i]);
+        g1_new(g1_operands[i]);
         g1_rand(g1_operands[i]);
-        g2_new(g2_operands[i]);
         g2_null(g2_operands[i]);
+        g2_new(g2_operands[i]);
         g2_rand(g2_operands[i]);
+        bn_new(x[i]);
+        bn_null(x[i]);
+        bn_rand_mod(x[i], order);
     }
 
-    gt_t temp;
-    gt_new(temp);
-    gt_null(temp);
+    g1_t temp;
+    g1_new(temp);
+    g1_null(temp);
 
-    gt_t prod;
-    gt_new(prod);
-    gt_null(prod);
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
+        g1_set_infty(temp);
         t[i] = cpucycles();
         for (size_t j = 0; j < operands; j++) {
-            pc_map(temp, g1_operands[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
+            g1_mul(g1_operands[j], g1_operands[j], x[j]);
+            g1_add(temp, temp, g1_operands[j]);
         }
-        gt_inv(prod, prod);
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
+        g1_set_infty(temp);
+        t[i] = cpucycles();
+        g1_mul_sim_lot(temp, g1_operands, x, operands);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
+    g2_t temp_g2;
+    g2_new(temp_g2);
+    g2_null(temp_g2);
+
+    for (size_t i = 0; i < NTESTS; i++) {
+        g2_set_infty(temp_g2);
         t[i] = cpucycles();
         for (size_t j = 0; j < operands; j++) {
-            g1_neg(g1_operands_neg[j], g1_operands[j]);
-            pc_map(temp, g1_operands_neg[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
+            g2_mul(g2_operands[j], g2_operands[j], x[j]);
+            g2_add(temp_g2, temp_g2, g2_operands[j]);
         }
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
+    for (size_t i = 0; i < NTESTS; i++) {
+        g2_set_infty(temp_g2);
+        t[i] = cpucycles();
+        g2_mul_sim_lot(temp_g2, g2_operands, x, operands);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");

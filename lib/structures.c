@@ -1129,11 +1129,6 @@ void set_c_attr_c_2_cp(const uint32_t attr, g2_t c_2, struct ciphertext_cp *c) {
 // GPSW
 int init_master_key_kp_gpsw(const uint32_t n_attr, struct master_key_kp_gpsw *m) {
     m->N_ATTR = n_attr;
-    m->attributes = (struct attribute *)malloc(n_attr * sizeof(struct attribute));
-
-    if (m->attributes == NULL) {
-        return EXIT_FAILURE;
-    }
     m->t_values = (bn_t *)malloc(n_attr * sizeof(bn_t));
     if (m->t_values == NULL) {
         return EXIT_FAILURE;
