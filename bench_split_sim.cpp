@@ -55,7 +55,7 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
-    int operands = atoi(argv[1]);
+    int operands = atoi(argv[1]) * 2;
 
     core_init();
 
@@ -72,16 +72,38 @@ int main(int argc, char **argv) {
     gt_null(m);
 
     g1_t g1_operands[operands];
-    g1_t g1_operands_neg[operands];
-
     g2_t g2_operands[operands];
+
+    g1_t g1_operands_first_half[operands / 2];
+    g1_t g1_operands_sec_half[operands / 2];
+
+    g2_t g2_operands_first_half[operands / 2];
+    g2_t g2_operands_sec_half[operands / 2];
+
+    for (size_t i = 0; i < operands / 2; i++) {
+        /* code */
+        g1_new(g1_operands_first_half[i]);
+        g1_null(g1_operands_first_half[i]);
+        g1_rand(g1_operands_first_half[i]);
+
+        g2_new(g2_operands_first_half[i]);
+        g2_null(g2_operands_first_half[i]);
+        g2_rand(g2_operands_first_half[i]);
+
+        g1_new(g1_operands_sec_half[i]);
+        g1_null(g1_operands_sec_half[i]);
+        g1_rand(g1_operands_sec_half[i]);
+
+        g2_new(g2_operands_sec_half[i]);
+        g2_null(g2_operands_sec_half[i]);
+        g2_rand(g2_operands_sec_half[i]);
+    }
 
     for (size_t i = 0; i < operands; i++) {
         g1_new(g1_operands[i]);
         g1_null(g1_operands[i]);
-        g1_new(g1_operands_neg[i]);
-        g1_null(g1_operands_neg[i]);
         g1_rand(g1_operands[i]);
+
         g2_new(g2_operands[i]);
         g2_null(g2_operands[i]);
         g2_rand(g2_operands[i]);
@@ -90,30 +112,23 @@ int main(int argc, char **argv) {
     gt_t temp;
     gt_new(temp);
     gt_null(temp);
+    gt_t temptwo;
+    gt_new(temptwo);
+    gt_null(temptwo);
 
-    gt_t prod;
-    gt_new(prod);
-    gt_null(prod);
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            pc_map(temp, g1_operands[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
-        }
-        gt_inv(prod, prod);
+        pc_map_sim(temp, g1_operands_first_half, g2_operands_first_half, operands / 2);
+        pc_map_sim(temptwo, g1_operands_sec_half, g2_operands_sec_half, operands / 2);
+        gt_mul(temp, temp, temptwo);
     }
+
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            g1_neg(g1_operands_neg[j], g1_operands[j]);
-            pc_map(temp, g1_operands_neg[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
-        }
+        pc_map_sim(temp, g1_operands, g2_operands, operands);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");

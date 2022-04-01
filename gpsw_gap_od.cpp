@@ -109,6 +109,17 @@ int main(int argc, char **argv) {
         g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
     }
 
+    g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_null(pre_T[i][j]);
+            g2_new(pre_T[i][j]);
+        }
+        g2_mul_pre(pre_T[i], mpk.T_values[i]);
+    }
+
     /*Y = e(g,g)^y*/
     pc_map(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
@@ -172,7 +183,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < test_attr; i++) {
             g2_null(E.E_values[i]);
             g2_new(E.E_values[i]);
-            g2_mul(E.E_values[i], mpk.T_values[i], s);
+            g2_mul_fix(E.E_values[i], pre_T[i], s);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
@@ -221,6 +232,7 @@ int main(int argc, char **argv) {
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
             g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
+            g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
         }
 
@@ -232,7 +244,7 @@ int main(int argc, char **argv) {
         }*/
         pc_map_sim(F_root, D_vals, E_vals, res.size());
 
-        gt_inv(F_root, F_root);
+        // gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);

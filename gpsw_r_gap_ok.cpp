@@ -70,8 +70,8 @@ int main(int argc, char **argv) {
     core_init();
 
     bn_t order;
-    bn_null(order);
     bn_new(order);
+    bn_null(order);
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
@@ -107,6 +107,17 @@ int main(int argc, char **argv) {
         g2_null(mpk.T_values[i]);
         g2_new(mpk.T_values[i]);
         g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
+    }
+
+    g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_null(pre_T[i][j]);
+            g2_new(pre_T[i][j]);
+        }
+        g2_mul_pre(pre_T[i], mpk.T_values[i]);
     }
 
     /*Y = e(g,g)^y*/
@@ -165,14 +176,13 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-
         bn_rand_mod(s, order);
         gt_exp(E.E_prime, mpk.Y, s);
         gt_mul(E.E_prime, E.E_prime, message);
         for (int i = 0; i < test_attr; i++) {
             g2_null(E.E_values[i]);
             g2_new(E.E_values[i]);
-            g2_mul(E.E_values[i], mpk.T_values[i], s);
+            g2_mul_fix(E.E_values[i], pre_T[i], s);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
@@ -195,45 +205,16 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
+
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
         } catch (struct TreeUnsatisfiableException *e) {
             std::cout << e->what() << std::endl;
         }
-
-        res = recover_coefficients(&tree_root, attributes, N_ATTR);
-
-        // TODO: Is this legal? fp12_set_dig
-        fp12_set_dig(F_root, 1);
-        gt_t mapping;
-        gt_null(mapping);
-        gt_new(mapping);
-
-        g1_t g1_temp;
-        g1_null(g1_temp);
-        g1_new(g1_temp);
-
-        g1_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
-        for (auto it = res.begin(); it != res.end(); it++) {
-            g1_null(D_vals[it->leaf_index - 1]);
-            g1_new(D_vals[it->leaf_index - 1]);
-            g2_null(E_vals[it->leaf_index - 1]);
-            g2_new(E_vals[it->leaf_index - 1]);
-            g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
-            g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-        }
-
-        /*for (auto it = res.begin(); it != res.end(); it++) {
-            //g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            pc_map(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            gt_exp(mapping, mapping, it->coeff);
-            gt_mul(F_root, F_root, mapping);
-        }*/
-        pc_map_sim(F_root, D_vals, E_vals, res.size());
-
-        gt_inv(F_root, F_root);
-        gt_mul(result, F_root, E.E_prime);
+        
+        recursive_decrypt(&result, &tree_root, sk.D_values, E.E_values);
+        gt_inv(result, result);
+        gt_mul(result, result, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");

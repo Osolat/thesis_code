@@ -544,6 +544,15 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     return result;
 }
 
+void recursive_decrypt(gt_t* res, struct node* root_node, g1_t *g1_components, g2_t *g2_components) {
+    std::stack<struct node*> node_stack;
+    std::stack<gt_t*> value_stack;
+    if (root_node->gate == LEAF) {
+        pc_map(*res, g1_components[0], g2_components[0]);
+    }
+    
+};
+
 std::string and_tree_formula(size_t size) {
     string s;
     if (size == 1) {

@@ -55,8 +55,7 @@ int getAttrNumber(string attr) {
 
 
 void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit oe, N_attr = %d", N_ATTR);
-
+    printf("abe circuit ok, N_attr = %d", N_ATTR);
 
     std::string keyInput = "";
     std::string encInput = "";
@@ -85,7 +84,7 @@ void test_abe(uint32_t N_ATTR) {
 
     bn_t order;
     pc_param_set_any();
-    pc_param_print();
+    //pc_param_print();
     pc_get_ord(order);
 
 
@@ -101,7 +100,7 @@ void test_abe(uint32_t N_ATTR) {
 
     g1_t t_pre_g1[RLC_EP_TABLE_MAX];
     g2_t t_pre_g2[RLC_EP_TABLE_MAX];
-    g1_t t_pre_g1_exp[N_ATTR][RLC_EP_TABLE_MAX];
+    g2_t t_pre_g2_exp[N_ATTR][RLC_EP_TABLE_MAX];
     for (int i = 0; i < RLC_EP_TABLE; i++) {
         g1_new(t_pre_g1[i]);
         g2_new(t_pre_g2[i]);
@@ -113,7 +112,7 @@ void test_abe(uint32_t N_ATTR) {
     gt_t big_y;
     gt_null(big_y);
     gt_new(big_y);
-    g1_t big_ts_g1[N_ATTR];
+    g2_t big_ts_g2[N_ATTR];
     bn_t exponents[N_ATTR];
     bn_t inv_exponents[N_ATTR];
 
@@ -131,9 +130,9 @@ void test_abe(uint32_t N_ATTR) {
             bn_null(exponents[i]); bn_new(exponents[i]);
             bn_rand_mod(exponents[i], order);
 
-            g1_null(big_ts_g1[i]); g1_new(big_ts_g1[i]);
-            g1_mul_gen(big_ts_g1[i], exponents[i]);
-            g1_mul_pre(t_pre_g1_exp[i], big_ts_g1[i]);
+            g1_null(big_ts_g2[i]); g1_new(big_ts_g2[i]);
+            g2_mul_gen(big_ts_g2[i], exponents[i]);
+            g2_mul_pre(t_pre_g2_exp[i], big_ts_g2[i]);
 
             bn_null(inv_exponents[i]); bn_new(inv_exponents[i]);
 
@@ -156,8 +155,6 @@ void test_abe(uint32_t N_ATTR) {
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
     //Encryption
-
-
     //cout << "sheesh 1\n";
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -172,7 +169,7 @@ void test_abe(uint32_t N_ATTR) {
 
 
 
-    g1_t big_es[N_ATTR];
+    g2_t big_es[N_ATTR];
     bn_t s; bn_null(s); bn_new(s)
     gt_t e_prime; gt_null(e_prime); gt_new(e_prime);
 
@@ -182,8 +179,8 @@ void test_abe(uint32_t N_ATTR) {
         t[j] = cpucycles();
         bn_rand_mod(s, order);
         for (int i = 0; i < N_ATTR; i++) {
-            g1_null(big_es[i]); g1_new(big_es[i]);
-            g1_mul_fix(big_es[i], t_pre_g1_exp[i], s);
+            g2_null(big_es[i]); g1_new(big_es[i]);
+            g2_mul_fix(big_es[i], t_pre_g2_exp[i], s);
             /*
             cout << "Value of big_es[" << i << "]\n";
             g1_print(big_es[i]);
@@ -227,7 +224,7 @@ void test_abe(uint32_t N_ATTR) {
     //cout << "shuus\n";
     //lsss.l_shareSecret(policy, y);
     //lsssRows = lsss.l_getRows();
-    g2_t big_ds[N_ATTR];
+    g1_t big_ds[N_ATTR];
     int attr_int;
     bn_t shares[N_ATTR];
     for (int j = 0; j < NTESTS; j++) {
@@ -246,9 +243,9 @@ void test_abe(uint32_t N_ATTR) {
             bn_mul(tmp, inv_exponents[attr_index], it -> share);
             bn_mod(tmp, tmp, order);
 
-            g2_null(big_ds[attr_index]); g2_new(big_ds[attr_index]);
+            g1_null(big_ds[attr_index]); g1_new(big_ds[attr_index]);
 
-            g2_mul_gen(big_ds[attr_index], tmp);
+            g1_mul_gen(big_ds[attr_index], tmp);
             /*
             cout << "Share\n";
             bn_print(it -> share);
@@ -279,7 +276,7 @@ void test_abe(uint32_t N_ATTR) {
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
-    g1_t e_reconstruct[N_ATTR];
+    g1_t d_reconstruct[N_ATTR];
     bn_t reconCoeffs[N_ATTR];
 
     gt_t r; gt_null(r); gt_new(r);
@@ -294,7 +291,7 @@ void test_abe(uint32_t N_ATTR) {
             //attr_int = getAttrNumber(label);
             int attr_index = it->leaf_index - 1;
 
-            g1_mul(e_reconstruct[attr_index], big_es[attr_index], it -> coeff);
+            g1_mul(d_reconstruct[attr_index], big_ds[attr_index], it -> coeff);
 
             //cout << "e_reconstruct[" << attr_index << "]\n";
             //g1_print(e_reconstruct[attr_index]);
@@ -312,7 +309,7 @@ void test_abe(uint32_t N_ATTR) {
 
             //cout << "leaf index: " << it->leaf_index << "\n";
         }
-        pc_map_sim(r, e_reconstruct, big_ds, N_ATTR);
+        pc_map_sim(r, d_reconstruct, big_es, N_ATTR);
     } print_results("Results decryption():           ", t, NTESTS);
     cout << "]\n";
 
@@ -391,7 +388,7 @@ void test_abe(uint32_t N_ATTR) {
 int main(int argc, char **argv) {
     t[0] = cpucycles();
 
-    test_abe(1024);
+    cout << "sheeshyeesh\n";
     //uint32_t N_ATTR = test_attr;
     int *test_attrs;
     if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
