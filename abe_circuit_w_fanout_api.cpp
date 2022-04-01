@@ -117,7 +117,7 @@ void test_abe(uint32_t N_ATTR) {
     bn_t exponents[N_ATTR];
     bn_t inv_exponents[N_ATTR];
 
-    for(int j = 0; j < NTESTS; j++) {
+    for(int j = 0; j < 1; j++) {
         t[j] = cpucycles();
 
         //g1_mul_pre(t_pre_g1, g1);
@@ -154,7 +154,9 @@ void test_abe(uint32_t N_ATTR) {
         bn_mod_inv_sim(inv_exponents, exponents, order, N_ATTR);
         pc_map(big_y, g1, g2);
         gt_exp(big_y, big_y, y);
-    } printf("["); print_results("Results gen param():           ", t, NTESTS);
+    }
+    printf("["); 
+    //print_results("Results gen param():           ", t, NTESTS);
     //Encryption
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -375,7 +377,6 @@ void test_abe(uint32_t N_ATTR) {
      */
     //
     int cmp = gt_cmp(r, e_prime) == RLC_EQ; 
-    cout << "[*] Correctness check r = E': " << cmp << "\n";
     if (cmp != 1) {
         cout << "Value of blinding factor before decrypt\n";
         gt_print(e_prime);
@@ -389,6 +390,8 @@ int main(int argc, char **argv) {
 
 
     //uint32_t N_ATTR = test_attr;
+    cout << "**********************\n";
+    //uint32_t N_ATTR = test_attr;
     int *test_attrs;
     if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
         test_attrs = (int *) malloc(sizeof(int) * argc-2);
@@ -398,6 +401,7 @@ int main(int argc, char **argv) {
     } else {
         test_abe(2);
     }
+    cout << "**********************\n";
     //uint32_t *attr_int_list = NULL;
     //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
     //test_abe(2);
