@@ -496,6 +496,34 @@ g2_t *matrixG2_mul_matrixBN(g2_t out[], g2_t A[], bn_t Wi[], int a_rows, int a_c
 
 
 
+g1_t *vector_trans_mul_matrix_g1_pre(g1_t out[], bn_t v[], g1_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows) {
+    if (v_cols != A_rows) {
+        printf("Error in matrix - trans vector dimensions! \n");
+        exit(-1);
+    }
+
+    g1_t tmp; g1_t tmp_add;
+    init_null_new_g1_t_var(tmp);
+    init_null_new_g1_t_var(tmp_add);
+    g1_set_infty(tmp_add);
+
+    int ctr = 0;
+    int z = 0;
+    int h = 0;
+
+    for (int i = 0; i < A_cols; ++i) {
+        z = h;
+        for (int j = 0; j < v_cols; ++j, z += A_cols) {
+            g1_mul_fix(tmp, A[z], v[j]);
+            g1_add(tmp_add, tmp_add, tmp);
+        }
+        h++;
+        g1_copy(out[ctr], tmp_add);
+        g1_set_infty(tmp_add);
+        ctr ++;
+    }
+    return out;
+}
 //g1 versions_sim
 g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols, int A_cols, int A_rows) {
     if (v_cols != A_rows) {
@@ -596,6 +624,35 @@ g2_t *vector_trans_mul_matrix_g2_sim(g2_t out[], bn_t v[], g2_t A[], int v_cols,
     return out;
 }
 
+
+g2_t *vector_trans_mul_matrix_g2_pre(g2_t out[], bn_t v[], g2_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows) {
+    if (v_cols != A_rows) {
+        printf("Error in matrix - trans vector dimensions! \n");
+        exit(-1);
+    }
+
+    g2_t tmp; g2_t tmp_add;
+    init_null_new_g2_t_var(tmp);
+    init_null_new_g2_t_var(tmp_add);
+    g2_set_infty(tmp_add);
+
+    int ctr = 0;
+    int z = 0;
+    int h = 0;
+
+    for (int i = 0; i < A_cols; ++i) {
+        z = h;
+        for (int j = 0; j < v_cols; ++j, z += A_cols) {
+            g2_mul_fix(tmp, A[z], v[j]);
+            g2_add(tmp_add, tmp_add, tmp);
+        }
+        h++;
+        g2_copy(out[ctr], tmp_add);
+        g2_set_infty(tmp_add);
+        ctr ++;
+    }
+    return out;
+}
 
 void print_sk(struct secret_key_K_Lin *sk, struct sk_tmp_vj *shares, const uint32_t n, const uint32_t ksec) {
     for (int j = 0; j < (n + 1); ++j) {

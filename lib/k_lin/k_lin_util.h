@@ -36,6 +36,9 @@ g2_t *matrixG2_mul_matrixBN(g2_t out[], g2_t A[], bn_t Wi[], int a_rows, int a_c
 g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols, int A_cols, int A_rows);
 g2_t *vector_trans_mul_matrix_g2_sim(g2_t out[], bn_t v[], g2_t A[], int v_cols, int A_cols, int A_rows);
 
+g1_t *vector_trans_mul_matrix_g1_pre(g1_t out[], bn_t v[], g1_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows);
+g2_t *vector_trans_mul_matrix_g2_pre(g2_t out[], bn_t v[], g2_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows);
+
 void init_null_new_bn_t_var(bn_t var_name);
 void init_null_new_g1_t_var(g1_t var_name);
 void init_null_new_g2_t_var(g2_t var_name);
