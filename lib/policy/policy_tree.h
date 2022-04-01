@@ -20,6 +20,7 @@ struct node {
     size_t leaf_index = 1;
     bn_t share;
     bn_t share_index;
+    gt_t group_share;
     struct node *firstchild = NULL;
     struct node *nextsibling = NULL;
     bool marked_for_coeff = false;
@@ -106,5 +107,12 @@ struct TreeUnsatisfiableException : public std::exception {
  * @param[in] size			- pointer to root of the access tree
  */
 std::string or_tree_formula(size_t size);
+
+/**
+ * Recursive descryption as described for gpsw
+ * @param[in] res			- pointer to result value that will be overwritten with decrypt result
+ * @param[in] root_node		- pointer to root of tree
+ */
+void recursive_decrypt(gt_t* res, struct node* root_node, g1_t *g1_components, g2_t *g2_components);
 
 void free_tree(struct node *root);

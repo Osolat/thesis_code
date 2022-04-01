@@ -90,33 +90,13 @@ int main(int argc, char **argv) {
     int test_attr = atoi(argv[1]);
 
     srand(time(NULL));
-    std::string keyInput = "";
-    std::string encInput = "";
-
     uint32_t N_ATTR = test_attr;
-    uint32_t *attr_int_list = NULL;
-    attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-
-    int d = 1;
-    for (int k = 0; k < test_attr; k++) {
-        keyInput = keyInput + "attr" + std::to_string(d);
-        encInput = encInput + "attr" + std::to_string(d);
-
-        if (k < test_attr - 1) {
-            keyInput = keyInput + "|";
-            encInput = encInput + " and ";
-        }
-        attr_int_list[k] = d;
-        d++;
-    }
 
     bn_t attributes[test_attr];
     for (int i = 0; i < N_ATTR; ++i) {
         init_null_new_bn_t_var(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
-
-    std::cout << keyInput;
 
     struct master_key_k_lin msk;
     struct public_key_k_lin mpk;
@@ -130,55 +110,6 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
-    g1_t g1_val_1;
-    g1_t g1_res_1;
-    g1_t g1_res_2;
-    g1_t g1_mul_1;
-    g1_t g1_mul_2;
-    g1_t g1_val_2;
-    bn_t bn_t_val;
-
-    init_null_new_bn_t_var(bn_t_val);
-    init_null_new_g1_t_var(g1_val_1);
-    init_null_new_g1_t_var(g1_val_2);
-    init_null_new_g1_t_var(g1_res_1);
-    init_null_new_g1_t_var(g1_res_2);
-    init_null_new_g1_t_var(g1_mul_1);
-    init_null_new_g1_t_var(g1_mul_2);
-
-    bn_rand_mod(bn_t_val, order);
-    g1_rand(g1_val_1);
-    g1_rand(g1_val_2);
-    /*
-    for (int bo = 0; bo < NTESTS; bo++) {
-        //BenchMark g1_mul_sim vs g1_mul
-        t[bo] = cpucycles();
-        g1_mul(g1_mul_1, g1_val_1, bn_t_val);
-        g1_mul(g1_mul_2, g1_val_2, bn_t_val);
-        g1_add(g1_res_1, g1_mul_1, g1_mul_2);
-        //assert(g1_cmp(g1_res_1, g1_res_2) == RLC_EQ);
-        //std::cout << "[*] PASSED mul_sim" << std::endl;
-    }
-    printf("[");
-    print_results("Results bench_g1_mul():           ", t, NTESTS);
-
-    for (int to = 0; to < NTESTS; to++) {
-        //BenchMark g1_mul_sim vs g1_mul
-        t[to] = cpucycles();
-        g1_mul_sim(g1_res_2, g1_val_1, bn_t_val, g1_val_2, bn_t_val);
-        //assert(g1_cmp(g1_res_1, g1_res_2) == RLC_EQ);
-        //std::cout << "[*] PASSED mul_sim" << std::endl;
-    }
-    print_results("Results bench_mul_sim():           ", t, NTESTS);
-    */
-
-    //DEBUG UTIL:
-    //test_matrix_mul_vector(kss, order);
-    //test_vector_trans_mul_matrix(kss, order);
-    //test_matrix_mul_matrix(kss, order);
-    //test_vector_dot_product(kss, order);
-
-
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
@@ -186,9 +117,10 @@ int main(int argc, char **argv) {
 
     /* Setup */
     //float progress = 0.0;
-    for (int jo = 0; jo < NTESTS; jo++) {
+    //TODO: Run only once then remove the loop around setup function. Else could measure memory of setup.
+    for (int jo = 0; jo < 1; jo++) {
         //progressBar(100, progress);
-        t[jo] = cpucycles();
+        //t[jo] = cpucycles();
 
         g1_rand(group1);
         g2_rand(group2);
@@ -242,7 +174,7 @@ int main(int argc, char **argv) {
     //test_stuff(resultArray, 0, t, NTESTS);
 
     //printf("[");
-    print_results("Results gen param():           ", t, NTESTS);
+    //print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
     //float progress2 = 0.0;
@@ -284,7 +216,7 @@ int main(int argc, char **argv) {
 
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
-
+        //TODO: This should be a loop just like the above using iterator over shares.
         for (int kj = 0; kj < N_ATTR; kj++) {
             //Computes W_j * rj by matrix-vector multiplication.
             Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, (kss + 1), kss, kss, order);
@@ -298,12 +230,13 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-
+    printf("[");
     print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */
     //Initialize ciphertext struct
     //float progress3 = 0.0;
+    //TODO should actually take an attribute list under which we want to encrypt not just all the N_ATTR attributes.
     struct ciphertext_K_Lin CT_A;
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
@@ -338,19 +271,21 @@ int main(int argc, char **argv) {
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
         ct_1 = vector_trans_mul_matrix_g1(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
-        for (int t = 0; t < (kss + 1); ++t) {
-            g1_copy(CT_A.C_1[t], ct_1[t]);
-        }
+
         //set ct_2i
         //For all N_ATTR + 1 calculate sTAW_i and the reason for doing it over N_ATTR+1 opposed to N_ATTR is because W_0 = 0 and is done to support that the lsss map can be rho(j) = 0.
+        //TODO: Therefore last loop here over N_ATTR+1 should be over the input attribute list length+1. Maybe comes with issues regarding w_0 = 0
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
             ct2_i = vector_trans_mul_matrix_g1(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
-            for (int v = 0; v < kss; ++v) {
-                g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
+            for (int v = 0; v < (kss+1); ++v) {
+                if(v < kss) {
+                    g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
+                }
+                g1_copy(CT_A.C_1[v], ct_1[v]);
             }
         }
         //progress3 = ((float) (qo+1) / NTESTS);
@@ -421,14 +356,14 @@ int main(int argc, char **argv) {
             bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
 
             for (int ole = 0; ole < (kss + 1); ++ole) {
+                if (ole < kss){
+                    pp_map_oatep_k12(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[ole],sk.sk[it3->leaf_index - 1].sk_two[ole]);
+                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
+                }
                 pp_map_oatep_k12(map_tmp_1, CT_A.C_1[ole], sk.sk[it3->leaf_index - 1].sk_one[ole]);
                 gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
             }
 
-            for (int ola = 0; ola < kss; ++ola) {
-                pp_map_oatep_k12(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[ola],sk.sk[it3->leaf_index - 1].sk_two[ola]);
-                gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-            }
             gt_inv(invert_elem, map_tmp_prod_1);
             gt_mul(map_res, invert_elem, map_tmp_prod_2);
             gt_exp(exp_val, map_res, pack_coef[it3->leaf_index - 1]);
@@ -445,12 +380,6 @@ int main(int argc, char **argv) {
 
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
-
-    //Test if msk and mpk is initialized correctly:
-    //print_msk(&msk, N_ATTR, kss);
-    //print_mpk(&mpk, N_ATTR, kss);
-    //print_sk(&sk, &vj, N_ATTR, kss);
-    //print_ct(&CT_A, N_ATTR, kss);
-
+    std::cout<<"\n"<<std::endl;
     return 0;
 }
