@@ -2,30 +2,36 @@
 // Created by jonas on 3/31/22.
 //
 
-#include <iostream>
 #include <cstdio>
+#include <iostream>
 #include <string>
-#include "bench_defs.h"
 
+extern "C" {
+#include <relic/relic.h>
+}
+
+#define NTESTS 5000
 
 long long cpucycles(void) {
     unsigned long long result;
     asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"
-    : "=a" (result)::"%rdx");
+                 : "=a"(result)::"%rdx");
     return result;
 }
 
 static int cmp_llu(const void *a, const void *b) {
-    if (*(unsigned long long *) a < *(unsigned long long *) b) return -1;
-    if (*(unsigned long long *) a > *(unsigned long long *) b) return 1;
+    if (*(unsigned long long *)a < *(unsigned long long *)b) return -1;
+    if (*(unsigned long long *)a > *(unsigned long long *)b) return 1;
     return 0;
 }
 
 static unsigned long long median(unsigned long long *l, size_t llen) {
     qsort(l, llen, sizeof(unsigned long long), cmp_llu);
 
-    if (llen % 2) return l[llen / 2];
-    else return (l[llen / 2 - 1] + l[llen / 2]) / 2;
+    if (llen % 2)
+        return l[llen / 2];
+    else
+        return (l[llen / 2 - 1] + l[llen / 2]) / 2;
 }
 
 static unsigned long long average(unsigned long long *t, size_t tlen) {
@@ -59,9 +65,12 @@ static void progressBar(int width, float progress) {
     std::cout << "[";
     int pos = barWidth * progress;
     for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
     }
     std::cout << "] " << int(progress * 100.0) + 1 << " %\r";
     std::cout.flush();
@@ -79,7 +88,6 @@ unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
     std::cout << "Benchmarking pre_vs_sim mul\n";
-
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -117,21 +125,20 @@ int main(int argc, char **argv) {
     g2_null(group2);
     g2_new(group2);
 
-    bn_t rnd_s[test_comp+1];
+    bn_t rnd_s[test_comp + 1];
     for (int i = 0; i < test_comp; ++i) {
         bn_rand_mod(rnd_s[i], order);
     }
 
-    g1_t mat_g1[test_comp+1];
+    g1_t mat_g1[test_comp + 1];
     for (int x = 0; x < test_comp; ++x) {
         g1_rand(mat_g1[x]);
     }
 
-    g2_t mat_g2[test_comp+1];
+    g2_t mat_g2[test_comp + 1];
     for (int x = 0; x < test_comp; ++x) {
         g2_rand(mat_g2[x]);
     }
-
 
     for (int i = 0; i < test_comp; ++i) {
         for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
@@ -154,8 +161,8 @@ int main(int argc, char **argv) {
         g2_mul_pre(t_pre_A_g2[i], rand_elem_g2);
     }
 
-
-    g1_t tmp_pre; g1_t tmp_add_pre;
+    g1_t tmp_pre;
+    g1_t tmp_add_pre;
 
     g1_null(tmp_pre);
     g1_new(tmp_pre);
@@ -175,8 +182,9 @@ int main(int argc, char **argv) {
     printf("[");
     print_results("Results pre:           ", t, NTESTS);
 
-
-    g1_t tmp_sim; g1_t tmp_add_sim; g1_t sim_res;
+    g1_t tmp_sim;
+    g1_t tmp_add_sim;
+    g1_t sim_res;
 
     g1_null(tmp_sim);
     g1_new(tmp_sim);
@@ -190,10 +198,9 @@ int main(int argc, char **argv) {
         t[go] = cpucycles();
 
         for (int i = 0; i < test_comp; ++i) {
-            g1_mul_sim(sim_res, mat_g1[i], rnd_s[i+1], mat_g1[i+1], rnd_s[i+1]);
+            g1_mul_sim(sim_res, mat_g1[i], rnd_s[i + 1], mat_g1[i + 1], rnd_s[i + 1]);
             g1_add(tmp_add_sim, tmp_add_sim, sim_res);
         }
-
     }
     print_results("Results sim():           ", t, NTESTS);
 
@@ -202,12 +209,13 @@ int main(int argc, char **argv) {
 
     for (int jo = 0; jo < NTESTS; jo++) {
         t[jo] = cpucycles();
-        g1_mul_sim_lot(sim_res, mat_g1, rnd_s, test_comp+1);
+        g1_mul_sim_lot(sim_res, mat_g1, rnd_s, test_comp + 1);
     }
 
     print_results("Results sim lot:           ", t, NTESTS);
 
-    g2_t tmp_pre_g2; g2_t tmp_add_pre_g2;
+    g2_t tmp_pre_g2;
+    g2_t tmp_add_pre_g2;
 
     g2_null(tmp_pre_g2);
     g2_new(tmp_pre_g2);
@@ -227,8 +235,9 @@ int main(int argc, char **argv) {
 
     print_results("Results pre g2:           ", t, NTESTS);
 
-
-    g2_t tmp_sim_g2; g2_t tmp_add_sim_g2; g2_t sim_res_g2;
+    g2_t tmp_sim_g2;
+    g2_t tmp_add_sim_g2;
+    g2_t sim_res_g2;
 
     g2_null(tmp_sim_g2);
     g2_new(tmp_sim_g2);
@@ -242,10 +251,9 @@ int main(int argc, char **argv) {
         t[go] = cpucycles();
 
         for (int i = 0; i < test_comp; ++i) {
-            g2_mul_sim(sim_res_g2, mat_g2[i], rnd_s[i+1], mat_g2[i+1], rnd_s[i+1]);
+            g2_mul_sim(sim_res_g2, mat_g2[i], rnd_s[i + 1], mat_g2[i + 1], rnd_s[i + 1]);
             g2_add(tmp_add_sim_g2, tmp_add_sim_g2, sim_res_g2);
         }
-
     }
     print_results("Results sim g2():           ", t, NTESTS);
 
@@ -254,12 +262,13 @@ int main(int argc, char **argv) {
 
     for (int jo = 0; jo < NTESTS; jo++) {
         t[jo] = cpucycles();
-        g2_mul_sim_lot(sim_res_g2, mat_g2, rnd_s, test_comp+1);
+        g2_mul_sim_lot(sim_res_g2, mat_g2, rnd_s, test_comp + 1);
     }
 
     print_results("Results sim lot g2:           ", t, NTESTS);
     printf("]\n");
-    std::cout<<"\n"<<std::endl;
+    std::cout << "\n"
+              << std::endl;
 
     return 0;
 }
