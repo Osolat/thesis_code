@@ -11,6 +11,7 @@
 #include "../g2_arith.h"
 #include "../gt_arith.h"
 
+
 void init_null_new_bn_t_var(bn_t var_name){
     bn_null(var_name);
     bn_new(var_name);
@@ -167,7 +168,6 @@ bn_t *vector_add_vector(bn_t out[], bn_t v1[], bn_t v2[], int v1_size, int v2_si
         bn_t_add(tmp_add, v1[i], v2[i], order);
         bn_copy(out[i], tmp_add);
         bn_t_setzero(tmp_add);
-        //bn_null(tmp_add); bn_new(tmp_add);
     }
     return out;
 }
@@ -201,7 +201,7 @@ g1_t *vector_trans_mul_matrix_g1(g1_t out[], bn_t v[], g1_t A[], int v_cols, int
     g1_t tmp; g1_t tmp_add;
     init_null_new_g1_t_var(tmp);
     init_null_new_g1_t_var(tmp_add);
-    g1_mul_dig(tmp_add, tmp_add, 0);
+    g1_set_infty(tmp_add);
 
     int ctr = 0;
     int z = 0;
@@ -214,7 +214,7 @@ g1_t *vector_trans_mul_matrix_g1(g1_t out[], bn_t v[], g1_t A[], int v_cols, int
         }
         h++;
         g1_copy(out[ctr], tmp_add);
-        g1_mul_dig(tmp_add, tmp_add, 0);
+        g1_set_infty(tmp_add);
         ctr ++;
     }
     return out;
@@ -223,7 +223,7 @@ g1_t *vector_trans_mul_matrix_g1(g1_t out[], bn_t v[], g1_t A[], int v_cols, int
 g1_t *matrix_mul_scalar_g1(g1_t out[], g1_t A[], int scalar, int a_rows, int a_cols) {
     g1_t tmp_mul;
     init_null_new_g1_t_var(tmp_mul);
-    g1_mul_dig(tmp_mul, tmp_mul, 0);
+    g1_set_infty(tmp_mul);
 
     bn_t scalarBn_t;
     init_null_new_bn_t_var(scalarBn_t);
@@ -232,7 +232,7 @@ g1_t *matrix_mul_scalar_g1(g1_t out[], g1_t A[], int scalar, int a_rows, int a_c
     for (int i = 0; i < (a_rows * a_cols); ++i) {
         g1_mul(tmp_mul, A[i], scalarBn_t);
         g1_copy(out[i], tmp_mul);
-        g1_mul_dig(tmp_mul, tmp_mul, 0);
+        g1_set_infty(tmp_mul);
     }
     return out;
 }
@@ -244,12 +244,12 @@ g1_t *vector_add_vector_g1(g1_t out[], g1_t v1[], g1_t v2[], int v1_size, int v2
     }
     g1_t tmp_add;
     init_null_new_g1_t_var(tmp_add);
-    g1_mul_dig(tmp_add, tmp_add, 0);
+    g1_set_infty(tmp_add);
 
     for (int i = 0; i < v1_size; ++i) {
         g1_add(tmp_add, v1[i], v2[i]);
         g1_copy(out[i], tmp_add);
-        g1_mul_dig(tmp_add, tmp_add, 0);
+        g1_set_infty(tmp_add);
     }
     return out;
 }
@@ -261,12 +261,12 @@ g1_t *matrix_add_matrix_g1(g1_t out[], g1_t A[], g1_t Wi[], int a_rows, int a_co
     }
     g1_t tmp_add;
     init_null_new_g1_t_var(tmp_add);
-    g1_mul_dig(tmp_add, tmp_add, 0);
+    g1_set_infty(tmp_add);
 
     for (int i = 0; i < (a_rows * a_cols); ++i) {
         g1_add(tmp_add, A[i], Wi[i]);
         g1_copy(out[i], tmp_add);
-        g1_mul_dig(tmp_add, tmp_add, 0);
+        g1_set_infty(tmp_add);
     }
 
     return out;
@@ -281,7 +281,7 @@ g1_t *matrixG1_mul_vectorBN(g1_t out[], g1_t A[], bn_t v[], int a_rows, int a_co
     g1_t tmp; g1_t tmp_add;
     init_null_new_g1_t_var(tmp);
     init_null_new_g1_t_var(tmp_add);
-    g1_mul_dig(tmp_add, tmp_add, 0);
+    g1_set_infty(tmp_add);
 
     int z = 0;
     int cter = 0;
@@ -295,7 +295,7 @@ g1_t *matrixG1_mul_vectorBN(g1_t out[], g1_t A[], bn_t v[], int a_rows, int a_co
         }
 
         g1_copy(out[cter], tmp_add);
-        g1_mul_dig(tmp_add, tmp_add, 0);
+        g1_set_infty(tmp_add);
         cter ++;
     }
     return out;
@@ -310,7 +310,7 @@ g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_c
     g1_t tmp; g1_t tmp_add;
     init_null_new_g1_t_var(tmp);
     init_null_new_g1_t_var(tmp_add);
-    g1_mul_dig(tmp_add, tmp_add, 0);
+    g1_set_infty(tmp_add);
 
     int ctt = 0;
     int z = 0;
@@ -332,12 +332,12 @@ g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_c
             }
             h++;
             g1_copy(out[ctt], tmp_add);
-            g1_mul_dig(tmp_add, tmp_add, 0);
+            g1_set_infty(tmp_add);
             ctt ++;
         }
-        g1_mul_dig(tmp, tmp, 0);
+        g1_set_infty(tmp);
         g1_add(tmp, tmp, oneValue);
-        g1_mul_dig(tmp_add, tmp_add, 0);
+        g1_set_infty(tmp_add);
     }
     return out;
 }
@@ -494,6 +494,107 @@ g2_t *matrixG2_mul_matrixBN(g2_t out[], g2_t A[], bn_t Wi[], int a_rows, int a_c
     return out;
 }
 
+
+
+//g1 versions_sim
+g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols, int A_cols, int A_rows) {
+    if (v_cols != A_rows) {
+        printf("Error in matrix - trans vector dimensions! \n");
+        exit(-1);
+    }
+
+    g1_t tmp; g1_t tmp_add; g1_t sim_res;
+    init_null_new_g1_t_var(tmp);
+    init_null_new_g1_t_var(tmp_add);
+    init_null_new_g1_t_var(sim_res);
+
+    g1_set_infty(tmp_add);
+    int ctr = 0; int z = 0; int h = 0; int j_ctr = 0; int z_ctr = 0; int i_ctr = 1;
+    for (int i = 0; i < A_cols; ++i) {
+        z = h;
+        if (v_cols == 1) {
+            for (int j = 0; j < v_cols; ++j, z += A_cols) {
+                g1_mul(tmp, A[z], v[j]);
+                g1_add(tmp_add, tmp_add, tmp);
+            }
+        } else if (v_cols % 2 == 0){
+            for (int j = 0; j < v_cols/2; ++j, z += A_cols) {
+                g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                g1_add(tmp_add, tmp_add, sim_res);
+                i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
+            }
+            i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
+
+        } else if (v_cols % 2 != 0 && v_cols > 1){
+            for (int j = 0; j < (v_cols-1)/2; ++j, z += A_cols) {
+                g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                g1_add(tmp_add, tmp_add, sim_res);
+                i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
+
+                if (j == ((v_cols-1)/2)-1){
+                    g1_mul(tmp, A[z_ctr], v[j_ctr]);
+                    g1_add(tmp_add, tmp_add, tmp);
+                }
+            }
+            i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
+        }
+        h++;
+        g1_copy(out[ctr], tmp_add);
+        g1_set_infty(tmp_add);
+        ctr ++;
+    }
+    return out;
+}
+
+//g2 versions_sim
+g2_t *vector_trans_mul_matrix_g2_sim(g2_t out[], bn_t v[], g2_t A[], int v_cols, int A_cols, int A_rows) {
+    if (v_cols != A_rows) {
+        printf("Error in matrix - trans vector dimensions! \n");
+        exit(-1);
+    }
+
+    g2_t tmp; g2_t tmp_add; g2_t sim_res;
+    init_null_new_g2_t_var(tmp);
+    init_null_new_g2_t_var(tmp_add);
+    init_null_new_g2_t_var(sim_res);
+
+    g2_set_infty(tmp_add);
+    int ctr = 0; int z = 0; int h = 0; int j_ctr = 0; int z_ctr = 0; int i_ctr = 1;
+    for (int i = 0; i < A_cols; ++i) {
+        z = h;
+        if (v_cols == 1) {
+            for (int j = 0; j < v_cols; ++j, z += A_cols) {
+                g2_mul(tmp, A[z], v[j]);
+                g2_add(tmp_add, tmp_add, tmp);
+            }
+        } else if (v_cols % 2 == 0){
+            for (int j = 0; j < v_cols/2; ++j, z += A_cols) {
+                g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                g2_add(tmp_add, tmp_add, sim_res);
+                i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
+            }
+            i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
+
+        } else if (v_cols % 2 != 0 && v_cols > 1){
+            for (int j = 0; j < (v_cols-1)/2; ++j, z += A_cols) {
+                g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                g2_add(tmp_add, tmp_add, sim_res);
+                i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
+
+                if (j == ((v_cols-1)/2)-1){
+                    g2_mul(tmp, A[z_ctr], v[j_ctr]);
+                    g2_add(tmp_add, tmp_add, tmp);
+                }
+            }
+            i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
+        }
+        h++;
+        g2_copy(out[ctr], tmp_add);
+        g2_set_infty(tmp_add);
+        ctr ++;
+    }
+    return out;
+}
 
 
 void print_sk(struct secret_key_K_Lin *sk, struct sk_tmp_vj *shares, const uint32_t n, const uint32_t ksec) {

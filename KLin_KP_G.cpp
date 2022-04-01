@@ -80,7 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_G\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -130,54 +130,11 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
-    g1_t g1_val_1;
-    g1_t g1_res_1;
-    g1_t g1_res_2;
-    g1_t g1_mul_1;
-    g1_t g1_mul_2;
-    g1_t g1_val_2;
-    bn_t bn_t_val;
-
-    init_null_new_bn_t_var(bn_t_val);
-    init_null_new_g1_t_var(g1_val_1);
-    init_null_new_g1_t_var(g1_val_2);
-    init_null_new_g1_t_var(g1_res_1);
-    init_null_new_g1_t_var(g1_res_2);
-    init_null_new_g1_t_var(g1_mul_1);
-    init_null_new_g1_t_var(g1_mul_2);
-
-    bn_rand_mod(bn_t_val, order);
-    g1_rand(g1_val_1);
-    g1_rand(g1_val_2);
-    /*
-    for (int bo = 0; bo < NTESTS; bo++) {
-        //BenchMark g1_mul_sim vs g1_mul
-        t[bo] = cpucycles();
-        g1_mul(g1_mul_1, g1_val_1, bn_t_val);
-        g1_mul(g1_mul_2, g1_val_2, bn_t_val);
-        g1_add(g1_res_1, g1_mul_1, g1_mul_2);
-        //assert(g1_cmp(g1_res_1, g1_res_2) == RLC_EQ);
-        //std::cout << "[*] PASSED mul_sim" << std::endl;
-    }
-    printf("[");
-    print_results("Results bench_g1_mul():           ", t, NTESTS);
-
-    for (int to = 0; to < NTESTS; to++) {
-        //BenchMark g1_mul_sim vs g1_mul
-        t[to] = cpucycles();
-        g1_mul_sim(g1_res_2, g1_val_1, bn_t_val, g1_val_2, bn_t_val);
-        //assert(g1_cmp(g1_res_1, g1_res_2) == RLC_EQ);
-        //std::cout << "[*] PASSED mul_sim" << std::endl;
-    }
-    print_results("Results bench_mul_sim():           ", t, NTESTS);
-    */
-
     //DEBUG UTIL:
     //test_matrix_mul_vector(kss, order);
     //test_vector_trans_mul_matrix(kss, order);
     //test_matrix_mul_matrix(kss, order);
     //test_vector_dot_product(kss, order);
-
 
     g1_t group1;
     g2_t group2;
@@ -232,7 +189,6 @@ int main(int argc, char **argv) {
 
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
-                //g1_copy(mpk.mats[j].w[x], AWi[x]);
                 g1_mul(mpk.mats[j].w[x], group1, AWi[x]);
             }
         }
@@ -241,7 +197,7 @@ int main(int argc, char **argv) {
 
     //test_stuff(resultArray, 0, t, NTESTS);
 
-    //printf("[");
+    printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
@@ -312,7 +268,8 @@ int main(int argc, char **argv) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
-        gt_t gt_mul_test; gt_t gt_st_test;
+        gt_t gt_mul_test;
+        gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -362,27 +319,31 @@ int main(int argc, char **argv) {
     /* Decryption */
     //float progress4 = 0.0;
 
-    gt_t exp_val;
-    gt_t prod;
-    init_null_new_gt_t_var(exp_val);
-    init_null_new_gt_t_var(prod);
-
-    //Temporary variable supposed to hold intermediate result of the calculations.
-    gt_t tmp_res;
-    init_null_new_gt_t_var(tmp_res);
     bn_t pack_coef[N_ATTR];
-    //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
+    g1_t neg_ct[kss + 1];
+    gt_t prod_test2;
+    gt_t test_res;
+
+    /*
+    for (int hg = 0; hg < kss + 1; ++hg) {
+        init_null_new_g2_t_var(K1_prod[hg]);
+        init_null_new_g1_t_var(neg_ct[hg]);
+        g2_set_infty(K1_prod[hg]);
+    }
+    */
+
+    init_null_new_gt_t_var(prod_test2);
+    init_null_new_gt_t_var(test_res);
 
     for (int go = 0; go < NTESTS; go++) {
-        //progressBar(100,progress4);
-
+        //progressBar(100, progress4);
         t[go] = cpucycles();
 
         gt_t map_tmp_1;
         init_null_new_gt_t_var(map_tmp_1);
 
-        gt_t map_tmp_2;
-        init_null_new_gt_t_var(map_tmp_2);
+        gt_t map_tmp_test;
+        init_null_new_gt_t_var(map_tmp_test);
 
         gt_t map_tmp_prod_1;
         init_null_new_gt_t_var(map_tmp_prod_1);
@@ -390,61 +351,67 @@ int main(int argc, char **argv) {
         gt_t map_tmp_prod_2;
         init_null_new_gt_t_var(map_tmp_prod_2);
 
-        gt_t invert_elem;
-        init_null_new_gt_t_var(invert_elem);
+        g1_t exp_tmp_1;
+        init_null_new_g1_t_var(exp_tmp_1);
 
-        gt_t map_res;
-        init_null_new_gt_t_var(map_res);
+        g2_t tmp_prod_g2[kss + 1];
+        g2_t tmp_add_g2[kss + 1];
 
-        //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
-        fp12_set_dig(prod, 1);
+        fp12_set_dig(prod_test2, 1);
 
-        //Sets tmp_res to one so that the final multiplications starts out correct.
-        fp12_set_dig(tmp_res, 1);
-
+        for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
+            init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
+        }
 
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
         } catch (struct TreeUnsatisfiableException *e) {
             printf("Fail");
         }
-
         res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
-            fp12_set_dig(map_tmp_prod_1, 1);
-            fp12_set_dig(map_tmp_prod_2, 1);
+        fp12_set_dig(map_tmp_prod_2, 1);
 
-            //Copy all the coefficients to the pack_coef list.
-            init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
-            bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
+        for (int po = 0; po < kss + 1; ++po) {
+            int idx2 = 0;
+            g2_set_infty(tmp_add_g2[po]);
 
-            for (int ole = 0; ole < (kss + 1); ++ole) {
-                pp_map_oatep_k12(map_tmp_1, CT_A.C_1[ole], sk.sk[it3->leaf_index - 1].sk_one[ole]);
-                gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
+            for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
+                idx2 = it5->leaf_index - 1;
+                if (po == 0) {
+                    bn_copy(pack_coef[idx2], it5->coeff);
+                    fp12_set_dig(map_tmp_prod_1, 1);
+                    for (int jk2 = 0; jk2 < kss; ++jk2) {
+                        g1_mul(exp_tmp_1, CT_A.C_2[idx2 + 1].c_2_mat[jk2], pack_coef[idx2]);
+                        pp_map_oatep_k12(map_tmp_1, exp_tmp_1, sk.sk[idx2].sk_two[jk2]);
+                        gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
+                    }
+                    gt_mul(prod_test2, prod_test2, map_tmp_prod_1);
+                }
+                g2_mul(tmp_prod_g2[po], sk.sk[idx2].sk_one[po], pack_coef[idx2]);
+                g2_add(tmp_add_g2[po], tmp_add_g2[po], tmp_prod_g2[po]);
             }
-
-            for (int ola = 0; ola < kss; ++ola) {
-                pp_map_oatep_k12(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[ola],sk.sk[it3->leaf_index - 1].sk_two[ola]);
-                gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-            }
-            gt_inv(invert_elem, map_tmp_prod_1);
-            gt_mul(map_res, invert_elem, map_tmp_prod_2);
-            gt_exp(exp_val, map_res, pack_coef[it3->leaf_index - 1]);
-            gt_mul(prod, prod, exp_val);
+            g1_neg(neg_ct[po], CT_A.C_1[po]);
+            pp_map_oatep_k12(map_tmp_test, neg_ct[po], tmp_add_g2[po]);
+            gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_test);
         }
-        gt_mul(tmp_res, prod, CT_A.C_3_one_val);
+        gt_mul(test_res, map_tmp_prod_2, prod_test2);
+        gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;
-        //assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
+        //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
         //std::cout << "[*] PASSED" << std::endl;
         //progress4 = ((float) (go+1) / NTESTS);
     }
+
     //test_stuff(resultArray, 3, t, NTESTS);
 
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
+
+
+    //print_result_array(resultArray);
 
     //Test if msk and mpk is initialized correctly:
     //print_msk(&msk, N_ATTR, kss);

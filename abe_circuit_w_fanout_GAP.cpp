@@ -55,7 +55,7 @@ int getAttrNumber(string attr) {
 
 
 void test_abe(uint32_t N_ATTR) {
-    printf("abe circuit oe, N_attr = %d", N_ATTR);
+    printf("abe circuit GAP, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -156,9 +156,6 @@ void test_abe(uint32_t N_ATTR) {
         gt_exp(big_y, big_y, y);
     } printf("["); print_results("Results gen param():           ", t, NTESTS);
     //Encryption
-
-
-    //cout << "sheesh 1\n";
     bn_t attributes[N_ATTR];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -391,7 +388,7 @@ void test_abe(uint32_t N_ATTR) {
 int main(int argc, char **argv) {
     t[0] = cpucycles();
 
-    test_abe(1024);
+
     //uint32_t N_ATTR = test_attr;
     int *test_attrs;
     if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
