@@ -80,32 +80,32 @@ int main(int argc, char **argv) {
 
     /*Generator of G1*/
     g1_t g;
-    g1_new(g);
     g1_null(g);
+    g1_new(g);
     g1_get_gen(g);
 
     g2_t h;
-    g2_new(h);
     g2_null(h);
+    g2_new(h);
     g2_get_gen(h);
 
     /*For each attribute, t_i random*/
     for (int i = 0; i < N_ATTR; i++) {
-        bn_new(msk.t_values[i]);
         bn_null(msk.t_values[i]);
+        bn_new(msk.t_values[i]);
         bn_rand_mod(msk.t_values[i], order);
     }
 
     /*pick y randomly in Z_p*/
-    bn_new(msk.y);
     bn_null(msk.y);
+    bn_new(msk.y);
     bn_rand_mod(msk.y, order);
     /*MSK = (t_i, y)*/
 
     /*Setup PK*/
     for (int i = 0; i < N_ATTR; i++) {
-        g2_new(mpk.T_values[i]);
         g2_null(mpk.T_values[i]);
+        g2_new(mpk.T_values[i]);
         g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
     }
 
@@ -114,8 +114,8 @@ int main(int argc, char **argv) {
         /* code */
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
             /* code */
-            g2_new(pre_T[i][j]);
             g2_null(pre_T[i][j]);
+            g2_new(pre_T[i][j]);
         }
         g2_mul_pre(pre_T[i], mpk.T_values[i]);
     }
@@ -133,8 +133,8 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         for (int i = 0; i < N_ATTR; i++) {
-            g1_new(sk.D_values[i]);
             g1_null(sk.D_values[i]);
+            g1_new(sk.D_values[i]);
         }
         /*Secret sharing of y, according to policy tree*/
 
@@ -147,8 +147,8 @@ int main(int argc, char **argv) {
         share_secret(&tree_root, msk.y, order, res, true);
 
         bn_t temp;
-        bn_new(temp);
         bn_null(temp);
+        bn_new(temp);
         /*Accessing q_leaf(0) <= second.element().m_ZP*/
         /*Dx = g^(q_x(0)/t_x)*/
         for (auto it = res.begin(); it != res.end(); it++) {
@@ -163,14 +163,14 @@ int main(int argc, char **argv) {
     /* Encryption */
     // TODO: Fix message construction.
     gt_t message;
-    gt_new(message);
     gt_null(message);
+    gt_new(message);
     gt_rand(message);
     // gt_print(message);
 
     bn_t s;
-    bn_new(s);
     bn_null(s);
+    bn_new(s);
     struct ciphertext_kp_gpsw E;
     init_ciphertext_kp_gpsw(test_attr, &E);
 
@@ -180,8 +180,8 @@ int main(int argc, char **argv) {
         gt_exp(E.E_prime, mpk.Y, s);
         gt_mul(E.E_prime, E.E_prime, message);
         for (int i = 0; i < test_attr; i++) {
-            g2_new(E.E_values[i]);
             g2_null(E.E_values[i]);
+            g2_new(E.E_values[i]);
             g2_mul_fix(E.E_values[i], pre_T[i], s);
         }
     }
@@ -196,12 +196,12 @@ int main(int argc, char **argv) {
         bn_set_dig(attributes[i], i + 1);
     }
     gt_t F_root;
-    gt_new(F_root);
     gt_null(F_root);
+    gt_new(F_root);
 
     gt_t result;
-    gt_new(result);
     gt_null(result);
+    gt_new(result);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
