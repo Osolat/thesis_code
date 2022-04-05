@@ -2,30 +2,36 @@
 // Created by jonas on 4/1/22.
 //
 
-#include <iostream>
 #include <cstdio>
+#include <iostream>
 #include <string>
-#include "bench_defs.h"
 
+extern "C" {
+#include <relic/relic.h>
+}
+
+#define NTESTS 5000
 
 long long cpucycles(void) {
     unsigned long long result;
     asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"
-    : "=a" (result)::"%rdx");
+                 : "=a"(result)::"%rdx");
     return result;
 }
 
 static int cmp_llu(const void *a, const void *b) {
-    if (*(unsigned long long *) a < *(unsigned long long *) b) return -1;
-    if (*(unsigned long long *) a > *(unsigned long long *) b) return 1;
+    if (*(unsigned long long *)a < *(unsigned long long *)b) return -1;
+    if (*(unsigned long long *)a > *(unsigned long long *)b) return 1;
     return 0;
 }
 
 static unsigned long long median(unsigned long long *l, size_t llen) {
     qsort(l, llen, sizeof(unsigned long long), cmp_llu);
 
-    if (llen % 2) return l[llen / 2];
-    else return (l[llen / 2 - 1] + l[llen / 2]) / 2;
+    if (llen % 2)
+        return l[llen / 2];
+    else
+        return (l[llen / 2 - 1] + l[llen / 2]) / 2;
 }
 
 static unsigned long long average(unsigned long long *t, size_t tlen) {
@@ -48,7 +54,6 @@ unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
     std::cout << "Benchmarking iter_map_vs_map_sim\n";
-
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -83,7 +88,6 @@ int main(int argc, char **argv) {
     g2_t g2_ops_copy[test_comp];
 
     for (int i = 0; i < test_comp; ++i) {
-
         g1_null(g1_ops[i]);
         g1_new(g1_ops[i]);
         g2_null(g2_ops[i]);
@@ -105,13 +109,9 @@ int main(int argc, char **argv) {
             pc_map(iter_res, g1_ops[x], g2_ops[x]);
             gt_mul(iter_mul_tmp, iter_mul_tmp, iter_res);
         }
-
-
     }
     printf("[");
     print_results("Results iter_map:           ", t, NTESTS);
-
-
 
     for (int go = 0; go < NTESTS; go++) {
         t[go] = cpucycles();
@@ -123,8 +123,8 @@ int main(int argc, char **argv) {
     }
     print_results("Results sim():           ", t, NTESTS);
     printf("]\n");
-    std::cout<<"\n"<<std::endl;
+    std::cout << "\n"
+              << std::endl;
 
     return 0;
 }
-
