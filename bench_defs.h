@@ -32,6 +32,6 @@ extern "C" {
 
 /* Number of tests per operation during measurement */
 
-#define NTESTS 10000
+#define NTESTS 5000
 
 #endif
