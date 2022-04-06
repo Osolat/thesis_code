@@ -343,6 +343,8 @@ g1_t *matrixG1_mul_matrixBN(g1_t out[], g1_t A[], bn_t Wi[], int a_rows, int a_c
 }
 
 
+
+//TODO replace with g2_set_infty for all g2 versions
 //g2 versions
 g2_t *vector_trans_mul_matrix_g2(g2_t out[], bn_t v[], g2_t A[], int v_cols, int A_cols, int A_rows) {
     if (v_cols != A_rows) {
@@ -524,6 +526,25 @@ g1_t *vector_trans_mul_matrix_g1_pre(g1_t out[], bn_t v[], g1_t A[][RLC_EP_TABLE
     }
     return out;
 }
+
+
+g1_t *matrix_mul_scalar_g1_pre(g1_t out[], g1_t A[][RLC_EP_TABLE_MAX], int scalar, int a_rows, int a_cols) {
+    g1_t tmp_mul;
+    init_null_new_g1_t_var(tmp_mul);
+    g1_set_infty(tmp_mul);
+
+    bn_t scalarBn_t;
+    init_null_new_bn_t_var(scalarBn_t);
+    bn_set_dig(scalarBn_t, scalar);
+
+    for (int i = 0; i < (a_rows * a_cols); ++i) {
+        g1_mul_fix(tmp_mul, A[i], scalarBn_t);
+        g1_copy(out[i], tmp_mul);
+        g1_set_infty(tmp_mul);
+    }
+    return out;
+}
+
 //g1 versions_sim
 g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols, int A_cols, int A_rows) {
     if (v_cols != A_rows) {

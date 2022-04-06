@@ -120,9 +120,9 @@ int main(int argc, char **argv) {
 
     /* Setup */
     //float progress = 0.0;
-    for (int jo = 0; jo < 1; jo++) {
+    for (int jo = 0; jo < NTESTS; jo++) {
         //progressBar(100, progress);
-        //t[jo] = cpucycles();
+        t[jo] = cpucycles();
 
         g1_get_gen(group1);
         g2_get_gen(group2);
@@ -183,8 +183,8 @@ int main(int argc, char **argv) {
     }
     //test_stuff(resultArray, 0, t, NTESTS);
 
-    //printf("[");
-    //print_results("Results gen param():           ", t, NTESTS);
+    printf("[");
+    print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
     //float progress2 = 0.0;
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-    printf("[");
+    //printf("[");
     print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */

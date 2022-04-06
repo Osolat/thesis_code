@@ -37,6 +37,7 @@ g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols,
 g2_t *vector_trans_mul_matrix_g2_sim(g2_t out[], bn_t v[], g2_t A[], int v_cols, int A_cols, int A_rows);
 
 g1_t *vector_trans_mul_matrix_g1_pre(g1_t out[], bn_t v[], g1_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows);
+g1_t *matrix_mul_scalar_g1_pre(g1_t out[], g1_t A[][RLC_EP_TABLE_MAX], int scalar, int a_rows, int a_cols);
 g2_t *vector_trans_mul_matrix_g2_pre(g2_t out[], bn_t v[], g2_t A[][RLC_EP_TABLE_MAX], int v_cols, int A_cols, int A_rows);
 
 void init_null_new_bn_t_var(bn_t var_name);
