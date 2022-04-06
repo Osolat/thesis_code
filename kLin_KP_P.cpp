@@ -80,7 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_P\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_P on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -206,14 +206,11 @@ int main(int argc, char **argv) {
 
     init_secret_key_K_Lin(N_ATTR, &sk);
     init_sk_tmp_vj(N_ATTR, kss, &vj);
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
-
         t[no] = cpucycles();
-        free_tree(&tree_root);
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         bn_t *Wr;
         bn_t output1[kss + 1];
 

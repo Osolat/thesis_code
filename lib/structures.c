@@ -312,6 +312,184 @@ int init_tmp_si_lu(const uint32_t n_attr, const uint32_t kss, struct tmp_si_lu *
     }
 }
 
+
+//Stuff for klin unbounded optimized key generation:
+int init_master_key_k_lin_ub_ok(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_ub_ok *m) {
+    m->N_ATTR = n_attr;
+    m->N_SEC = kss;
+
+    m->W_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W0_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W1_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->v_secret = (bn_t * ) malloc (((2*kss)+1) * sizeof(bn_t));
+
+    if (m->W_matrix == NULL || m->v_secret == NULL || m->W0_matrix == NULL || m->W1_matrix == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_public_key_k_lin_ub_ok(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_ub_ok *p) {
+    p->N_ATTR = n_attr;
+    p->K_SEC = kss;
+
+    p->A1_mat = (g2_t * ) malloc ((((2*kss)+1)*kss) * sizeof(g2_t));
+    p->AW_mat = (g2_t * ) malloc ((kss*kss) * sizeof(g2_t));
+    p->AW0_mat = (g2_t * ) malloc ((kss*kss) * sizeof(g2_t));
+    p->AW1_mat = (g2_t * ) malloc ((kss*kss) * sizeof(g2_t));
+    p->e_mat = (gt_t * ) malloc (kss * sizeof(gt_t));
+
+    if (p->A1_mat == NULL  || p->AW_mat == NULL  || p->AW0_mat == NULL  || p->AW1_mat == NULL  || p->e_mat == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_K_Lin_ub_ok(const uint32_t n_attr, struct secret_key_K_Lin_ub_ok *s) {
+    s->N_ATTR = n_attr;
+    s->sk13 = (struct k_lin_secret_key_ub_13_ok * ) malloc (((n_attr) * 2*((2*kss)+1) + kss) * sizeof(struct k_lin_secret_key_ub_13_ok));
+    s->sk4 = (struct k_lin_secret_key_ub_4_ok * ) malloc (((n_attr) * 2*((2*kss)+1)) * sizeof(struct k_lin_secret_key_ub_4_ok));
+
+    if (s->sk13 == NULL || s->sk4 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_sk_tmp_vectors_ub_ok(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vectors_ub_ok *v) {
+    v->N_ATTR = n_attr;
+    v->K_SEC = kss;
+
+    v->vj = (struct tmp_vj_ub_ok * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_vj_ub_ok));
+    v->rj = (struct tmp_rj_ub_ok * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_rj_ub_ok));
+
+    if (v->vj == NULL || v->rj == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_ciphertext_K_Lin_ub_ok(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin_ub_ok *c) {
+    c->N_ATTR = n_attr;
+    c->K_SEC = kss;
+
+    c->C_23 = (struct c_attribute_K_Lin_ub_c23_ok * ) malloc ((n_attr * (((2*kss)+1)+kss)) * sizeof(struct c_attribute_K_Lin_ub_c23_ok));
+    c->C_1 = (g2_t * ) malloc (((2*kss)+1) * sizeof(g2_t));
+
+    if (c->C_23 == NULL || c->C_1 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_tmp_si_ub_ok(const uint32_t n_attr, const uint32_t kss, struct tmp_si_ub_ok *si) {
+    si->N_ATTR = n_attr;
+    si->K_SEC = kss;
+
+    si->si = (struct si_ub_ok * ) malloc ((n_attr * kss) * sizeof(struct si_ub_ok));
+
+    if (si->si == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+
+//Stuff for klin unbounded optimized decryption:
+int init_master_key_k_lin_ub_od(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_ub_od *m) {
+    m->N_ATTR = n_attr;
+    m->N_SEC = kss;
+
+    m->W_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W0_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->W1_matrix = (bn_t * ) malloc ((((2*kss)+1)*kss) * sizeof(bn_t));
+    m->v_secret = (bn_t * ) malloc (((2*kss)+1) * sizeof(bn_t));
+
+    if (m->W_matrix == NULL || m->v_secret == NULL || m->W0_matrix == NULL || m->W1_matrix == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_public_key_k_lin_ub_od(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_ub_od *p) {
+    p->N_ATTR = n_attr;
+    p->K_SEC = kss;
+
+    p->A1_mat_g1 = (g1_t * ) malloc ((((2*kss)+1)*kss) * sizeof(g1_t));
+    p->A1_mat_g2 = (g2_t * ) malloc ((((2*kss)+1)*kss) * sizeof(g2_t));
+    p->AW_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->AW0_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->AW1_mat = (g1_t * ) malloc ((kss*kss) * sizeof(g1_t));
+    p->e_mat = (gt_t * ) malloc (kss * sizeof(gt_t));
+
+    if (p->A1_mat_g1 == NULL || p->A1_mat_g2 == NULL  || p->AW_mat == NULL  || p->AW0_mat == NULL  || p->AW1_mat == NULL  || p->e_mat == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_K_Lin_ub_od(const uint32_t n_attr, struct secret_key_K_Lin_ub_od *s) {
+    s->N_ATTR = n_attr;
+    s->sk13 = (struct k_lin_secret_key_ub_13_od * ) malloc (((n_attr) * 2*((2*kss)+1) + kss) * sizeof(struct k_lin_secret_key_ub_13_od));
+    s->sk4 = (struct k_lin_secret_key_ub_4_od * ) malloc (((n_attr) * 2*((2*kss)+1)) * sizeof(struct k_lin_secret_key_ub_4_od));
+
+    if (s->sk13 == NULL || s->sk4 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_sk_tmp_vectors_ub_od(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vectors_ub_od *v) {
+    v->N_ATTR = n_attr;
+    v->K_SEC = kss;
+
+    v->vj = (struct tmp_vj_ub_od * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_vj_ub_od));
+    v->rj = (struct tmp_rj_ub_od * ) malloc (((n_attr) * ((2*kss)+1)) * sizeof(struct tmp_rj_ub_od));
+
+    if (v->vj == NULL || v->rj == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_ciphertext_K_Lin_ub_od(const uint32_t n_attr, const uint32_t kss, struct ciphertext_K_Lin_ub_od *c) {
+    c->N_ATTR = n_attr;
+    c->K_SEC = kss;
+
+    c->C_23 = (struct c_attribute_K_Lin_ub_c23_od * ) malloc ((n_attr * (((2*kss)+1)+kss)) * sizeof(struct c_attribute_K_Lin_ub_c23_od));
+    c->C_1 = (g2_t * ) malloc (((2*kss)+1) * sizeof(g2_t));
+
+    if (c->C_23 == NULL || c->C_1 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_tmp_si_ub_od(const uint32_t n_attr, const uint32_t kss, struct tmp_si_ub_od *si) {
+    si->N_ATTR = n_attr;
+    si->K_SEC = kss;
+
+    si->si = (struct si_ub_od * ) malloc ((n_attr * kss) * sizeof(struct si_ub_od));
+
+    if (si->si == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+
 //Optimised KeyGen
 int init_master_key_k_lin_ok(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_ok *m) {
     m->N_ATTR = n_attr;

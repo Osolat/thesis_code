@@ -81,7 +81,7 @@ unsigned long long t[NTESTS];
 //unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE_GAP_UB from K-Lin\n";
+    std::cout << "Benchmarking KP-ABE_GAP_UB from K-Lin on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
     srand(time(NULL));
 
     if (argc == 1) {
@@ -213,14 +213,11 @@ int main(int argc, char **argv) {
     std::vector <policy_coefficient> res;
     init_secret_key_K_Lin_lu(N_ATTR, &sk);
     init_sk_tmp_vectors_lu(N_ATTR, kss, &vj);
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
         t[no] = cpucycles();
-        free_tree(&tree_root);
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-
         for (int i = 0; i < (two_k); ++i) {
             bn_t *Wr;
             bn_t *jW1;

@@ -675,6 +675,23 @@ g2_t *vector_trans_mul_matrix_g2_pre(g2_t out[], bn_t v[], g2_t A[][RLC_EP_TABLE
     return out;
 }
 
+g2_t *matrix_mul_scalar_g2_pre(g2_t out[], g2_t A[][RLC_EP_TABLE_MAX], int scalar, int a_rows, int a_cols) {
+    g2_t tmp_mul;
+    init_null_new_g2_t_var(tmp_mul);
+    g2_set_infty(tmp_mul);
+
+    bn_t scalarBn_t;
+    init_null_new_bn_t_var(scalarBn_t);
+    bn_set_dig(scalarBn_t, scalar);
+
+    for (int i = 0; i < (a_rows * a_cols); ++i) {
+        g2_mul_fix(tmp_mul, A[i], scalarBn_t);
+        g2_copy(out[i], tmp_mul);
+        g2_set_infty(tmp_mul);
+    }
+    return out;
+}
+
 void print_sk(struct secret_key_K_Lin *sk, struct sk_tmp_vj *shares, const uint32_t n, const uint32_t ksec) {
     for (int j = 0; j < (n + 1); ++j) {
         printf("sk_1_%d: \n", j);
