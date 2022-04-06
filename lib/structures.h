@@ -75,33 +75,33 @@ int init_secret_key_kp_gpsw_oe(const uint32_t n_attr, struct secret_key_kp_gpsw_
 int init_ciphertext_kp_gpsw(const uint32_t n_attr, struct ciphertext_kp_gpsw *E);
 int init_ciphertext_kp_gpsw_oe(const uint32_t n_attr, struct ciphertext_kp_gpsw_oe *E);
 
-struct master_key_kp_gpsw_lu {
+struct master_key_kp_gpsw_lu_ok {
     bn_t y;
 };
 
-struct public_key_kp_gpsw_lu {
+struct public_key_kp_gpsw_lu_ok {
     g1_t g1;
     g2_t g2;
     // TODO: Most likely don't need t_values if using T as a hashing function -> G_2
     g2_t *t_values;
 };
 
-struct secret_key_kp_gpsw_lu {
+struct secret_key_kp_gpsw_lu_ok {
     g2_t *D_values;
     g1_t *R_values;
 };
 
-struct ciphertext_kp_gpsw_lu {
+struct ciphertext_kp_gpsw_lu_ok {
     bn_t gamma;
     gt_t E_prime;
     g1_t E_prime_prime;
     g2_t *E_values;
 };
 
-int init_master_key_kp_gpsw_lu(const uint32_t n_attr, struct master_key_kp_gpsw_lu *m);
-int init_public_key_kp_gpsw_lu(const uint32_t n_attr, struct public_key_kp_gpsw_lu *p);
-int init_secret_key_kp_gpsw_lu(const uint32_t n_attr, struct secret_key_kp_gpsw_lu *sk);
-int init_ciphertext_kp_gpsw_lu(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu *E);
+int init_master_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct master_key_kp_gpsw_lu_ok *m);
+int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gpsw_lu_ok *p);
+int init_secret_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_ok *sk);
+int init_ciphertext_kp_gpsw_lu_ok(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_ok *E);
 
 
 //Stuff used for the K_LIN scheme.

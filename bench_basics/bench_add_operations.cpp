@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 5000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -75,8 +75,7 @@ int main(int argc, char **argv) {
     g2_new(g2_gen_var);
 
     g1_t g1_gen_vars[NTESTS];
-
-    std::cout << "G1 operations" << std::endl;
+    std::cout << "[G1 add, G2 add, GT mul]" << std::endl;
     for (size_t i = 0; i < NTESTS; i++) {
         g1_null(g1_gen_vars[i]);
         g1_new(g1_gen_vars[i]);
@@ -92,13 +91,13 @@ int main(int argc, char **argv) {
         t[i] = cpucycles();
         g1_add(temp_g1, g1_gen_vars[i], g1_gen_vars[(i + 1) % NTESTS]);
     }
+    printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
         g1_free(g1_gen_vars[i]);
     }
 
-    std::cout << "G2 operations" << std::endl;
     // G2 tests
     g2_t g2_gen_vars[NTESTS];
 

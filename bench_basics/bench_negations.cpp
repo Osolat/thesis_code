@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 5000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -94,6 +94,7 @@ int main(int argc, char **argv) {
     gt_t prod;
     gt_new(prod);
     gt_null(prod);
+    std::cout << "[iterative mul-> inv, iterative neg+mul, sim_lot -> inv, neg -> sim_lot]" << std::endl;
     for (size_t i = 0; i < NTESTS; i++) {
         fp12_set_dig(prod, 1);
         t[i] = cpucycles();
@@ -116,7 +117,24 @@ int main(int argc, char **argv) {
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
+
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        pc_map_sim(temp, g1_operands, g2_operands, operands);
+        gt_inv(temp, temp);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        for (size_t j = 0; j < operands; j++) {
+            g1_neg(g1_operands_neg[j], g1_operands[j]);
+        }
+        pc_map_sim(temp, g1_operands, g2_operands, operands);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
+    
     core_clean();
     return 0;
 }

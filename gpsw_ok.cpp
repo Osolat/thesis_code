@@ -119,6 +119,8 @@ int main(int argc, char **argv) {
     struct node tree_root;
     std::vector<policy_coefficient> res;
     init_secret_key_kp_gpsw(N_ATTR, &sk);
+
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         for (int i = 0; i < N_ATTR; i++) {
@@ -127,11 +129,6 @@ int main(int argc, char **argv) {
         }
         /*Secret sharing of y, according to policy tree*/
 
-        /* code */
-        free_tree(&tree_root);
-
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 

@@ -13,6 +13,7 @@
 #include "lib/pairing_arith.h"
 #include "lib/gt_arith.h"
 #include "lib/g1_arith.h"
+#include "lib/utility/t_function.h"
 
 #include "legacy/l_zattributelist.h"
 #include "legacy/l_zconstants.h"
@@ -32,6 +33,6 @@ extern "C" {
 
 /* Number of tests per operation during measurement */
 
-#define NTESTS 10000
+#define NTESTS 1000
 
 #endif
