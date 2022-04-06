@@ -66,17 +66,17 @@ kLin_KP:
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	$(CXX) -o objects/klin_kp_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/klin_kp_G $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) KLin_KP_G.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/klin_kp_A $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) KLin_KP_A.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/klin_kp_P $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) KLin_KP_P.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/klin_kp_GAP $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) KLin_KP_GAP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_G $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_G.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_A $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_A.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_P $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_P.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_GAP $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/klin_kp_GAP_OE $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OE.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/klin_kp_GAP_OK $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OK.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/klin_kp_GAP_OD $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OD.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
 kLin_KP_UB:
-	$(info ************  Compiling K-LIN ************)
+	$(info ************  Compiling K-LIN-UB ************)
 	g++ $(CXXFLAGS) -c lib/k_lin/k_lin_util.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/zp_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
@@ -85,7 +85,7 @@ kLin_KP_UB:
 	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/klin_kp_gap_ub $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) Klin_KP_GAP_UB.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_gap_ub $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_UB.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/klin_kp_ub $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_lu.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
