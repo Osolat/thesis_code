@@ -80,8 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_A\n";
-
+    std::cout << "Benchmarking KP-ABE from K-Lin_GAP on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -89,7 +88,6 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
-
     srand(time(NULL));
     uint32_t N_ATTR = test_attr;
 
@@ -111,6 +109,10 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
+    /* Generate pre-computation tables for g, h */
+    g1_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW[N_ATTR+1][kss * kss][RLC_EP_TABLE_MAX];
+
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
@@ -118,9 +120,9 @@ int main(int argc, char **argv) {
 
     /* Setup */
     //float progress = 0.0;
-    for (int jo = 0; jo < 1; jo++) {
+    for (int jo = 0; jo < NTESTS; jo++) {
         //progressBar(100, progress);
-        //t[jo] = cpucycles();
+        t[jo] = cpucycles();
 
         g1_get_gen(group1);
         g2_get_gen(group2);
@@ -135,6 +137,12 @@ int main(int argc, char **argv) {
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
             g1_mul_gen(mpk.a_mat[d], A_tmp[d]);
+
+            for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
+                init_null_new_g1_t_var(t_pre_A[d][j]);
+            }
+            g1_mul_pre(t_pre_A[d], mpk.a_mat[d]);
+
         }
 
         bn_t *Av;
@@ -165,14 +173,18 @@ int main(int argc, char **argv) {
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
                 g1_mul_gen(mpk.mats[j].w[x], AWi[x]);
+                for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
+                    init_null_new_g1_t_var(t_pre_AW[j][x][d]);
+                }
+                g1_mul_pre(t_pre_AW[j][x], mpk.mats[j].w[x]);
             }
         }
         //progress = ((float) (jo+1) / NTESTS);
     }
     //test_stuff(resultArray, 0, t, NTESTS);
 
-    //printf("[");
-    //print_results("Results gen param():           ", t, NTESTS);
+    printf("[");
+    print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
     //float progress2 = 0.0;
@@ -185,14 +197,12 @@ int main(int argc, char **argv) {
 
     init_secret_key_K_Lin(N_ATTR, &sk);
     init_sk_tmp_vj(N_ATTR, kss, &vj);
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
 
         t[no] = cpucycles();
-        free_tree(&tree_root);
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         bn_t *Wr;
         bn_t output1[kss + 1];
 
@@ -228,7 +238,7 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-    printf("[");
+    //printf("[");
     print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */
@@ -242,8 +252,7 @@ int main(int argc, char **argv) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
-        gt_t gt_mul_test;
-        gt_t gt_st_test;
+        gt_t gt_mul_test; gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -267,7 +276,7 @@ int main(int argc, char **argv) {
         g1_t output[kss + 1];
 
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-        ct_1 = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
+        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
@@ -275,11 +284,11 @@ int main(int argc, char **argv) {
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
-            ct2_i = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
+            ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
             for (int v = 0; v < (kss + 1); ++v) {
-                if (v < kss) {
+                if (v < kss){
                     g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
                 }
                 g1_copy(CT_A.C_1[v], ct_1[v]);
@@ -293,96 +302,79 @@ int main(int argc, char **argv) {
 
     /* Decryption */
     //float progress4 = 0.0;
-    g1_t pair_g1_top[(kss + 1)];
-    g2_t pair_g2_top[(kss + 1)];
-    g1_t pair_g1_bot[kss];
-    g2_t pair_g2_bot[kss];
 
     bn_t pack_coef[N_ATTR];
+    g1_t pair_g1_test_2[kss];
+    g2_t pair_g2_test_2[kss];
+    g1_t neg_ct[kss + 1];
 
-    gt_t exp_val;
-    gt_t prod;
-    init_null_new_gt_t_var(exp_val);
-    init_null_new_gt_t_var(prod);
+    gt_t prod_test2;
+    g2_t K1_prod[kss + 1];
+    g2_t sk1_tmp[N_ATTR];
+    gt_t test_res;
 
-    //Temporary variable supposed to hold intermediate result of the calculations.
-    gt_t tmp_res;
-    init_null_new_gt_t_var(tmp_res);
+    for (int hg = 0; hg < kss + 1; ++hg) {
+        init_null_new_g2_t_var(K1_prod[hg]);
+        init_null_new_g2_t_var(sk1_tmp[hg]);
+        init_null_new_g1_t_var(neg_ct[hg]);
+        g2_set_infty(K1_prod[hg]);
+    }
+
+    init_null_new_gt_t_var(prod_test2);
+    init_null_new_gt_t_var(test_res);
+
+    gt_t map_sim_test_1;
+    gt_t map_sim_test_2;
+    init_null_new_gt_t_var(map_sim_test_1);
+    init_null_new_gt_t_var(map_sim_test_2);
 
     for (int go = 0; go < NTESTS; go++) {
-        //progressBar(100,progress4);
-
+        //progressBar(100, progress4);
         t[go] = cpucycles();
-        gt_t map_sim;
-        init_null_new_gt_t_var(map_sim);
+        fp12_set_dig(prod_test2, 1);
 
-        gt_t map_sim_1;
-        init_null_new_gt_t_var(map_sim_1);
-
-        gt_t map_sim_2;
-        init_null_new_gt_t_var(map_sim_2);
-
-        gt_t invert_elem;
-        init_null_new_gt_t_var(invert_elem);
-
-        gt_t map_sim_res;
-        init_null_new_gt_t_var(map_sim_res);
-
-        //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
-        fp12_set_dig(prod, 1);
-
-        //Sets tmp_res to one so that the final multiplications starts out correct.
-        fp12_set_dig(tmp_res, 1);
+        for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
+            init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
+        }
 
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
         } catch (struct TreeUnsatisfiableException *e) {
             printf("Fail");
         }
-
         res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
-            //Copy all the coefficients to the pack_coef list.
-            init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
-            bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
-            //Set up the two lists used for the pp_map_sim_oatep_k12 operation
-
-            for (int jki = 0; jki < kss+1; ++jki) {
-                g1_copy(pair_g1_top[jki], CT_A.C_1[jki]);
-                g2_copy(pair_g2_top[jki], sk.sk[it3->leaf_index - 1].sk_one[jki]);
-
+        for (int po = 0; po < kss + 1; ++po) {
+            for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
+                if (po == 0) {
+                    bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
+                    for (int jk2 = 0; jk2 < kss; ++jk2) {
+                        g1_mul(pair_g1_test_2[jk2], CT_A.C_2[it5->leaf_index].c_2_mat[jk2], pack_coef[it5->leaf_index - 1]);
+                        g2_copy(pair_g2_test_2[jk2], sk.sk[it5->leaf_index - 1].sk_two[jk2]);
+                    }
+                    pp_map_sim_oatep_k12(map_sim_test_2, pair_g1_test_2, pair_g2_test_2, kss);
+                    gt_mul(prod_test2, prod_test2, map_sim_test_2);
+                }
+                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
-            pp_map_sim_oatep_k12(map_sim_1, pair_g1_top, pair_g2_top, kss+1);
-
-            for (int jky = 0; jky < kss; ++jky) {
-                g1_copy(pair_g1_bot[jky], CT_A.C_2[it3->leaf_index].c_2_mat[jky]);
-                g2_copy(pair_g2_bot[jky], sk.sk[it3->leaf_index - 1].sk_two[jky]);
-
-            }
-            pp_map_sim_oatep_k12(map_sim_2, pair_g1_bot, pair_g2_bot, kss);
-            gt_inv(invert_elem, map_sim_1);
-            gt_mul(map_sim, map_sim_2, invert_elem);
-
-            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-            gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
-            //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
-            gt_mul(prod, prod, exp_val);
+            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(neg_ct[po], CT_A.C_1[po]);
         }
-        gt_mul(tmp_res, prod, CT_A.C_3_one_val);
+
+        pp_map_sim_oatep_k12(map_sim_test_1, neg_ct, K1_prod, (kss + 1));
+        gt_mul(test_res, map_sim_test_1, prod_test2);
+        gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;
-        //assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
+        //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
         //std::cout << "[*] PASSED" << std::endl;
         //progress4 = ((float) (go+1) / NTESTS);
     }
-    //test_stuff(resultArray, 3, t, NTESTS);
 
+    //test_stuff(resultArray, 3, t, NTESTS);
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
     std::cout<<"\n"<<std::endl;
     return 0;
 }
-
-

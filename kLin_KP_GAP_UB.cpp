@@ -1,5 +1,5 @@
 //
-// Created by jonas on 2/18/22.
+// Created by jonas on 4/5/22.
 //
 
 //#include "kLin_KP.h"
@@ -81,7 +81,7 @@ unsigned long long t[NTESTS];
 //unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE_UB from K-Lin on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
+    std::cout << "Benchmarking KP-ABE_GAP_UB from K-Lin on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
     srand(time(NULL));
 
     if (argc == 1) {
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
-    int two_k = ((2*kss) + 1);
+    int two_k = ((2 * kss) + 1);
 
     uint32_t N_ATTR = test_attr;
 
@@ -112,6 +112,12 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
+    g1_t t_pre_A[two_k * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW[kss * kss][RLC_EP_TABLE_MAX];
+    //g1_t t_pre_AW0[kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW1[kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_C2[kss * kss][RLC_EP_TABLE_MAX];
+
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
@@ -123,8 +129,8 @@ int main(int argc, char **argv) {
         //progressBar(100,progress);
         t[jo] = cpucycles();
 
-        g1_rand(group1);
-        g2_rand(group2);
+        g1_get_gen(group1);
+        g2_get_gen(group2);
 
         bn_t A1_tmp[two_k * kss];
 
@@ -136,11 +142,22 @@ int main(int argc, char **argv) {
             bn_rand_mod(msk.W_matrix[d], order);
             bn_rand_mod(msk.W1_matrix[d], order);
             bn_rand_mod(msk.W0_matrix[d], order);
-            g1_mul(mpk.A1_mat[d], group1, A1_tmp[d]);
+            g1_mul_gen(mpk.A1_mat[d], A1_tmp[d]);
+
+            for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
+                init_null_new_g1_t_var(t_pre_A[d][j]);
+            }
+            g1_mul_pre(t_pre_A[d], mpk.A1_mat[d]);
         }
 
-        bn_t *Av; bn_t *AW; bn_t *AW0; bn_t *AW1;
-        bn_t output[kss]; bn_t outputAW[kss * kss]; bn_t outputAW0[kss * kss]; bn_t outputAW1[kss * kss];
+        bn_t *Av;
+        bn_t *AW;
+        bn_t *AW0;
+        bn_t *AW1;
+        bn_t output[kss];
+        bn_t outputAW[kss * kss];
+        bn_t outputAW0[kss * kss];
+        bn_t outputAW1[kss * kss];
         gt_t map_tmp[kss];
 
         //bn_t one_as_bn;
@@ -168,9 +185,17 @@ int main(int argc, char **argv) {
                 pp_map_oatep_k12(map_tmp[k], group1, group2);
                 gt_exp(mpk.e_mat[k], map_tmp[k], Av[k]);
             }
-            g1_mul(mpk.AW_mat[k], group1, AW[k]);
-            g1_mul(mpk.AW0_mat[k], group1, AW0[k]);
-            g1_mul(mpk.AW1_mat[k], group1, AW1[k]);
+            g1_mul_gen(mpk.AW_mat[k], AW[k]);
+            g1_mul_gen(mpk.AW0_mat[k], AW0[k]);
+            g1_mul_gen(mpk.AW1_mat[k], AW1[k]);
+            for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
+                init_null_new_g1_t_var(t_pre_AW[k][d]);
+                //init_null_new_g1_t_var(t_pre_AW0[k][d]);
+                init_null_new_g1_t_var(t_pre_AW1[k][d]);
+            }
+            g1_mul_pre(t_pre_AW[k], mpk.AW_mat[k]);
+            //g1_mul_pre(t_pre_AW0[k], mpk.AW0_mat[k]);
+            g1_mul_pre(t_pre_AW1[k], mpk.AW1_mat[k]);
         }
         //progress = ((float) (jo+1) / NTESTS);
     }
@@ -194,7 +219,11 @@ int main(int argc, char **argv) {
         //progressBar(100,progress2);
         t[no] = cpucycles();
         for (int i = 0; i < (two_k); ++i) {
-            bn_t *Wr; bn_t *jW1; bn_t *W0_W1; bn_t *W0_w1_rj; bn_t *v_plus_w;
+            bn_t *Wr;
+            bn_t *jW1;
+            bn_t *W0_W1;
+            bn_t *W0_w1_rj;
+            bn_t *v_plus_w;
             bn_t output1[two_k];
             bn_t output3[two_k * kss];
             bn_t output4[two_k * kss];
@@ -207,29 +236,30 @@ int main(int argc, char **argv) {
                 //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
                 for (int k = 0; k < (kss); k++) {
                     bn_rand_mod(vj.rj[it->leaf_index - 1].vec_rj[k], order);
-                    g2_mul(sk.sk13[it->leaf_index - 1].sk_two[k], group2, vj.rj[it->leaf_index - 1].vec_rj[k]);
+                    g2_mul_gen(sk.sk13[it->leaf_index - 1].sk_two[k], vj.rj[it->leaf_index - 1].vec_rj[k]);
                 }
                 //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
                 //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
                 bn_copy(vj.vj[it->leaf_index - 1].vec_j[i], it->share);
-                g2_mul(sk.sk4[it->leaf_index - 1].sk_four[i], group2, vj.vj[it->leaf_index - 1].vec_j[i]);                                                                                                         //Correct if rho(j)=0 for all j, however should be empty when all AND gates in policy tree
+                g2_mul_gen(sk.sk4[it->leaf_index - 1].sk_four[i], vj.vj[it->leaf_index -
+                                                                        1].vec_j[i]);
 
-                jW1 = matrix_mul_scalar(output3, msk.W1_matrix, it->leaf_index - 1, two_k, kss, order);                                                               //h+1 so that we don't multiply with 0
-                W0_W1 = matrix_add_matrix(output4, msk.W0_matrix, jW1, two_k, kss, two_k, kss,order);                                     //TODO Maybe not correct with rho(j) !=0 / =0
+                jW1 = matrix_mul_scalar(output3, msk.W1_matrix, it->leaf_index - 1, two_k, kss,order);
+                W0_W1 = matrix_add_matrix(output4, msk.W0_matrix, jW1, two_k, kss, two_k, kss,order);
                 W0_w1_rj = matrix_mul_vector(output5, W0_W1, vj.rj[it->leaf_index - 1].vec_rj, two_k, kss, kss, order);
 
                 for (int s = 0; s < (two_k); ++s) {
-                    g2_mul(sk.sk13[it->leaf_index - 1].sk_three[s], group2, W0_w1_rj[s]);
+                    g2_mul_gen(sk.sk13[it->leaf_index - 1].sk_three[s], W0_w1_rj[s]);
                 }
             }
 
             for (auto it2 = res.begin(); it2 != res.end(); ++it2) {
                 //Computes W_j * rj by matrix-vector multiplication.
-                Wr = matrix_mul_vector(output1, msk.W_matrix, vj.rj[it2->leaf_index - 1].vec_rj, two_k, kss, kss, order);
-                v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it2->leaf_index - 1].vec_j, Wr, two_k, two_k, order);                                                   //TODO Bug (relic stack smashing) here but only occurs when k=1 and N_Attr=50. Every other values work
+                Wr = matrix_mul_vector(output1, msk.W_matrix, vj.rj[it2->leaf_index - 1].vec_rj, two_k, kss, kss,order);
+                v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it2->leaf_index - 1].vec_j, Wr, two_k, two_k,order);
                 //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
                 for (int u = 0; u < (two_k); ++u) {
-                    g2_mul(sk.sk13[it2->leaf_index - 1].sk_one[u], group2, v_plus_w[u]);
+                    g2_mul_gen(sk.sk13[it2->leaf_index - 1].sk_one[u], v_plus_w[u]);
                 }
             }
         }
@@ -252,7 +282,8 @@ int main(int argc, char **argv) {
         //progressBar(100,progress3);
         t[qo] = cpucycles();
 
-        gt_t gt_mul_test; gt_t gt_st_test;
+        gt_t gt_mul_test;
+        gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -274,13 +305,13 @@ int main(int argc, char **argv) {
         //set ct_1
         g1_t *ct_1_g1;
         g1_t output_g1[two_k];
-        ct_1_g1 = vector_trans_mul_matrix_g1(output_g1, rnd_s, mpk.A1_mat, kss, two_k, kss);
+        ct_1_g1 = vector_trans_mul_matrix_g1_pre(output_g1, rnd_s, t_pre_A, kss, two_k, kss);
 
         for (int t = 0; t < (two_k); ++t) {
             g1_copy(CT_A.C_1[t], ct_1_g1[t]);
         }
 
-        for (int z = 0; z < N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
+        for (int z = 0; z <N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
             for (int x = 0; x < kss; ++x) {
                 bn_rand_mod(si.si[z].si_vec[x], order);
             }
@@ -290,21 +321,32 @@ int main(int argc, char **argv) {
             g1_t output_ct_3[two_k];
 
             //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-            ct_3 = vector_trans_mul_matrix_g1(output_ct_3, si.si[z].si_vec, mpk.A1_mat, kss, two_k, kss);
+            ct_3 = vector_trans_mul_matrix_g1_pre(output_ct_3, si.si[z].si_vec, t_pre_A, kss, two_k, kss);
 
             g1_t *sTAW;
             g1_t output[kss];
-            sTAW = vector_trans_mul_matrix_g1(output, rnd_s, mpk.AW_mat, kss, kss, kss);
+            sTAW = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW, kss, kss, kss);
 
-            g1_t *i_A1_W1; g1_t *W0_i_A1_W1; g1_t *res_sT_W0; g1_t *res_Add_val;
+            g1_t *i_A1_W1;
+            g1_t *W0_i_A1_W1;
+            g1_t *res_sT_W0;
+            g1_t *res_Add_val;
             g1_t output_i_A1_W1[kss * kss];
             g1_t output_W0_i_A1_W1[kss * kss];
             g1_t output_res_sT_W0[kss];
             g1_t output_res_Add_val[kss];
 
-            i_A1_W1 = matrix_mul_scalar_g1(output_i_A1_W1, mpk.AW1_mat, (z), kss, kss);
-            W0_i_A1_W1 = matrix_add_matrix_g1(output_W0_i_A1_W1, mpk.AW0_mat, i_A1_W1, kss, kss, kss,kss);
-            res_sT_W0 = vector_trans_mul_matrix_g1(output_res_sT_W0, si.si[z].si_vec, W0_i_A1_W1, kss, kss, kss);
+            i_A1_W1 = matrix_mul_scalar_g1_pre(output_i_A1_W1, t_pre_AW1, (z), kss, kss);
+            W0_i_A1_W1 = matrix_add_matrix_g1(output_W0_i_A1_W1, mpk.AW0_mat, i_A1_W1, kss, kss, kss, kss);
+
+            for (int i = 0; i < kss * kss; ++i) {
+                for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
+                    init_null_new_g1_t_var(t_pre_C2[i][j]);
+                }
+                g1_mul_pre(t_pre_C2[i], W0_i_A1_W1[i]);
+            }
+
+            res_sT_W0 = vector_trans_mul_matrix_g1_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
             res_Add_val = vector_add_vector_g1(output_res_Add_val, sTAW, res_sT_W0, kss, kss);
 
             for (int p = 0; p < two_k; ++p) {
@@ -319,65 +361,56 @@ int main(int argc, char **argv) {
     //test_stuff(resultArray, 2, t, NTESTS);
     print_results("Results encryption():           ", t, NTESTS);
 
-    //TODO start/complete decryption.
-    //
     /* Decryption */
     //float progress4 = 0.0;
     bn_t pack_coef[N_ATTR];
     bn_t pack_coef_neg[N_ATTR];
 
-    gt_t exp_val; gt_t exp_val_extra; gt_t prod; gt_t mul_val; gt_t mul_val_extra; gt_t tmp_res;
-    init_null_new_gt_t_var(exp_val);
-    init_null_new_gt_t_var(exp_val_extra);
-    init_null_new_gt_t_var(prod);
-    init_null_new_gt_t_var(mul_val);
-    init_null_new_gt_t_var(mul_val_extra);
+    g1_t full_pairings_g1[two_k + kss];
+    g2_t full_pairings_g2[two_k + kss];
+
+    gt_t MAP_COM_PROD;
+    init_null_new_gt_t_var(MAP_COM_PROD);
+
+    gt_t tmp_res;
     init_null_new_gt_t_var(tmp_res);
 
     //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
     for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
         init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
+        init_null_new_bn_t_var(pack_coef_neg[it4->leaf_index - 1]);
+    }
+
+    gt_t MAP_COM;
+    init_null_new_gt_t_var(MAP_COM);
+
+    g2_t sk1_tmp[N_ATTR];
+    g2_t sk4_tmp[N_ATTR];
+    g2_t K1_prod[two_k];
+    g2_t K4_prod[two_k];
+    g1_t neg_ct[two_k];
+
+
+    for (int hg = 0; hg < two_k; ++hg) {
+        init_null_new_g2_t_var(K1_prod[hg]);
+        init_null_new_g2_t_var(K4_prod[hg]);
+        init_null_new_g2_t_var(sk1_tmp[hg]);
+        init_null_new_g2_t_var(sk4_tmp[hg]);
+        init_null_new_g1_t_var(neg_ct[hg]);
+        g2_set_infty(K1_prod[hg]);
+        g2_set_infty(K4_prod[hg]);
     }
 
     for (int go = 0; go < NTESTS; go++) {
         //progressBar(100,progress4);
         t[go] = cpucycles();
+        fp12_set_dig(MAP_COM_PROD, 1);
 
         gt_t map_tmp_1;
         init_null_new_gt_t_var(map_tmp_1);
 
         gt_t map_tmp_2;
         init_null_new_gt_t_var(map_tmp_2);
-
-        gt_t map_tmp_3;
-        init_null_new_gt_t_var(map_tmp_3);
-
-        gt_t map_tmp_4;
-        init_null_new_gt_t_var(map_tmp_4);
-
-        gt_t map_tmp_prod_1;
-        init_null_new_gt_t_var(map_tmp_prod_1);
-
-        gt_t map_tmp_prod_2;
-        init_null_new_gt_t_var(map_tmp_prod_2);
-
-        gt_t map_tmp_prod_3;
-        init_null_new_gt_t_var(map_tmp_prod_3);
-
-        gt_t map_tmp_prod_4;
-        init_null_new_gt_t_var(map_tmp_prod_4);
-
-        gt_t invert_elem_1;
-        init_null_new_gt_t_var(invert_elem_1);
-
-        gt_t de_nom;
-        init_null_new_gt_t_var(de_nom);
-
-        gt_t map_res;
-        init_null_new_gt_t_var(map_res);
-
-        //Sets mul_val to one so that the multiplication starts out correct.
-        fp12_set_dig(mul_val, 1);
 
         //Sets tmp_res to one so that the final multiplications starts out correct.
         fp12_set_dig(tmp_res, 1);
@@ -391,60 +424,49 @@ int main(int argc, char **argv) {
         res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
+        for (int po = 0; po < two_k; ++po) {
+            for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
+                if (po == 0) {
+                    bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
 
-            fp12_set_dig(map_tmp_prod_1, 1);
-            fp12_set_dig(map_tmp_prod_2, 1);
-            fp12_set_dig(map_tmp_prod_3, 1);
-            fp12_set_dig(map_tmp_prod_4, 1);
+                    //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
+                    //bn_t neg_coef;
+                    //init_null_new_bn_t_var(neg_coef);
+                    //bn_copy(neg_coef, it5->coeff);
+                    //bn_t_negate(neg_coef, order);
+                    //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
 
-            init_null_new_bn_t_var(pack_coef[it5->leaf_index - 1]);
-            bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
-
-
-            //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
-            //bn_t neg_coef;
-            //init_null_new_bn_t_var(neg_coef);
-            //bn_copy(neg_coef, it5->coeff);
-            //bn_t_negate(neg_coef, order);
-            //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
-
-            for (int jk = 0; jk < ((2 * two_k) + kss); ++jk) {
-                if (jk < two_k) {
-                    pp_map_oatep_k12(map_tmp_1, CT_A.C_1[jk], sk.sk13[it5->leaf_index - 1].sk_one[jk]);
-                    gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
-                } else if (jk >= two_k && jk < (2 * two_k)) {
-                    pp_map_oatep_k12(map_tmp_2, CT_A.C_23[it5->leaf_index - 1].c_3_vec[jk % two_k], sk.sk13[it5->leaf_index - 1].sk_three[jk % two_k]);
-                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-                } else {
-                    pp_map_oatep_k12(map_tmp_3, CT_A.C_23[it5->leaf_index - 1].c_2_vec[jk % (2 * two_k)], sk.sk13[it5->leaf_index - 1].sk_two[jk % (2 * two_k)]);
-                    gt_mul(map_tmp_prod_3, map_tmp_prod_3, map_tmp_3);
+                    for (int im = 0; im < two_k; ++im) {
+                        if (im < kss) {
+                            g1_mul(full_pairings_g1[im], CT_A.C_23[it5->leaf_index - 1].c_2_vec[im],pack_coef[it5->leaf_index - 1]);
+                            g2_copy(full_pairings_g2[im], sk.sk13[it5->leaf_index - 1].sk_two[im]);
+                        }
+                        //TODO could use pack_coef_neg instead. Faster than g1_neg???
+                        g1_mul(full_pairings_g1[im+kss], CT_A.C_23[it5->leaf_index - 1].c_3_vec[im],pack_coef[it5->leaf_index - 1]);
+                        g1_neg(full_pairings_g1[im+kss], full_pairings_g1[im+kss]);
+                        g2_copy(full_pairings_g2[im+kss], sk.sk13[it5->leaf_index - 1].sk_three[im]);
+                    }
+                    pp_map_sim_oatep_k12(MAP_COM, full_pairings_g1, full_pairings_g2, two_k + kss);
+                    gt_mul(MAP_COM_PROD, MAP_COM_PROD, MAP_COM);
                 }
+                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[po]);
+                //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[po]);
             }
-
-            //TODO not used right now as we only use policies of AND gates.
-            //for (int ik = 0; ik < (two_k); ++ik) {
-                //pp_map_oatep_k12(map_tmp_4, CT_A.C_1[ik], sk.sk4[it5->leaf_index - 1].sk_four[ik]);
-                //gt_mul(map_tmp_prod_4, map_tmp_prod_4, map_tmp_4);
-            //}
-
-            gt_mul(de_nom, map_tmp_prod_1, map_tmp_prod_2);
-            gt_inv(invert_elem_1, de_nom);
-            gt_mul(map_res, invert_elem_1, map_tmp_prod_3);
-
-            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-            gt_exp(exp_val, map_res, pack_coef[it5->leaf_index - 1]);
+            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
 
             //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-            //gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it5->leaf_index - 1]);
+            //g2_mul_sim_lot(K4_prod[po], sk4_tmp, pack_coef_neg, N_ATTR);
 
-            //TODO multiply cases where X_rho(j)=1 and rho(j)=0
-            //gt_mul(prod, exp_val, exp_val_extra);
-
-            gt_mul(mul_val, mul_val, exp_val);
+            //Negate CT1
+            g1_neg(neg_ct[po], CT_A.C_1[po]);
         }
-        //Here we complete the product of [-sTAv_j]^(wj)
-        gt_mul(tmp_res, tmp_res, mul_val);
+
+        //TODO could refactor so do only one pp_map_sim over 2*two_k
+        pp_map_sim_oatep_k12(map_tmp_1, neg_ct, K1_prod, two_k);
+        //pp_map_sim_oatep_k12(map_tmp_2, CT_A.C_1, K4_prod, two_k);
+
+        //TODO multiply cases where X_rho(j)=1 and rho(j)=0 "Multiply map_tmp_2 with tmp_res
+        gt_mul(tmp_res, map_tmp_1, MAP_COM_PROD);
 
         //Printouts for correctness.
         gt_t final_final_res;
@@ -462,8 +484,10 @@ int main(int argc, char **argv) {
 
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
-    std::cout<<"\n"<<std::endl;
+    std::cout << "\n" << std::endl;
     return 0;
 }
+
+
 
 
