@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
             g1_mul_gen(mpk.a_mat[d], A_tmp[d]);
-
+            //TODO check of number of attributes and size of k
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
                 init_null_new_g1_t_var(t_pre_A[d][j]);
             }
@@ -173,6 +173,7 @@ int main(int argc, char **argv) {
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
                 g1_mul_gen(mpk.mats[j].w[x], AWi[x]);
+                //TODO check of number of attributes and size of k
                 for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
                     init_null_new_g1_t_var(t_pre_AW[j][x][d]);
                 }
@@ -275,7 +276,7 @@ int main(int argc, char **argv) {
         g1_t *ct_1;
         g1_t output[kss + 1];
 
-        //Calculate sT*A using vector-matrix multiplication for a transposed vector.
+        //TODO check of number of attributes and size of k
         ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
@@ -284,6 +285,7 @@ int main(int argc, char **argv) {
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
+            //TODO check of number of attributes and size of k
             ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
