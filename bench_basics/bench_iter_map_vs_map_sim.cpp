@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 5000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -53,8 +53,6 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking iter_map_vs_map_sim\n";
-
     if (argc == 1) {
         printf("Need to give argument\n");
         return 0;
@@ -86,6 +84,8 @@ int main(int argc, char **argv) {
 
     g1_t g1_ops_copy[test_comp];
     g2_t g2_ops_copy[test_comp];
+
+    std::cout << "[Iterative map + mul, pc_map_sim]" << std::endl;
 
     for (int i = 0; i < test_comp; ++i) {
         g1_null(g1_ops[i]);

@@ -71,70 +71,49 @@ int main(int argc, char **argv) {
     gt_new(m);
     gt_null(m);
 
-    g1_t g1_operands[operands];
-    g1_t g1_operands_neg[operands];
+    g1_t g1_operands[NTESTS];
+    g2_t g2_operands[NTESTS];
+    gt_t gt_operands[NTESTS];
 
-    g2_t g2_operands[operands];
-
-    for (size_t i = 0; i < operands; i++) {
+    for (size_t i = 0; i < NTESTS; i++) {
         g1_new(g1_operands[i]);
         g1_null(g1_operands[i]);
-        g1_new(g1_operands_neg[i]);
-        g1_null(g1_operands_neg[i]);
         g1_rand(g1_operands[i]);
+
         g2_new(g2_operands[i]);
         g2_null(g2_operands[i]);
         g2_rand(g2_operands[i]);
+
+        gt_new(gt_operands[i]);
+        gt_null(gt_operands[i]);
+        gt_rand(gt_operands[i]);
     }
 
-    gt_t temp;
-    gt_new(temp);
-    gt_null(temp);
+    g1_t temp;
+    g1_new(temp);
+    g1_null(temp);
 
-    gt_t prod;
-    gt_new(prod);
-    gt_null(prod);
-    std::cout << "[iterative mul-> inv, iterative neg+mul, sim_lot -> inv, neg -> sim_lot]" << std::endl;
+    std::cout << "[negation g1, negate g2, negate(inv) gt]" << std::endl;
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            pc_map(temp, g1_operands[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
-        }
-        gt_inv(prod, prod);
+        g1_neg(g1_operands[i], g1_operands[i]);
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
-        fp12_set_dig(prod, 1);
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            g1_neg(g1_operands_neg[j], g1_operands[j]);
-            pc_map(temp, g1_operands_neg[j], g2_operands[j]);
-            gt_mul(prod, prod, temp);
-        }
+        g2_neg(g2_operands[i], g2_operands[i]);
     }
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        pc_map_sim(temp, g1_operands, g2_operands, operands);
-        gt_inv(temp, temp);
-    }
-    print_results("Results gen param():           ", t, NTESTS);
-
-    for (size_t i = 0; i < NTESTS; i++) {
-        t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            g1_neg(g1_operands_neg[j], g1_operands[j]);
-        }
-        pc_map_sim(temp, g1_operands, g2_operands, operands);
+        gt_inv(gt_operands[i], gt_operands[i]);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
-    
+
     core_clean();
     return 0;
 }

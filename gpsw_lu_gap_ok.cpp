@@ -61,11 +61,11 @@ int main(int argc, char **argv) {
 
     uint32_t N_ATTR = test_attr;
 
-    struct master_key_kp_gpsw msk;
-    struct public_key_kp_gpsw mpk;
+    struct master_key_kp_gpsw_lu_ok msk;
+    struct public_key_kp_gpsw_lu_ok mpk;
 
-    init_master_key_kp_gpsw(N_ATTR, &msk);
-    init_public_key_kp_gpsw(N_ATTR, &mpk);
+    init_master_key_kp_gpsw_lu_ok(N_ATTR, &msk);
+    init_public_key_kp_gpsw_lu_ok(N_ATTR, &mpk);
 
     core_init();
 
@@ -89,76 +89,89 @@ int main(int argc, char **argv) {
     g2_new(h);
     g2_get_gen(h);
 
-    /*For each attribute, t_i random*/
-    for (int i = 0; i < N_ATTR; i++) {
-        bn_null(msk.t_values[i]);
-        bn_new(msk.t_values[i]);
-
-        bn_rand_mod(msk.t_values[i], order);
-    }
-
     /*pick y randomly in Z_p*/
-    bn_new(msk.y);
     bn_null(msk.y);
+    bn_new(msk.y);
     bn_rand_mod(msk.y, order);
-    /*MSK = (t_i, y)*/
 
     /*Setup PK*/
-    for (int i = 0; i < N_ATTR; i++) {
-        g2_null(mpk.T_values[i]);
-        g2_new(mpk.T_values[i]);
-        g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
+    g1_mul_gen(mpk.g1, msk.y);
+    g2_rand(mpk.g2);
+
+    for (size_t i = 0; i < N_ATTR + 1; i++) {
+        g2_rand(mpk.t_values[i]);
     }
 
-    g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
+    /* g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
-        /* code */
+
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            /* code */
             g2_null(pre_T[i][j]);
             g2_new(pre_T[i][j]);
         }
         g2_mul_pre(pre_T[i], mpk.T_values[i]);
     }
+ */
 
-    /*Y = e(g,g)^y*/
-    pc_map(mpk.Y, g, h);
-    gt_exp(mpk.Y, mpk.Y, msk.y);
-    /*MPK = (T_i, Y)*/
     /*KeyGeneration*/
-    struct secret_key_kp_gpsw sk;
+    struct secret_key_kp_gpsw_lu_ok sk;
     struct node tree_root;
     std::vector<policy_coefficient> res;
-    init_secret_key_kp_gpsw(N_ATTR, &sk);
-
-    for (int i = 0; i < N_ATTR; i++) {
-        g1_null(sk.D_values[i]);
-        g1_new(sk.D_values[i]);
-    }
+    init_secret_key_kp_gpsw_lu_ok(N_ATTR, &sk);
 
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
+    g2_t temp;
+    g2_null(temp);
+    g2_new(temp);
+
+    bn_t x;
+    bn_null(x);
+    bn_new(x);
+
+    bn_t r;
+    bn_null(r);
+    bn_new(r);
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         /*Secret sharing of y, according to policy tree*/
 
-        /* code */
-
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 
-        bn_t temp;
-        bn_null(temp);
-        bn_new(temp);
         /*Accessing q_leaf(0) <= second.element().m_ZP*/
         /*Dx = g^(q_x(0)/t_x)*/
         for (auto it = res.begin(); it != res.end(); it++) {
-            bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
-            bn_mul(temp, temp, it->share);
-            g1_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+            bn_rand_mod(r, order);
+            bn_set_dig(x, it->leaf_index - 1);
+            t_function_g2(&temp, x, mpk.g2, mpk.t_values, N_ATTR, order);
+            g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
+            g1_mul_gen(sk.R_values[it->leaf_index - 1], r);
         }
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
+    /*Setup precomputation tables for sk*/
+    g1_t pre_R_values[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g1_null(pre_R_values[i][j]);
+            g1_new(pre_R_values[i][j]);
+        }
+        g1_mul_pre(pre_R_values[i], sk.R_values[i]);
+    }
+
+    g2_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_null(pre_R_values[i][j]);
+            g2_new(pre_R_values[i][j]);
+        }
+        g2_mul_pre(pre_D_values[i], sk.D_values[i]);
+    }
 
     /* Encryption */
     // TODO: Fix message construction.
@@ -171,24 +184,35 @@ int main(int argc, char **argv) {
     bn_t s;
     bn_null(s);
     bn_new(s);
-    struct ciphertext_kp_gpsw E;
-    init_ciphertext_kp_gpsw(test_attr, &E);
+
+    g1_t g1_prime;
+    g1_null(g1_prime);
+    g1_new(g1_prime);
+
+    g2_t T;
+    g2_null(T);
+    g2_new(T);
+
+    struct ciphertext_kp_gpsw_lu_ok E;
+    init_ciphertext_kp_gpsw_lu_ok(test_attr, &E);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         bn_rand_mod(s, order);
-        gt_exp(E.E_prime, mpk.Y, s);
+        g1_mul(g1_prime, mpk.g1, s);
+        pc_map(E.E_prime, g1_prime, mpk.g2);
         gt_mul(E.E_prime, E.E_prime, message);
+        g1_mul_gen(E.E_prime_prime, s);
+
         for (int i = 0; i < test_attr; i++) {
-            g2_null(E.E_values[i]);
-            g2_new(E.E_values[i]);
-            g2_mul_fix(E.E_values[i], pre_T[i], s);
+            bn_set_dig(x, i);
+            t_function_g2(&T, x, mpk.g2, mpk.t_values, N_ATTR, order);
+            g2_mul(E.E_values[i], T, s);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
 
     /*Decryption(E,D) -> message*/
-
     bn_t attributes[test_attr];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -224,13 +248,18 @@ int main(int argc, char **argv) {
         g1_null(g1_temp);
         g1_new(g1_temp);
 
-        g1_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
+        g1_t g1_vals[res.size()];
+        g2_t g2_val[res.size()];
+        g1_t R_vals[res.size()];
+
         for (auto it = res.begin(); it != res.end(); it++) {
-            g1_null(D_vals[it->leaf_index - 1]);
-            g1_new(D_vals[it->leaf_index - 1]);
+            g1_null(R_vals[it->leaf_index - 1]);
+            g1_new(R_vals[it->leaf_index - 1]);
+            g1_mul_fix(R_vals[it->leaf_index-1], pre_R_values[it->leaf_index-1], it->coeff);
+            
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
+
             g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
             g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
