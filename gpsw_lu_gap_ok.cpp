@@ -150,6 +150,28 @@ int main(int argc, char **argv) {
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
+    /*Setup precomputation tables for sk*/
+    g1_t pre_R_values[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g1_null(pre_R_values[i][j]);
+            g1_new(pre_R_values[i][j]);
+        }
+        g1_mul_pre(pre_R_values[i], sk.R_values[i]);
+    }
+
+    g2_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_null(pre_R_values[i][j]);
+            g2_new(pre_R_values[i][j]);
+        }
+        g2_mul_pre(pre_D_values[i], sk.D_values[i]);
+    }
 
     /* Encryption */
     // TODO: Fix message construction.
@@ -191,7 +213,6 @@ int main(int argc, char **argv) {
     print_results("Results gen param():           ", t, NTESTS);
 
     /*Decryption(E,D) -> message*/
-
     bn_t attributes[test_attr];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]);
@@ -227,13 +248,18 @@ int main(int argc, char **argv) {
         g1_null(g1_temp);
         g1_new(g1_temp);
 
-        g1_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
+        g1_t g1_vals[res.size()];
+        g2_t g2_val[res.size()];
+        g1_t R_vals[res.size()];
+
         for (auto it = res.begin(); it != res.end(); it++) {
-            g1_null(D_vals[it->leaf_index - 1]);
-            g1_new(D_vals[it->leaf_index - 1]);
+            g1_null(R_vals[it->leaf_index - 1]);
+            g1_new(R_vals[it->leaf_index - 1]);
+            g1_mul_fix(R_vals[it->leaf_index-1], pre_R_values[it->leaf_index-1], it->coeff);
+            
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
+
             g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
             g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);

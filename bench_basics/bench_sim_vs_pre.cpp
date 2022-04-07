@@ -223,7 +223,6 @@ int main(int argc, char **argv) {
     g2_new(tmp_add_pre_g2);
 
     g2_set_infty(tmp_add_pre_g2);
-
     for (int jo = 0; jo < NTESTS; jo++) {
         t[jo] = cpucycles();
 
