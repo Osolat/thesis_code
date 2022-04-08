@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     g1_t g1_operands[operands];
     g2_t g2_operands[operands];
     bn_t x[operands];
-    std::cout << "[G1 iterative mul+add, G1 mul_sim_lot, G2 iterative mul+add, G2 mul_sim_lot]"
+    std::cout << "[G1 iterative mul+add, G1 mul_sim_lot, G2 iterative mul+add, G2 mul_sim_lot]" << std::endl;
     for (size_t i = 0; i < operands; i++) {
         g1_null(g1_operands[i]);
         g1_new(g1_operands[i]);
