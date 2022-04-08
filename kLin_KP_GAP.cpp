@@ -120,9 +120,9 @@ int main(int argc, char **argv) {
 
     /* Setup */
     //float progress = 0.0;
-    for (int jo = 0; jo < NTESTS; jo++) {
+    for (int jo = 0; jo < 1; jo++) {
         //progressBar(100, progress);
-        t[jo] = cpucycles();
+        //t[jo] = cpucycles();
 
         g1_get_gen(group1);
         g2_get_gen(group2);
@@ -137,7 +137,6 @@ int main(int argc, char **argv) {
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
             g1_mul_gen(mpk.a_mat[d], A_tmp[d]);
-            //TODO check of number of attributes and size of k
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
                 init_null_new_g1_t_var(t_pre_A[d][j]);
             }
@@ -173,7 +172,6 @@ int main(int argc, char **argv) {
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
                 g1_mul_gen(mpk.mats[j].w[x], AWi[x]);
-                //TODO check of number of attributes and size of k
                 for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
                     init_null_new_g1_t_var(t_pre_AW[j][x][d]);
                 }
@@ -184,8 +182,8 @@ int main(int argc, char **argv) {
     }
     //test_stuff(resultArray, 0, t, NTESTS);
 
-    printf("[");
-    print_results("Results gen param():           ", t, NTESTS);
+    //printf("[");
+    //print_results("Results gen param():           ", t, NTESTS);
 
     /* Key Generation */
     //float progress2 = 0.0;
@@ -239,7 +237,7 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-    //printf("[");
+    printf("[");
     print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */
@@ -275,9 +273,8 @@ int main(int argc, char **argv) {
         //set ct_1
         g1_t *ct_1;
         g1_t output[kss + 1];
-
-        //TODO check of number of attributes and size of k
         ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
+
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
@@ -285,7 +282,6 @@ int main(int argc, char **argv) {
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
-            //TODO check of number of attributes and size of k
             ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
@@ -308,7 +304,7 @@ int main(int argc, char **argv) {
     bn_t pack_coef[N_ATTR];
     g1_t pair_g1_test_2[kss];
     g2_t pair_g2_test_2[kss];
-    g1_t neg_ct[kss + 1];
+    //g1_t neg_ct[kss + 1];
 
     gt_t prod_test2;
     g2_t K1_prod[kss + 1];
@@ -318,7 +314,7 @@ int main(int argc, char **argv) {
     for (int hg = 0; hg < kss + 1; ++hg) {
         init_null_new_g2_t_var(K1_prod[hg]);
         init_null_new_g2_t_var(sk1_tmp[hg]);
-        init_null_new_g1_t_var(neg_ct[hg]);
+        //init_null_new_g1_t_var(neg_ct[hg]);
         g2_set_infty(K1_prod[hg]);
     }
 
@@ -361,11 +357,16 @@ int main(int argc, char **argv) {
                 g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
             g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(neg_ct[po], CT_A.C_1[po]);
+            //g1_neg(neg_ct[po], CT_A.C_1[po]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, neg_ct, K1_prod, (kss + 1));
-        gt_mul(test_res, map_sim_test_1, prod_test2);
+        pp_map_sim_oatep_k12(map_sim_test_1, CT_A.C_1, K1_prod, (kss + 1));
+
+        gt_t inv_elem;
+        init_null_new_gt_t_var(inv_elem);
+        gt_inv(inv_elem, map_sim_test_1);
+
+        gt_mul(test_res, inv_elem, prod_test2);
         gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;

@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
         for (size_t j = 0; j < operands; j++) {
             g1_neg(g1_operands_neg[j], g1_operands[j]);
         }
-        pc_map_sim(temp, g1_operands, g2_operands, operands);
+        pc_map_sim(temp, g1_operands_neg, g2_operands, operands);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
