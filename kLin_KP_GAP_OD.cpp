@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
     bn_t pack_coef[N_ATTR];
     g1_t pair_g1_test_2[kss];
     g2_t pair_g2_test_2[kss];
-    g1_t neg_k_prod[kss + 1];
+    //g1_t neg_k_prod[kss + 1];
 
     gt_t prod_test2;
     g1_t K1_prod[kss + 1];
@@ -318,8 +318,8 @@ int main(int argc, char **argv) {
     for (int hg = 0; hg < kss + 1; ++hg) {
         init_null_new_g1_t_var(K1_prod[hg]);
         init_null_new_g1_t_var(sk1_tmp[hg]);
-        init_null_new_g1_t_var(neg_k_prod[hg]);
-        g1_set_infty(K1_prod[hg]);
+        //init_null_new_g1_t_var(neg_k_prod[hg]);
+        //g1_set_infty(K1_prod[hg]);
     }
 
     init_null_new_gt_t_var(prod_test2);
@@ -361,11 +361,16 @@ int main(int argc, char **argv) {
                 g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
             g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(neg_k_prod[po], K1_prod[po]);
+            //g1_neg(neg_k_prod[po], K1_prod[po]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, neg_k_prod, CT_A.C_1, (kss + 1));
-        gt_mul(test_res, map_sim_test_1, prod_test2);
+        pp_map_sim_oatep_k12(map_sim_test_1, K1_prod, CT_A.C_1, (kss + 1));
+
+        gt_t inv_elem;
+        init_null_new_gt_t_var(inv_elem);
+        gt_inv(inv_elem, map_sim_test_1);
+
+        gt_mul(test_res, inv_elem, prod_test2);
         gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;

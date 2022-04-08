@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
     //float progress4 = 0.0;
 
     bn_t pack_coef[N_ATTR];
-    g1_t neg_ct[kss + 1];
+    //g1_t neg_ct[kss + 1];
     gt_t prod_test2;
     gt_t test_res;
 
@@ -354,11 +354,16 @@ int main(int argc, char **argv) {
                 g2_mul(tmp_prod_g2[po], sk.sk[it5->leaf_index - 1].sk_one[po], pack_coef[it5->leaf_index - 1]);
                 g2_add(tmp_add_g2[po], tmp_add_g2[po], tmp_prod_g2[po]);
             }
-            g1_neg(neg_ct[po], CT_A.C_1[po]);
-            pp_map_oatep_k12(map_tmp_test, neg_ct[po], tmp_add_g2[po]);
+            //g1_neg(neg_ct[po], CT_A.C_1[po]);
+            pp_map_oatep_k12(map_tmp_test, CT_A.C_1[po], tmp_add_g2[po]);
             gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_test);
         }
-        gt_mul(test_res, map_tmp_prod_2, prod_test2);
+
+        gt_t inv_elem;
+        init_null_new_gt_t_var(inv_elem);
+        gt_inv(inv_elem, map_tmp_prod_2);
+
+        gt_mul(test_res, inv_elem, prod_test2);
         gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;
