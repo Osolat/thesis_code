@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
-
+    std::cout << "[g1 mul, g1 mul fix, g2 mul, g2 mul fix]" << std::endl;
     gt_t m;
     gt_new(m);
     gt_null(m);

@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 1000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
-
+    std::cout << "[2x map_sim_lot, 1x map_sim_lot]" << std::endl;
     gt_t m;
     gt_new(m);
     gt_null(m);
