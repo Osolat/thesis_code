@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 3000
+#define NTESTS 1000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -55,7 +55,6 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
-    int operands = atoi(argv[1]);
 
     core_init();
 
