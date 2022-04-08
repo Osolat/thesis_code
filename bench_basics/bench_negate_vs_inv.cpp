@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 1000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;

@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
     g1_t g1_gen_vars[NTESTS];
 
     std::cout << "G1 operations" << std::endl;
+    std::cout << "[mul, mul_gen, add, mul_sim, mul_sim_gen, mul_sim_lot(2), mul_sim_lot(10), mul_sim_lot(100), hash(32)]" << std::endl;
+
     for (size_t i = 0; i < NTESTS; i++) {
         bn_null(x[i]);
         bn_new(x[i]);
@@ -212,7 +214,7 @@ int main(int argc, char **argv) {
         memcpy(char_arrays_32[i], (void *)memcpy + i, 32);
     }
 
-    // Map random 8 byte arrays
+    /* // Map random 8 byte arrays
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         g1_map(temp_g1, char_arrays_8[i], 8);
@@ -224,7 +226,7 @@ int main(int argc, char **argv) {
         t[i] = cpucycles();
         g1_map(temp_g1, char_arrays_16[i], 16);
     }
-    print_results("Results gen param():           ", t, NTESTS);
+    print_results("Results gen param():           ", t, NTESTS); */
 
     // Map random 32 byte arrays
     for (size_t i = 0; i < NTESTS; i++) {
@@ -236,6 +238,8 @@ int main(int argc, char **argv) {
     printf("]\n");
 
     std::cout << "G2 operations" << std::endl;
+    std::cout << "[mul, mul_gen, add, mul_sim, mul_sim_gen, mul_sim_lot(2), mul_sim_lot(10), mul_sim_lot(100), hash(32)]" << std::endl;
+
     // G2 tests
     g2_t g2_gen_vars[NTESTS];
 
@@ -423,6 +427,8 @@ int main(int argc, char **argv) {
     printf("]\n");
 
     std::cout << "GT operations" << std::endl;
+    std::cout << "[exp, exp_gen, exp_sim]" << std::endl;
+
     gt_t gt_gen_vars[NTESTS];
 
     for (size_t i = 0; i < NTESTS; i++) {
