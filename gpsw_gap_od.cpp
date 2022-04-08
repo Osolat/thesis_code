@@ -130,6 +130,8 @@ int main(int argc, char **argv) {
     struct node tree_root;
     std::vector<policy_coefficient> res;
     init_secret_key_kp_gpsw(N_ATTR, &sk);
+
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         for (int i = 0; i < N_ATTR; i++) {
@@ -138,11 +140,6 @@ int main(int argc, char **argv) {
         }
         /*Secret sharing of y, according to policy tree*/
 
-        /* code */
-        free_tree(&tree_root);
-
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 
@@ -159,6 +156,15 @@ int main(int argc, char **argv) {
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
+
+    g1_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            g1_null(pre_D_values[i][j]);
+            g1_new(pre_D_values[i][j]);
+        }
+        g1_mul_pre(pre_D_values[i], sk.D_values[i]);
+    }
 
     /* Encryption */
     // TODO: Fix message construction.
@@ -225,14 +231,14 @@ int main(int argc, char **argv) {
         g1_new(g1_temp);
 
         g1_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
+        g2_t E_vals[res.size()];        
         for (auto it = res.begin(); it != res.end(); it++) {
             g1_null(D_vals[it->leaf_index - 1]);
             g1_new(D_vals[it->leaf_index - 1]);
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
-            g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
-            g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
+            g1_mul_fix(D_vals[it->leaf_index - 1], pre_D_values[it->leaf_index - 1], it->coeff);
+            //g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]   );
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
         }
 
@@ -244,7 +250,7 @@ int main(int argc, char **argv) {
         }*/
         pc_map_sim(F_root, D_vals, E_vals, res.size());
 
-        // gt_inv(F_root, F_root);
+        gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);

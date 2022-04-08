@@ -133,14 +133,11 @@ int main(int argc, char **argv) {
         g2_null(sk.D_values[i]);
         g2_new(sk.D_values[i]);
     }
-
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         /*Secret sharing of y, according to policy tree*/
-        free_tree(&tree_root);
 
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 
@@ -222,7 +219,7 @@ int main(int argc, char **argv) {
         g1_t g1_temp;
         g1_null(g1_temp);
         g1_new(g1_temp);
-
+        
         g2_t D_vals[res.size()];
         g1_t E_vals[res.size()];
         for (auto it = res.begin(); it != res.end(); it++) {
@@ -231,7 +228,7 @@ int main(int argc, char **argv) {
             g1_null(E_vals[it->leaf_index - 1]);
             g1_new(E_vals[it->leaf_index - 1]);
             g1_mul(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1], it->coeff);
-            g1_neg(E_vals[it->leaf_index - 1],E_vals[it->leaf_index - 1]);
+            //g1_neg(E_vals[it->leaf_index - 1], E_vals[it->leaf_index - 1]);
             g2_copy(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1]);
         }
 
@@ -243,7 +240,7 @@ int main(int argc, char **argv) {
        }  */
         pc_map_sim(F_root, E_vals, D_vals, res.size());
 
-        //gt_inv(F_root, F_root);
+        gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);

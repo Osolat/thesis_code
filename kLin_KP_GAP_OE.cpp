@@ -80,7 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_GAP_OE\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_GAP_OE on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -197,14 +197,11 @@ int main(int argc, char **argv) {
 
     init_secret_key_K_Lin(N_ATTR, &sk);
     init_sk_tmp_vj(N_ATTR, kss, &vj);
+    tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
-
         t[no] = cpucycles();
-        free_tree(&tree_root);
-        tree_root = node();
-        tree_from_string(and_tree_formula(N_ATTR), &tree_root);
         bn_t *Wr;
         bn_t output1[kss + 1];
 
@@ -308,7 +305,7 @@ int main(int argc, char **argv) {
     bn_t pack_coef[N_ATTR];
     g1_t pair_g1_test_2[kss];
     g2_t pair_g2_test_2[kss];
-    g1_t neg_ct[kss + 1];
+    //g1_t neg_ct[kss + 1];
 
     gt_t prod_test2;
     g2_t K1_prod[kss + 1];
@@ -318,7 +315,7 @@ int main(int argc, char **argv) {
     for (int hg = 0; hg < kss + 1; ++hg) {
         init_null_new_g2_t_var(K1_prod[hg]);
         init_null_new_g2_t_var(sk1_tmp[hg]);
-        init_null_new_g1_t_var(neg_ct[hg]);
+        //init_null_new_g1_t_var(neg_ct[hg]);
         g2_set_infty(K1_prod[hg]);
     }
 
@@ -361,11 +358,16 @@ int main(int argc, char **argv) {
                 g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
             g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(neg_ct[po], CT_A.C_1[po]);
+            //g1_neg(neg_ct[po], CT_A.C_1[po]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, neg_ct, K1_prod, (kss + 1));
-        gt_mul(test_res, map_sim_test_1, prod_test2);
+        pp_map_sim_oatep_k12(map_sim_test_1, CT_A.C_1, K1_prod, (kss + 1));
+
+        gt_t inv_elem;
+        init_null_new_gt_t_var(inv_elem);
+        gt_inv(inv_elem, map_sim_test_1);
+
+        gt_mul(test_res, inv_elem, prod_test2);
         gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;

@@ -55,7 +55,6 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
 unsigned long long t[NTESTS];
 
 int main(int argc, char **argv) {
-    int operands = atoi(argv[1]);
 
     core_init();
 
@@ -66,88 +65,54 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
-    std::cout << "[g1 mul, g1 mul fix, g2 mul, g2 mul fix]" << std::endl;
+
     gt_t m;
     gt_new(m);
     gt_null(m);
 
-    g1_t g1_operands[operands];
-    g2_t g2_operands[operands];
-    bn_t x[operands];
-    for (size_t i = 0; i < operands; i++) {
-        g1_null(g1_operands[i]);
+    g1_t g1_operands[NTESTS];
+    g2_t g2_operands[NTESTS];
+    gt_t gt_operands[NTESTS];
+
+    for (size_t i = 0; i < NTESTS; i++) {
         g1_new(g1_operands[i]);
+        g1_null(g1_operands[i]);
         g1_rand(g1_operands[i]);
-        
-        g2_null(g2_operands[i]);
+
         g2_new(g2_operands[i]);
+        g2_null(g2_operands[i]);
         g2_rand(g2_operands[i]);
-        
-        bn_null(x[i]);
-        bn_new(x[i]);
-        bn_rand_mod(x[i], order);
-    }
 
-    g1_t pre_g1[operands][RLC_EP_TABLE_MAX];
-    g2_t pre_g2[operands][RLC_EP_TABLE_MAX];
-
-    for (size_t i = 0; i < operands; i++) {
-        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            /* code */
-            g1_null(pre_g1[i][j]);
-            g1_new(pre_g1[i][j]);
-            g2_null(pre_g2[i][j]);
-            g2_new(pre_g2[i][j]);
-        }
-        g1_mul_pre(pre_g1[i], g1_operands[i]);
-        g2_mul_pre(pre_g2[i], g2_operands[i]);
+        gt_new(gt_operands[i]);
+        gt_null(gt_operands[i]);
+        gt_rand(gt_operands[i]);
     }
 
     g1_t temp;
-    g1_null(temp);
     g1_new(temp);
-    g2_t temptwo;
-    g2_null(temptwo);
-    g2_new(temptwo);
+    g1_null(temp);
 
+    std::cout << "[negation g1, negate g2, negate(inv) gt]" << std::endl;
     for (size_t i = 0; i < NTESTS; i++) {
-        g1_set_infty(temp);
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            g1_mul(g1_operands[j], g1_operands[j], x[j]);
-        }
+        g1_neg(g1_operands[i], g1_operands[i]);
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            /* code */
-            g1_mul_fix(temp, pre_g1[j], x[j]);
-        }
-    }
-    print_results("Results gen param():           ", t, NTESTS);
-
-    for (size_t i = 0; i < NTESTS; i++) {
-        g1_set_infty(temp);
-        t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            g2_mul(g2_operands[j], g2_operands[j], x[j]);
-        }
+        g2_neg(g2_operands[i], g2_operands[i]);
     }
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
-        for (size_t j = 0; j < operands; j++) {
-            /* code */
-            g2_mul_fix(temptwo, pre_g2[j], x[j]);
-        }
+        gt_inv(gt_operands[i], gt_operands[i]);
     }
     print_results("Results gen param():           ", t, NTESTS);
-
     printf("]\n");
+
     core_clean();
     return 0;
 }

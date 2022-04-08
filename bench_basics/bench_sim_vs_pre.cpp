@@ -10,7 +10,7 @@ extern "C" {
 #include <relic/relic.h>
 }
 
-#define NTESTS 5000
+#define NTESTS 3000
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -87,7 +87,6 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking pre_vs_sim mul\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -103,7 +102,8 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     g1_get_ord(order);
-
+    
+    std::cout << "[g1 iterative pre_mul + add, g1 mul sim + add, g1 mul_sim_lot, g2 iterative pre_mul + add, g2 mul sim + add, g2 mul_sim_lot]" << std::endl;
     g1_t t_pre_g[RLC_EP_TABLE_MAX];
     g2_t t_pre_h[RLC_EP_TABLE_MAX];
 
@@ -223,7 +223,6 @@ int main(int argc, char **argv) {
     g2_new(tmp_add_pre_g2);
 
     g2_set_infty(tmp_add_pre_g2);
-
     for (int jo = 0; jo < NTESTS; jo++) {
         t[jo] = cpucycles();
 
