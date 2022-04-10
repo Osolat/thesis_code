@@ -634,3 +634,42 @@ int init_tmp_si_ub_ok(const uint32_t n_attr, const uint32_t kss, struct tmp_si_u
         return EXIT_SUCCESS;
     }
 }
+
+//ALP
+
+
+int init_public_params_alp_oe(const uint32_t N_ATTR, struct alp_pp_naive_oe *pp){
+    pp->N_ATTR = N_ATTR;
+    pp->U1 = (g1_t *)malloc(N_ATTR*sizeof(g1_t));
+    pp->U2 = (g2_t *)malloc(N_ATTR*sizeof(g2_t));
+    pp->H1 = (g1_t *)malloc(N_ATTR*sizeof(g1_t));
+    pp->H2 = (g2_t *)malloc(N_ATTR*sizeof(g2_t));
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_attr_alp_oe(const uint32_t N_ATTR, struct alp_sk_attr_oe *sk) { 
+    g2_null(sk -> D1); g2_new(sk -> D1); 
+    g2_null(sk -> D2); g2_new(sk -> D2); 
+    sk -> K = (g2_t *)malloc(N_ATTR-1*sizeof(g2_t)); 
+    if (sk -> D1 == NULL || sk -> D2 == NULL || sk -> K == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_alp_oe(const uint32_t N_ATTR, struct alp_sk_oe *sk) {
+    sk -> D = (struct alp_sk_attr_oe *)malloc(N_ATTR* sizeof(struct alp_sk_attr_oe));
+    if (sk -> D == NULL){
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}

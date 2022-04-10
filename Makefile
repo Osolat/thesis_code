@@ -149,6 +149,21 @@ abe_circuit:
 	$(CXX) -o objects/abe_circuit_api $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ)  $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) abe_circuit_w_fanout_api.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/abe_circuit_GAP $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ)  $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) abe_circuit_w_fanout_GAP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
+
+alp:
+	$(info ************  Compiling ************)
+	g++ $(CXXFLAGS) -c lib/k_lin/k_lin_util.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/utility/t_function.cpp -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/zp_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/g1_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/g2_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	$(CXX) -o objects/alp_naive $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_naive.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	rm *.o
+	
 policy_tree:
 	$(info ************  Compiling Policy Tree Test************)
 	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)

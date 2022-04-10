@@ -617,6 +617,31 @@ int init_sk_tmp_vj_od(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_v
 int init_master_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct master_key_k_lin_od *m);
 int init_public_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin_od *p);
 
+//ALP
 
+struct alp_pp_naive_oe {
+    uint32_t N_ATTR;
+    g1_t g1; 
+    g2_t g2;
+    gt_t gt;
+    g1_t *H1;
+    g2_t *H2;
+    g1_t *U1;
+    g2_t *U2;
+};
+
+struct alp_sk_oe {
+    struct alp_sk_attr_oe *D;
+};
+
+struct alp_sk_attr_oe {
+    g2_t D1;
+    g2_t D2;
+    g2_t *K;
+};
+
+int init_public_params_alp_oe(const uint32_t N_ATTR, struct alp_pp_naive_oe *pp);
+int init_secret_key_attr_alp_oe(const uint32_t N_ATTR, struct alp_sk_attr_oe *sk);
+int init_secret_key_alp_oe(const uint32_t N_ATTR, struct alp_sk_oe *sk);
 
 #endif
