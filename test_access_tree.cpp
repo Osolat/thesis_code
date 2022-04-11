@@ -70,8 +70,8 @@ int test5() {
 
 int test6() {
     // char formula[] = "AND(AND(OR(attr1),OR(attr2)),AND(OR(attr3),OR(attr4),OR(attr5)))";
-    char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4),OR(attr5)))";
-    // char formula[] = "AND(OR(attr1),OR(attr2),OR(attr3),OR(attr4),OR(attr5))";
+    //char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4),OR(attr5)))";
+    char formula[] = "AND(OR(attr1),OR(attr2),OR(attr3),OR(attr4),OR(attr5))";
     struct node root;
     tree_from_string(formula, &root);
 
@@ -118,8 +118,9 @@ int test6() {
     bn_new(tmp);
 
     for (std::vector<policy_coefficient>::iterator it = res.begin(); it != res.end(); ++it) {
-        bn_print(it->share);
-        std::cout << it->leaf_index << std::endl;
+        //bn_print(it->share);
+        bn_print(it->coeff);
+        //std::cout << it->leaf_index << std::endl;
         bn_mul(tmp, it->coeff, it->share);
         bn_add(gather, gather, tmp);
     }
@@ -153,7 +154,8 @@ int main(int argc, char const *argv[]) {
     test6();
     std::cout << and_tree_formula(10) << std::endl;
     struct node root;
-    tree_from_string(and_tree_formula(10), &root);
+    std::string str = "AND(AND(AND(AND(OR(attr5), OR(attr4)), OR(attr3)), OR(attr2)), OR(attr1))";
+    tree_from_string(str, &root);
     bn_t secret, order;
     bn_null(secret);
     bn_new(secret);
@@ -172,21 +174,21 @@ int main(int argc, char const *argv[]) {
         std::cout << it->leaf_index << std::endl;
     }
 
-    bn_t attributes[10];
-    for (size_t i = 0; i < 10; i++) {
+    bn_t attributes[5];
+    for (size_t i = 0; i < 5; i++) {
         bn_null(attributes[i]);
         bn_new(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
 
     try {
-        check_satisfiability(&root, attributes, 10);
+        check_satisfiability(&root, attributes, 5);
         std::cout << "Satisfiable with correct attributes" << std::endl;
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
     res = std::vector<policy_coefficient>();
-    res = recover_coefficients(&root, attributes, 10);
+    res = recover_coefficients(&root, attributes, 5);
     bn_t gather;
     bn_null(gather);
     bn_new(gather);
@@ -198,6 +200,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "Boy Im here" << std::endl;
     for (std::vector<policy_coefficient>::iterator it = res.begin(); it != res.end(); ++it) {
         bn_print(it->share);
+        bn_print(it->coeff);
         std::cout << it->leaf_index << std::endl;
         bn_mul(tmp, it->coeff, it->share);
         bn_add(gather, gather, tmp);

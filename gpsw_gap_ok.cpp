@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
+    std::cout << "gpsw_gap_ok with " << N_ATTR << std::endl;
 
     /* Setup */
 
@@ -159,7 +160,7 @@ int main(int argc, char **argv) {
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
-    
+
     g1_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
@@ -236,12 +237,13 @@ int main(int argc, char **argv) {
         g1_t D_vals[res.size()];
         g2_t E_vals[res.size()];
         for (auto it = res.begin(); it != res.end(); it++) {
+            bn_print(it->coeff);
             g1_null(D_vals[it->leaf_index - 1]);
             g1_new(D_vals[it->leaf_index - 1]);
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
             g1_mul_fix(D_vals[it->leaf_index - 1], pre_D_values[it->leaf_index - 1], it->coeff);
-            //g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
+            // g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
         }
 
