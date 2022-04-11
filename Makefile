@@ -15,6 +15,39 @@ LEGACY_OBJ = l_zobject.o l_zfunctioninput.o l_zattributelist.o l_zpolicy.o l_zdr
 POLICY_OBJ = policy_tree.o
 UTIL_OBJ = k_lin_util.o t_function.o
 
+main:
+	$(info ************  Compiling ************)
+	g++ $(CXXFLAGS) -c lib/k_lin/k_lin_util.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/utility/t_function.cpp -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/policy/policy_tree.cpp -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/zp_arith.c -I$(RELIC_INCLUDE_BLS_12_381) 
+	g++ $(CXXFLAGS) -c lib/g1_arith.c -I$(RELIC_INCLUDE_BLS_12_381) 
+	g++ $(CXXFLAGS) -c lib/g2_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
+	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
+	$(CXX) -o objects/gpsw_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_a_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_a_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_g_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_g_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_p_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_p_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_od $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_od.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_lu_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_G $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_G.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_A $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_A.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_P $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_P.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_GAP $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_GAP_OE $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OE.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_GAP_OK $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OK.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_GAP_OD $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_OD.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_gap_ub $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_UB.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_gap_ub_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_UB_OK.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_gap_ub_od $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_GAP_UB_OD.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/klin_kp_ub $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) kLin_KP_lu.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	rm *.o
+
 gpsw:
 	$(info ************  Compiling ************)
 	g++ $(CXXFLAGS) -c lib/k_lin/k_lin_util.c -I$(RELIC_INCLUDE_BLS_12_381)
@@ -55,7 +88,7 @@ basic_bench:
 	$(CXX) -o objects/bench_operations $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_operations.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
 	$(CXX) -o objects/bench_sim_vs_pre $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_sim_vs_pre.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
 	$(CXX) -o objects/bench_split_sim $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_split_sim.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
-	$(CXX) -o objects/bench_neg_g1g2gt $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_negate_vs_inv.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
+	$(CXX) -o objects/bench_negate_vs_inv $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_negate_vs_inv.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
 	rm *.o
 
 kLin_KP:
