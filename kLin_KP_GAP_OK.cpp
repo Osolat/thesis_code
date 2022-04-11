@@ -304,11 +304,8 @@ int main(int argc, char **argv) {
     //float progress4 = 0.0;
 
     bn_t pack_coef[N_ATTR];
-    g1_t pair_g1_test_2[kss];
-    g2_t pair_g2_test_2[kss];
-    //g1_t neg_k_prod[kss + 1];
-
-    gt_t prod_test2;
+    g1_t g1_list_lol[(N_ATTR * kss) + (kss + 1)];
+    g2_t g2_list_lol[(N_ATTR * kss) + (kss + 1)];
     g1_t K1_prod[kss + 1];
     g1_t sk1_tmp[N_ATTR];
     gt_t test_res;
@@ -316,22 +313,14 @@ int main(int argc, char **argv) {
     for (int hg = 0; hg < kss + 1; ++hg) {
         init_null_new_g1_t_var(K1_prod[hg]);
         init_null_new_g1_t_var(sk1_tmp[hg]);
-        //init_null_new_g1_t_var(neg_k_prod[hg]);
-        //g1_set_infty(neg_k_prod[hg]);
     }
-
-    init_null_new_gt_t_var(prod_test2);
     init_null_new_gt_t_var(test_res);
-
     gt_t map_sim_test_1;
-    gt_t map_sim_test_2;
     init_null_new_gt_t_var(map_sim_test_1);
-    init_null_new_gt_t_var(map_sim_test_2);
 
     for (int go = 0; go < NTESTS; go++) {
         //progressBar(100, progress4);
         t[go] = cpucycles();
-        fp12_set_dig(prod_test2, 1);
 
         for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
             init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
@@ -345,31 +334,29 @@ int main(int argc, char **argv) {
         res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
+
+        int lel = 0;
+        int kul = 0;
         for (int po = 0; po < kss + 1; ++po) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
                 if (po == 0) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
                     for (int jk2 = 0; jk2 < kss; ++jk2) {
-                        g1_mul(pair_g1_test_2[jk2], sk.sk[it5->leaf_index - 1].sk_two[jk2], pack_coef[it5->leaf_index - 1]);
-                        g2_copy(pair_g2_test_2[jk2], CT_A.C_2[it5->leaf_index].c_2_mat[jk2]);
+                        g1_mul(g1_list_lol[lel], sk.sk[it5->leaf_index - 1].sk_two[jk2], pack_coef[it5->leaf_index - 1]);
+                        g2_copy(g2_list_lol[lel], CT_A.C_2[it5->leaf_index].c_2_mat[jk2]);
+                        lel++;
                     }
-                    pp_map_sim_oatep_k12(map_sim_test_2, pair_g1_test_2, pair_g2_test_2, kss);
-                    gt_mul(prod_test2, prod_test2, map_sim_test_2);
                 }
                 g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
+            kul = lel + po;
             g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            //g1_neg(neg_k_prod[po], K1_prod[po]);
+            g1_neg(g1_list_lol[kul], K1_prod[po]);
+            g2_copy(g2_list_lol[kul], CT_A.C_1[po]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, K1_prod, CT_A.C_1, (kss + 1));
-
-        gt_t inv_elem;
-        init_null_new_gt_t_var(inv_elem);
-        gt_inv(inv_elem, map_sim_test_1);
-
-        gt_mul(test_res, inv_elem, prod_test2);
-        gt_mul(test_res, test_res, CT_A.C_3_one_val);
+        pp_map_sim_oatep_k12(map_sim_test_1, g1_list_lol, g2_list_lol, (N_ATTR*kss)+(kss + 1));
+        gt_mul(test_res, map_sim_test_1, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;
         //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
