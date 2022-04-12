@@ -71,6 +71,19 @@ int test5() {
 int test6() {
     // char formula[] = "AND(AND(OR(attr1),OR(attr2)),AND(OR(attr3),OR(attr4),OR(attr5)))";
     //char formula[] = "AND(OR(attr1),OR(attr2),OR(OR(attr3),OR(attr4),OR(attr5)))";
+
+    bn_t two;
+    bn_null(two);
+    bn_new(two);
+
+    bn_t nottwo;
+    bn_null(nottwo);
+    bn_new(nottwo);
+
+    bn_set_dig(two, 2);
+    bn_neg(nottwo, two);
+    bn_print(two);
+    bn_print(nottwo);
     char formula[] = "AND(OR(attr1),OR(attr2),OR(attr3),OR(attr4),OR(attr5))";
     struct node root;
     tree_from_string(formula, &root);
@@ -163,6 +176,7 @@ int main(int argc, char const *argv[]) {
     bn_new(order);
     pc_param_set_any();
     g1_get_ord(order);
+    bn_print(order);
     bn_set_dig(secret, 105);
     bn_print(secret);
     std::vector<policy_coefficient> res;
