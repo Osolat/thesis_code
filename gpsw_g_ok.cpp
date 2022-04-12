@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
+    std::cout << "gpsw_g with " << N_ATTR << std::endl;
 
     /* Setup */
 
@@ -215,7 +216,7 @@ int main(int argc, char **argv) {
 
         for (auto it = res.begin(); it != res.end(); it++) {
             g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            //g1_neg(g1_temp, g1_temp);
+            // g1_neg(g1_temp, g1_temp);
             pc_map(mapping, g1_temp, E.E_values[it->leaf_index - 1]);
             // gt_exp(mapping, mapping, it->coeff);
             gt_mul(F_root, F_root, mapping);

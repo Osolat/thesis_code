@@ -350,6 +350,7 @@ int main(int argc, char **argv) {
         t[i] = cpucycles();
         g2_mul_sim_lot(temp_g2, g2_mult_100[i], x_mult_100[i], 100);
     }
+    
     print_results("Results gen param():           ", t, NTESTS);
 
     for (size_t i = 0; i < NTESTS; i++) {
