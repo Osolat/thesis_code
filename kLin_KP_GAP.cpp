@@ -112,11 +112,20 @@ int main(int argc, char **argv) {
     /* Generate pre-computation tables for g, h */
     g1_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
     g1_t t_pre_AW[N_ATTR+1][kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_g[RLC_EP_TABLE_MAX];
+    g2_t t_pre_h[RLC_EP_TABLE_MAX];
+
+    for (int i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        init_null_new_g1_t_var(t_pre_g[i]);
+        init_null_new_g2_t_var(t_pre_h[i]);
+    }
 
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
     init_null_new_g2_t_var(group2);
+    g1_get_gen(group1);
+    g2_get_gen(group2);
 
     /* Setup */
     //float progress = 0.0;
@@ -124,8 +133,8 @@ int main(int argc, char **argv) {
         //progressBar(100, progress);
         //t[jo] = cpucycles();
 
-        g1_get_gen(group1);
-        g2_get_gen(group2);
+        g1_mul_pre(t_pre_g, group1);
+        g2_mul_pre(t_pre_h, group2);
 
         bn_t A_tmp[(kss + 1) * kss];
         //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
@@ -136,7 +145,7 @@ int main(int argc, char **argv) {
             //Initializes the bn_t entries of the A-matrix as just random bn_t value modulo the order.
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
-            g1_mul_gen(mpk.a_mat[d], A_tmp[d]);
+            g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
                 init_null_new_g1_t_var(t_pre_A[d][j]);
             }
@@ -171,7 +180,7 @@ int main(int argc, char **argv) {
 
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
-                g1_mul_gen(mpk.mats[j].w[x], AWi[x]);
+                g1_mul_fix(mpk.mats[j].w[x], t_pre_g, AWi[x]);
                 for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
                     init_null_new_g1_t_var(t_pre_AW[j][x][d]);
                 }
@@ -213,7 +222,7 @@ int main(int argc, char **argv) {
                 //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
                 for (int k = 0; k < (kss); k++) {
                     bn_rand_mod(vj.rj[it2->leaf_index - 1].vec_rj[k], order);
-                    g2_mul_gen(sk.sk[it2->leaf_index - 1].sk_two[k], vj.rj[it2->leaf_index - 1].vec_rj[k]);
+                    g2_mul_fix(sk.sk[it2->leaf_index - 1].sk_two[k], t_pre_h, vj.rj[it2->leaf_index - 1].vec_rj[k]);
                 }
                 //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
                 //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
@@ -231,7 +240,7 @@ int main(int argc, char **argv) {
 
             //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
             for (int u = 0; u < (kss + 1); ++u) {
-                g2_mul_gen(sk.sk[kj].sk_one[u], v_plus_w[u]);
+                g2_mul_fix(sk.sk[kj].sk_one[u], t_pre_h, v_plus_w[u]);
             }
         }
         //progress2 = ((float) (no+1) / NTESTS);
