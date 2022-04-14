@@ -620,7 +620,7 @@ int init_public_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct p
 //ALP
 
 struct alp_pp_naive_oe {
-    uint32_t N_ATTR;
+    uint32_t bound;
     g1_t g1; 
     g2_t g2;
     gt_t gt;
@@ -640,8 +640,8 @@ struct alp_sk_attr_oe {
     g2_t *K;
 };
 
-int init_public_params_alp_oe(const uint32_t N_ATTR, struct alp_pp_naive_oe *pp);
-int init_secret_key_attr_alp_oe(const uint32_t N_ATTR, struct alp_sk_attr_oe *sk);
-int init_secret_key_alp_oe(const uint32_t N_ATTR, struct alp_sk_oe *sk);
+int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_naive_oe *pp);
+int init_secret_key_attr_alp_oe(const uint32_t bound, struct alp_sk_attr_oe *sk);
+int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk);
 
 #endif

@@ -4,7 +4,6 @@
 #include "bench_defs.h"
 using namespace std;
 
-int N_ATTR;
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -122,7 +121,7 @@ int coeff(int k,const vector<int>& roots)
 }
 //Inductive coefficients from roots computation
 void ind_coeff(vector<vector<int>>& coeffs, const vector<int> roots, int n) {
-    for (auto i = 0; i < n; i++){
+    for (auto i = 0; i < n+1; i++){
         coeffs[i][i] = 1;
     }
     for (int i = 1; i < n+1; i++){
@@ -138,7 +137,7 @@ void ind_coeff(vector<vector<int>>& coeffs, const vector<int> roots, int n) {
 
 unsigned long long t[NTESTS];
 
-void setup_naive_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order) {
+void setup_naive_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order, int bound) {
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g2_new(g2);
 
@@ -148,24 +147,76 @@ void setup_naive_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order) {
     g2_get_gen(g2);
     //cout << "g2\n";
     //g2_print(g2);
-    init_public_params_alp_oe(N_ATTR, pp);     
-    for(int i = 0; i < N_ATTR; i++) {
+    init_public_params_alp_oe(bound, pp);     
+    for(int i = 0; i < bound+1; i++) {
         bn_t alpha_i; bn_null(alpha_i); bn_new(alpha_i);
-        bn_t beta_i; bn_null(beta_i); bn_new(beta_i);
-        bn_rand_mod(alpha_i, order); bn_rand_mod(beta_i, order);
+        g1_null(pp->U1[i]); g1_new(pp->U1[i]);
+        g2_null(pp->U2[i]); g1_new(pp->U2[i]);
+        bn_rand_mod(alpha_i, order); 
         g1_mul(pp->U1[i], g1, alpha_i);
         g2_mul(pp->U2[i], g2, alpha_i);
-        g1_mul(pp->H1[i], g1, beta_i);
-        g2_mul(pp->H2[i], g2, beta_i);
+        if (i < bound) {
+            bn_t beta_i; bn_null(beta_i); bn_new(beta_i);
+            g1_null(pp->H1[i]); g1_new(pp->H1[i]);
+            g2_null(pp->H2[i]); g2_new(pp->H2[i]);
+            bn_rand_mod(beta_i, order);
+            g1_mul(pp->H1[i], g1, beta_i);
+            g2_mul(pp->H2[i], g2, beta_i);
+        }
     }
+
     g1_copy(pp->g1, g1);
     g2_copy(pp->g2, g2);
     pc_map(pp->gt, g1, g2);
     gt_exp(pp->gt, pp->gt, alpha);
 }
 
+void print_secret_key_oe(struct alp_sk_oe sk, int bound) {
+    for (int i = 0; i < bound-1; i++) {
+        cout << "sk.D[" << i << "]" << ".D1\n"; 
+        g2_print(sk.D[i].D1);
+        cout << "sk.D[" << i << "]" << ".D2\n";
+        g2_print(sk.D[i].D2);
+        for (int j = 0; j < bound-1; j++){
+            cout << "sk.D[" << i << "].K[" << j << "]\n";
+            g2_print(sk.D[i].K[j]);
+        } 
+    }
+}
+
+void print_public_params(struct alp_pp_naive_oe pp, int bound) {
+    cout << "pp.g1\n";
+    g1_print(pp.g1);
+    cout << "pp.g2\n";
+    g2_print(pp.g2);
+    cout << "pp.gt\n";
+    gt_print(pp.gt);
+    for (int i = 0; i < bound+1; i++) {
+        cout << "pp.U1[" << i << "]\n";
+        g1_print(pp.U1[i]);
+        cout << "pp.U2[" << i << "]\n";
+        g2_print(pp.U2[i]);
+        if (i < bound) {
+        cout << "pp.H1[" << i << "]\n";
+            g1_print(pp.H1[i]);
+            cout << "pp.H2[" << i << "]\n";
+            g2_print(pp.H2[i]);
+        }
+    } 
+} 
+
+void print_share_component(struct alp_sk_attr_oe D, struct alp_pp_naive_oe pp, bn_t *p_coeffs, bn_t *shares, bn_t *r, int bound) {
+    g2_t res; gt_null(res); gt_new(res); g2_set_infty(res);
+    for (int i = 0; i < bound-1; i++) {
+        g2_t u_y; gt_null(u_y); gt_new(u_y);
+        g2_mul(u_y, pp.U2[i+2], p_coeffs[i+1]);
+        g2_add(res, res, u_y)
+    }
+}
+
+
 void test(int N_ATTR) {
-    N_ATTR = N_ATTR;
+    int bound = N_ATTR+1;
     printf("alp naive, N_attr = %d", N_ATTR);
 
 
@@ -203,94 +254,110 @@ void test(int N_ATTR) {
     struct alp_pp_naive_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
-    setup_naive_oe(&pp, alpha, order);
-   
- 
- 
+    setup_naive_oe(&pp, alpha, order, bound);
+    print_public_params(pp, bound);
+
     cout << "Key Gen\n";
     struct alp_sk_oe sk;
     struct node tree_root;
     vector<policy_coefficient> vector;
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-    init_secret_key_alp_oe(N_ATTR, &sk);
+    init_secret_key_alp_oe(bound, &sk);
+    bn_t shares[N_ATTR]; bn_t r[N_ATTR];
     for (size_t j = 0; j < 1; j++) {
         vector = std::vector<policy_coefficient>(); 
         share_secret(&tree_root, alpha, order, vector, true); 
         for (auto it = vector.begin(); it != vector.end(); it++){
             struct alp_sk_attr_oe D;
-            init_secret_key_attr_alp_oe(N_ATTR, &D);
+            init_secret_key_attr_alp_oe(bound, &D);
             size_t attr_index = it -> leaf_index-1;
             //cout << "leaf_index: " << it -> leaf_index << "\n";
-            bn_t rho[N_ATTR];
-            for (size_t i = 0; i < N_ATTR; i++) {
+            bn_t rho[bound];
+            //rho[i] = rho_{leaf_index_1,i} = leaf_index^{i}
+            bn_null(rho[0]); bn_new(rho[0]);
+            bn_set_dig(rho[0], 1);
+            for (size_t i = 1; i < bound; i++) {
                 bn_null(rho[i]); bn_new(rho[i]);
                 bn_t i_read; bn_null(i_read); bn_new(i_read);
                 bn_set_dig(rho[i], it -> leaf_index);
                 bn_set_dig(i_read, i);
                 bn_mxp_basic(rho[i], rho[i], i_read, order); 
-                //cout << "rho[" << i << "]\n";
-                //bn_print(rho[i]);
+                cout << "rho_" << attr_index << "_" << i << "\n";
+                bn_print(rho[i]);
             }
-            bn_t r_i; bn_null(r_i); bn_new(r_i);
+            bn_t r_i; bn_null(r_i); bn_new(r_i); bn_null(r[attr_index]); bn_new(r[attr_index]);
+            bn_null(shares[attr_index]); bn_new(shares[attr_index]);
+            bn_copy(shares[attr_index], it -> share);
             bn_rand_mod(r_i, order);
             g2_mul(D.D1, pp.g2, it -> share); 
             g2_t u_0_tmp; g2_null(u_0_tmp); g2_new(u_0_tmp);
             g2_mul(u_0_tmp, pp.U2[0], r_i);
+            bn_copy(r[attr_index], r_i);
             g2_add(D.D1, D.D1, u_0_tmp);
             //cout << "D_" << it -> leaf_index << "_1\n";
             //g2_print(D.D1);
 
-            g2_mul(D.D2, pp.g2, it -> share);
+            g2_mul(D.D2, pp.g2, r_i);
             //cout << "D_" << it -> leaf_index << "_2\n";
             //g2_print(D.D2);
 
-            for (int j = 0; j < N_ATTR-1; j++){
+            //u_1^{-rho_{attr_index, 2}}*u_2 ... u_1^{-rho_{attr_index, n}}u*n
+            for (int j = 0; j < bound-1; j++){
                 bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 //1/rho_{i,1}
-                bn_mod_inv(rho_i, rho[0], order);
+                //bn_mod_inv(rho_i, rho[0], order);
                 //rho_{i,j+1}/rho_{i,1}
-                bn_mul(rho_i, rho_i, rho[j+1]);
+                //bn_mul(rho_i, rho[0], rho[j+1]);
                 //-rho_{i,j+1}/rho_{i,1}
-                bn_neg(rho_i, rho_i);
-                bn_mod(rho_i, rho_i, order);
-                //cout << "rho[" << attr_index << "][" << j << "]\n";
-
-                g2_null(D.K[(N_ATTR-1)*attr_index+j]); g2_new(D.K[(N_ATTR-1)*attr_index+j]);
+                bn_neg(rho_i, rho[j+1]);
+                //cout << "-rho_" << attr_index << "_" << j+1 << "\n";
                 //bn_print(rho_i);
+                //bn_mod(rho_i, rho[j+1], order);
+                g2_null(D.K[j]); g2_new(D.K[j]); 
+                //bn_print(rho_i);
+                //g2_print(pp.U2[1]);
                 //u_1^(-rho_{i,j+1}/rho_{i,1})
-                g2_mul(D.K[(N_ATTR-1)*attr_index+j], pp.U2[0], rho_i);
+                g2_mul(D.K[j], pp.U2[1], rho_i);
                 //cout << "sheesh\n";
                 //u_1^(-rho_{i,j+1}/rho_{i,1})*u_2
-                g2_add(D.K[(N_ATTR-1)*attr_index+j], D.K[(N_ATTR-1)*attr_index+j], pp.U2[1]);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
                 //(u_1^(-rho_{i,j+1}/rho_{i,1})*u_2)^r_i
-                g2_mul(D.K[(N_ATTR-1)*attr_index+j], D.K[(N_ATTR-1)*attr_index+j],r_i);
-                //cout << "K[" << attr_index << "][" << j << "]\n";
-                //g2_print(D.K[(N_ATTR-1)*attr_index+j]);
+                g2_mul(D.K[j], D.K[j], r_i);
             }
             sk.D[attr_index] = D; 
         }
     } 
+    
+    print_secret_key_oe(sk, bound); 
 
     cout << "Encrypt\n";
     bn_t attributes[N_ATTR];
     std::vector<int> attr_vector(N_ATTR);
-    bn_t p_Coeffs[N_ATTR];
+    bn_t p_Coeffs[bound];
     for (size_t i = 0; i < N_ATTR; i++) {
         bn_null(attributes[i]); 
         bn_new(attributes[i]); 
-        bn_set_dig(attributes[i], i + 1);
+        bn_set_dig(attributes[i], i+1);
         attr_vector[i] = i+1;
     }
     //TODO: This is the q+1 = n_attr case, if we don't encrypt under all attributes, this does not work.
-    std::vector<std::vector<int>> coeff_vector(N_ATTR+1, std::vector<int> (N_ATTR+1, 0));
+    std::vector<std::vector<int>> coeff_vector(bound, std::vector<int> (bound, 0));
     cout << "yeesh\n";
     ind_coeff(coeff_vector, attr_vector, N_ATTR);
-    for (size_t i = 0; i < N_ATTR; i++){
+    for (size_t i = 0; i < bound; i++){
         bn_null(p_Coeffs[i]; bn_new(p_Coeffs[i]));
-        int y = coeff_vector[N_ATTR-1][i];
-        //cout << "y_" << i << ": " << y <<  "\n";
-        bn_set_dig(p_Coeffs[i], y);
+        int y = coeff_vector[N_ATTR][i];
+        const char * y_string = std::to_string(y).c_str();
+        cout << "y_" << i << ": " << y <<  "\n";
+        cout << "y_string " << i << ": " << y_string << "\n";
+        cout << "size of y_string: " << sizeof(y_string) << "\n"; 
+        //bn_read_str(p_Coeffs[i], y_string, sizeof(y_string), 10);
+        bn_set_dig(p_Coeffs[i], (dig_t) y);
+        cout << "p_Coeffs[" << i << "]\n";
+        bn_print(p_Coeffs[i]);
     }
+    
+    cout << "brugh\n";
     bn_t s; bn_null(s); bn_new(s);
     gt_t C0; gt_null(C0); gt_new(C0);
     g1_t C1; g1_null(C1); g1_new(C1);
@@ -303,17 +370,35 @@ void test(int N_ATTR) {
     gt_exp(C0, pp.gt, s);
     g1_mul(C1, pp.g1, s);
     g1_copy(C2, pp.U1[0]);
-    g1_copy(C3, pp.H1[0]);
-    for (int i = 1; i < N_ATTR; i++) {
+    g1_set_infty(C3);
+    for (int i = 0; i < bound; i++) {
         g1_t u_tmp; g1_null(u_tmp); g1_new(u_tmp);
-        g1_t h_tmp; g1_null(h_tmp); g1_new(h_tmp);
-        g1_mul(u_tmp, pp.U1[i], p_Coeffs[i]);
-        g1_mul(h_tmp, pp.H1[i], p_Coeffs[i]);
+        cout << "pp.U1[" << i+1 << "]\n";
+        g1_print(pp.U1[i+1]);
+        cout << "p_Coeffs[" << i << "]\n";
+        bn_print(p_Coeffs[i]); 
+        g1_mul(u_tmp, pp.U1[i+1], p_Coeffs[i]);
         g1_add(C2, C2, u_tmp);
-        g1_add(C3, C3, h_tmp);
+        if (i < bound-1) {
+            g1_t h_tmp; g1_null(h_tmp); g1_new(h_tmp);
+            g1_mul(h_tmp, pp.H1[i], p_Coeffs[i]);
+            g1_add(C3, C3, h_tmp);
+        }
+        //cout << "u_tmp " << i << "\n";
+        //g1_print(u_tmp);
     }
     g1_mul(C2, C2, s);
     g1_mul(C3, C3, s);
+
+    cout << "C0\n";
+    gt_print(C0); 
+    cout << "C1\n";
+    g1_print(C1);
+    cout << "C2\n";
+    g1_print(C2);
+    cout << "C3\n";
+    g1_print(C3);
+
 
     cout << "Decrypt\n";
     try {
@@ -322,22 +407,71 @@ void test(int N_ATTR) {
     } catch (struct TreeUnsatisfiableException *e) {
         std::cout << e->what() << std::endl;
     }
-
     vector = std::vector<policy_coefficient>();
     vector = recover_coefficients(&tree_root, attributes, N_ATTR);
+    gt_t share_points[N_ATTR]; 
+    gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
+    gt_t share_mul; gt_null(share_mul); gt_new(share_mul); gt_set_unity(share_mul); 
     for (auto it = vector.begin(); it != vector.end(); it++) {
         size_t attr_index = it -> leaf_index-1;
         g2_t decrypt_d; g2_null(decrypt_d); g2_new(decrypt_d);
-        g2_copy(decrypt_d, sk.D->D1);
-        for (int j = 1; j < N_ATTR; j++){
-            g2_t Ky; g2_null(Ky); g2_new(Ky);
-            //g2_mul(Ky, sk.D[attr_index].K[attr_index][j], p_Coeffs[j]);
+        g2_t Ky; g2_null(Ky); g2_new(Ky); g2_set_infty(Ky);
+        //prod_{j=2}^n K_{i,j}^y_j 
+        for (int j = 0; j < bound-1; j++){
+            g2_t Ky_j; g2_null(Ky_j); g2_new(Ky_j);
+            cout << "sk.D[" << attr_index << "][" << j <<"]\n";
+            g2_print(sk.D[attr_index].K[j]);
+            cout << "p_Coeffs[" << j+1 << "]\n";
+            bn_print(p_Coeffs[j+1]);
+            g2_mul(Ky_j, sk.D[attr_index].K[j], p_Coeffs[j+1]);
+            cout << "Ky_" << attr_index << "_" << j << "\n";
+            g2_print(Ky_j);
+            g2_add(Ky, Ky, Ky_j);
         }
+        cout << "Ky\n";
+        g2_print(Ky);
+        g2_add(decrypt_d, sk.D[attr_index].D1, Ky);
+        gt_t inv_tmp; gt_null(inv_tmp); gt_new(inv_tmp);
+        gt_null(share_points[attr_index]); gt_new(share_points[attr_index]);
+
+        pc_map(share_points[attr_index], C1, decrypt_d);
+        pc_map(inv_tmp, C2, sk.D[attr_index].D2);
+        gt_inv(inv_tmp, inv_tmp);
+        gt_mul(share_points[attr_index], share_points[attr_index], inv_tmp);
+        cout << "share_points[" << attr_index << "]\n";
+        gt_print(share_points[attr_index]); 
+
+        gt_t share_tmp; gt_null(share_tmp); gt_new(share_tmp);
+        pc_map(share_tmp, pp.g1, pp.g2);
+        gt_exp(share_tmp, share_tmp, shares[attr_index]);
+        gt_exp(share_tmp, share_tmp, s);
+        cout << "e(g1,g2)^share_" << attr_index <<"*s\n";
+        gt_print(share_tmp);      
+
+        //bn_t inv_coeff; bn_null(inv_coeff); bn_new(inv_coeff);
+        //bn_inv(inv_coeff, it -> coeff, order);
+        gt_exp(share_points[attr_index], share_points[attr_index], it -> coeff);
+        gt_exp(share_tmp, share_tmp, it -> coeff);
+        gt_mul(share_mul, share_mul, share_tmp);
+        //gt_inv(share_points[attr_index], share_points[attr_index]);
+        gt_mul(result, result, share_points[attr_index]);
     }    
+    //gt_mul(result, result, C0);
+    cout << "res\n";
+    int cmp  = (gt_cmp(result, C0) == RLC_EQ); 
+    cout << cmp << "\n";
+    cout << "share mul\n";
+    gt_print(share_mul);
+    if (cmp != 1) {
+        cout << "Value of blinding factor before decrypt\n";
+        gt_print(C0);
+        cout << "Value of blinding factor after decrypt\n";
+        gt_print(result);
+    }
 }
 
 
 int main (int argc, char **argv) {
-    test(8);
+    test(2);
     return 0;
 }
