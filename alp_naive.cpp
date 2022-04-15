@@ -205,13 +205,29 @@ void print_public_params(struct alp_pp_naive_oe pp, int bound) {
     } 
 } 
 
-void print_share_component(struct alp_sk_attr_oe D, struct alp_pp_naive_oe pp, bn_t *p_coeffs, bn_t *shares, bn_t *r, int bound) {
-    g2_t res; gt_null(res); gt_new(res); g2_set_infty(res);
+void print_share_component(struct alp_sk_oe sk, struct alp_pp_naive_oe pp, bn_t *p_coeffs, bn_t share, bn_t r, int bound, int attr_index, g2_t res) {
+    gt_null(res); gt_new(res); g2_set_infty(res);
+    //prod k_i_j ^ y_j
+    //for (int i = 0; i < bound; i++) {
+    //    g2_t u_y; gt_null(u_y); gt_new(u_y);
+    //    g2_mul(u_y, pp.U2[i+1], p_coeffs[i]);
+    //    g2_add(res, res, u_y)
+    //}
     for (int i = 0; i < bound-1; i++) {
-        g2_t u_y; gt_null(u_y); gt_new(u_y);
-        g2_mul(u_y, pp.U2[i+2], p_coeffs[i+1]);
-        g2_add(res, res, u_y)
+        g2_t k_y; gt_null(k_y); gt_new(k_y);
+        g2_mul(k_y, sk.D[attr_index].K[i], p_coeffs[i+1]);
+        g2_add(res, res, k_y);
     }
+    //u0
+    //g2_add(res, res, pp.U2[0]);
+    //g2_mul(res, res, r);
+    //u_0^r_i
+    //g2_t g_share; gt_null(g_share); gt_new(g_share);
+    //g2_mul(g_share, pp.g2, share);
+    g2_add(res, res, sk.D[attr_index].D1);
+    //g2_add(res, res, g_share);
+    cout << "g^lamda*(prod u_j^y_j)^r_i\n";
+    g2_print(res);
 }
 
 
@@ -289,20 +305,21 @@ void test(int N_ATTR) {
             bn_null(shares[attr_index]); bn_new(shares[attr_index]);
             bn_copy(shares[attr_index], it -> share);
             bn_rand_mod(r_i, order);
-            g2_mul(D.D1, pp.g2, it -> share); 
             g2_t u_0_tmp; g2_null(u_0_tmp); g2_new(u_0_tmp);
             g2_mul(u_0_tmp, pp.U2[0], r_i);
-            bn_copy(r[attr_index], r_i);
+
+            g2_mul(D.D1, pp.g2, it -> share);  
             g2_add(D.D1, D.D1, u_0_tmp);
             //cout << "D_" << it -> leaf_index << "_1\n";
             //g2_print(D.D1);
-
+            bn_copy(r[attr_index], r_i);
             g2_mul(D.D2, pp.g2, r_i);
             //cout << "D_" << it -> leaf_index << "_2\n";
             //g2_print(D.D2);
 
             //u_1^{-rho_{attr_index, 2}}*u_2 ... u_1^{-rho_{attr_index, n}}u*n
             for (int j = 0; j < bound-1; j++){
+                cout << "j+2: " << j+2 << "\n";
                 bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 //1/rho_{i,1}
                 //bn_mod_inv(rho_i, rho[0], order);
@@ -310,8 +327,8 @@ void test(int N_ATTR) {
                 //bn_mul(rho_i, rho[0], rho[j+1]);
                 //-rho_{i,j+1}/rho_{i,1}
                 bn_neg(rho_i, rho[j+1]);
-                //cout << "-rho_" << attr_index << "_" << j+1 << "\n";
-                //bn_print(rho_i);
+                cout << "-rho_" << attr_index << "_" << j+1 << "\n";
+                bn_print(rho_i);
                 //bn_mod(rho_i, rho[j+1], order);
                 g2_null(D.K[j]); g2_new(D.K[j]); 
                 //bn_print(rho_i);
@@ -347,12 +364,18 @@ void test(int N_ATTR) {
     for (size_t i = 0; i < bound; i++){
         bn_null(p_Coeffs[i]; bn_new(p_Coeffs[i]));
         int y = coeff_vector[N_ATTR][i];
-        const char * y_string = std::to_string(y).c_str();
-        cout << "y_" << i << ": " << y <<  "\n";
-        cout << "y_string " << i << ": " << y_string << "\n";
-        cout << "size of y_string: " << sizeof(y_string) << "\n"; 
-        //bn_read_str(p_Coeffs[i], y_string, sizeof(y_string), 10);
-        bn_set_dig(p_Coeffs[i], (dig_t) y);
+        if (y < 0) {
+            y = -y;
+            bn_set_dig(p_Coeffs[i], y);
+            bn_neg(p_Coeffs[i], p_Coeffs[i]);
+        } else {
+            const char * y_string = std::to_string(y).c_str();
+            cout << "y_" << i << ": " << y <<  "\n";
+            cout << "y_string " << i << ": " << y_string << "\n";
+            cout << "size of y_string: " << sizeof(y_string) << "\n"; 
+            //bn_read_str(p_Coeffs[i], y_string, sizeof(y_string), 10);
+            bn_set_dig(p_Coeffs[i], y);
+        }
         cout << "p_Coeffs[" << i << "]\n";
         bn_print(p_Coeffs[i]);
     }
@@ -387,6 +410,32 @@ void test(int N_ATTR) {
         //cout << "u_tmp " << i << "\n";
         //g1_print(u_tmp);
     }
+    
+    bn_t minus_one; bn_null(minus_one); bn_new(minus_one); 
+    bn_t minus_two; bn_null(minus_two); bn_new(minus_two);
+    bn_t minus_four; bn_null(minus_four); bn_new(minus_four);
+    bn_t sum; bn_null(sum); bn_new(sum);
+    bn_set_dig(minus_one, 1);
+    bn_neg(minus_one, minus_one);
+    bn_set_dig(minus_two, 2);
+    bn_neg(minus_two, minus_two);
+    bn_set_dig(minus_four, 4);
+    bn_neg(minus_four, minus_four);
+
+    bn_mul(sum, minus_one, p_Coeffs[1]);
+    bn_add(sum, minus_one, sum);
+    cout << "sum\n";
+    bn_print(sum);
+
+    g1_t g_sqr; g1_null(g_sqr); g1_new(g_sqr);
+    g1_mul(g_sqr, pp.g1, sum);
+    cout << "g^sum\n";
+    g1_print(g_sqr);
+    g1_mul_dig(g_sqr, pp.g1, 2);
+    cout << "g^2\n";
+    g1_print(g_sqr);
+
+
     g1_mul(C2, C2, s);
     g1_mul(C3, C3, s);
 
@@ -423,18 +472,26 @@ void test(int N_ATTR) {
             g2_print(sk.D[attr_index].K[j]);
             cout << "p_Coeffs[" << j+1 << "]\n";
             bn_print(p_Coeffs[j+1]);
+            
             g2_mul(Ky_j, sk.D[attr_index].K[j], p_Coeffs[j+1]);
+
             cout << "Ky_" << attr_index << "_" << j << "\n";
             g2_print(Ky_j);
+
             g2_add(Ky, Ky, Ky_j);
         }
         cout << "Ky\n";
         g2_print(Ky);
         g2_add(decrypt_d, sk.D[attr_index].D1, Ky);
+        cout << "decrypt_d " << attr_index << "\n";
+        g2_print(decrypt_d);
+        g2_t share_tmp2; 
+        print_share_component(sk, pp, p_Coeffs, shares[attr_index], r[attr_index], bound, attr_index, share_tmp2);  
         gt_t inv_tmp; gt_null(inv_tmp); gt_new(inv_tmp);
         gt_null(share_points[attr_index]); gt_new(share_points[attr_index]);
 
         pc_map(share_points[attr_index], C1, decrypt_d);
+        //pc_map(share_points[attr_index], C1, share_tmp2);
         pc_map(inv_tmp, C2, sk.D[attr_index].D2);
         gt_inv(inv_tmp, inv_tmp);
         gt_mul(share_points[attr_index], share_points[attr_index], inv_tmp);
@@ -446,7 +503,7 @@ void test(int N_ATTR) {
         gt_exp(share_tmp, share_tmp, shares[attr_index]);
         gt_exp(share_tmp, share_tmp, s);
         cout << "e(g1,g2)^share_" << attr_index <<"*s\n";
-        gt_print(share_tmp);      
+        gt_print(share_tmp);    
 
         //bn_t inv_coeff; bn_null(inv_coeff); bn_new(inv_coeff);
         //bn_inv(inv_coeff, it -> coeff, order);
