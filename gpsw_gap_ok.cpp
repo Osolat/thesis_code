@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
+    std::cout << "gpsw_gap_ok with " << N_ATTR << std::endl;
 
     /* Setup */
 
@@ -109,6 +110,14 @@ int main(int argc, char **argv) {
         g2_new(mpk.T_values[i]);
         g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
     }
+
+    g1_t pre_g[RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        /* code */
+        g1_null(pre_g[i]);
+        g1_new(pre_g[i]);
+    }
+    g1_mul_pre(pre_g, g);
 
     g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -154,12 +163,12 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g1_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+            g1_mul_fix(sk.D_values[it->leaf_index - 1], pre_g, temp);
         }
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
-    
+
     g1_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
@@ -241,7 +250,7 @@ int main(int argc, char **argv) {
             g2_null(E_vals[it->leaf_index - 1]);
             g2_new(E_vals[it->leaf_index - 1]);
             g1_mul_fix(D_vals[it->leaf_index - 1], pre_D_values[it->leaf_index - 1], it->coeff);
-            //g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
+            // g1_neg(D_vals[it->leaf_index - 1], D_vals[it->leaf_index - 1]);
             g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
         }
 

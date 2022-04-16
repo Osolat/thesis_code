@@ -481,7 +481,8 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
             bn_new(p.coeff);
             bn_null(p.share);
             bn_new(p.share);
-            bn_copy(p.coeff, temp);
+            //bn_copy(p.coeff, temp);
+            bn_mod(p.coeff, temp, order);
             bn_copy(p.share, current_node->share);
             result.push_back(p);
         } else {

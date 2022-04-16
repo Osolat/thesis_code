@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
+    std::cout << "gpsw_gap_oe with " << N_ATTR << std::endl;
 
     /* Setup */
 
@@ -119,6 +120,14 @@ int main(int argc, char **argv) {
         g1_mul_pre(pre_T[i], mpk.T_values[i]);
     }
 
+    g2_t pre_h[RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        /* code */
+        g2_null(pre_h[i]);
+        g2_new(pre_h[i]);
+    }
+    g2_mul_pre(pre_h, h);
+
     /*Y = e(g,g)^y*/
     pc_map(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
@@ -149,7 +158,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g2_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+            g2_mul_fix(sk.D_values[it->leaf_index - 1], pre_h, temp);
         }
     }
     printf("[");
@@ -219,7 +228,7 @@ int main(int argc, char **argv) {
         g1_t g1_temp;
         g1_null(g1_temp);
         g1_new(g1_temp);
-        
+
         g2_t D_vals[res.size()];
         g1_t E_vals[res.size()];
         for (auto it = res.begin(); it != res.end(); it++) {
@@ -228,7 +237,7 @@ int main(int argc, char **argv) {
             g1_null(E_vals[it->leaf_index - 1]);
             g1_new(E_vals[it->leaf_index - 1]);
             g1_mul(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1], it->coeff);
-            //g1_neg(E_vals[it->leaf_index - 1], E_vals[it->leaf_index - 1]);
+            // g1_neg(E_vals[it->leaf_index - 1], E_vals[it->leaf_index - 1]);
             g2_copy(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1]);
         }
 

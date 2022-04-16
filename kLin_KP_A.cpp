@@ -1,5 +1,5 @@
 //
-// Created by jonas on 3/29/22.
+// Created by jonas on 4/10/22.
 //
 
 #include "lib/k_lin/k_lin_util.h"
@@ -290,13 +290,7 @@ int main(int argc, char **argv) {
 
     /* Decryption */
     //float progress4 = 0.0;
-    g1_t pair_g1_top[(kss + 1)];
-    g2_t pair_g2_top[(kss + 1)];
-    g1_t pair_g1_bot[kss];
-    g2_t pair_g2_bot[kss];
-
     bn_t pack_coef[N_ATTR];
-
     gt_t exp_val;
     gt_t prod;
     init_null_new_gt_t_var(exp_val);
@@ -313,17 +307,8 @@ int main(int argc, char **argv) {
         gt_t map_sim;
         init_null_new_gt_t_var(map_sim);
 
-        gt_t map_sim_1;
-        init_null_new_gt_t_var(map_sim_1);
-
-        gt_t map_sim_2;
-        init_null_new_gt_t_var(map_sim_2);
-
-        gt_t invert_elem;
-        init_null_new_gt_t_var(invert_elem);
-
-        gt_t map_sim_res;
-        init_null_new_gt_t_var(map_sim_res);
+        g1_t pair_g1[(kss + 1) + kss];
+        g2_t pair_g2[(kss + 1) + kss];
 
         //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
         fp12_set_dig(prod, 1);
@@ -346,25 +331,17 @@ int main(int argc, char **argv) {
             bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
             //Set up the two lists used for the pp_map_sim_oatep_k12 operation
 
-            for (int jki = 0; jki < kss+1; ++jki) {
-                g1_copy(pair_g1_top[jki], CT_A.C_1[jki]);
-                g2_copy(pair_g2_top[jki], sk.sk[it3->leaf_index - 1].sk_one[jki]);
-
+            for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
+                if (jk < (kss + 1)) {
+                    g1_neg(pair_g1[jk], CT_A.C_1[jk]);
+                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_one[jk]);
+                } else {
+                    g1_copy(pair_g1[jk], CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[(jk + 1) % kss]);
+                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_two[(jk + 1) % kss]);
+                }
             }
-            pp_map_sim_oatep_k12(map_sim_1, pair_g1_top, pair_g2_top, kss+1);
-
-            for (int jky = 0; jky < kss; ++jky) {
-                g1_copy(pair_g1_bot[jky], CT_A.C_2[it3->leaf_index].c_2_mat[jky]);
-                g2_copy(pair_g2_bot[jky], sk.sk[it3->leaf_index - 1].sk_two[jky]);
-
-            }
-            pp_map_sim_oatep_k12(map_sim_2, pair_g1_bot, pair_g2_bot, kss);
-            gt_inv(invert_elem, map_sim_1);
-            gt_mul(map_sim, map_sim_2, invert_elem);
-
-            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+            pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
             gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
-            //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
             gt_mul(prod, prod, exp_val);
         }
         gt_mul(tmp_res, prod, CT_A.C_3_one_val);
@@ -381,5 +358,8 @@ int main(int argc, char **argv) {
     std::cout<<"\n"<<std::endl;
     return 0;
 }
+
+
+
 
 
