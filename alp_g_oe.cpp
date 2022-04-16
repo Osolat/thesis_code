@@ -7,7 +7,7 @@ using namespace std;
 
 void test_g(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp naive, N_attr = %d", N_ATTR);
+    printf("alp general optimisation, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -45,7 +45,7 @@ void test_g(int N_ATTR) {
     struct alp_pp_naive_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
-    setup_naive_oe(&pp, alpha, order, bound);
+    setup_g_oe(&pp, alpha, order, bound);
     //print_public_params(pp, bound);
 
     //cout << "Key Gen\n";
@@ -86,7 +86,7 @@ void test_g(int N_ATTR) {
 
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        decrypt_naive_oe(pp, sk, C, attributes, tree_root);
+        decrypt_g_oe(pp, sk, C, attributes, tree_root);
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);
@@ -95,6 +95,7 @@ void test_g(int N_ATTR) {
 
 int main (int argc, char **argv) {
     test_g(2);
+    /*
     test_g(4);
     test_g(8);
     test_g(16);
@@ -104,5 +105,6 @@ int main (int argc, char **argv) {
     test_g(256);
     test_g(512);
     test_g(1024);
+    */
     return 0;
 }

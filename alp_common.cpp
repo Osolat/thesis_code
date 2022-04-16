@@ -361,7 +361,51 @@ void decrypt_naive_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe
         cout << "Value of result after decrypt\n";
         gt_print(result);
     } 
-} 
+}
+
+void decrypt_g_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root) {
+    bn_t p_Coeffs[pp.bound];
+    coeff_array(p_Coeffs, attributes, pp.bound);
+    lsss_vector = std::vector<policy_coefficient>();
+    lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
+    //gt_t share_points[pp.bound-1]; 
+    gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++) {
+        size_t attr_index = it -> leaf_index-1;
+        g2_t decrypt_d; g2_null(decrypt_d); g2_new(decrypt_d);
+        g2_t Ky; g2_null(Ky); g2_new(Ky); g2_set_infty(Ky);
+        for (int j = 0; j < pp.bound-1; j++){
+            g2_t Ky_j; g2_null(Ky_j); g2_new(Ky_j);
+            g2_mul(Ky_j, sk.D[attr_index].K[j], p_Coeffs[j+1]);
+            g2_add(Ky, Ky, Ky_j);
+        }
+        g2_add(decrypt_d, sk.D[attr_index].D1, Ky);
+        g2_t share_tmp2; 
+        gt_t inv_tmp; gt_null(inv_tmp); gt_new(inv_tmp);
+        g1_t inv_C2; g1_null(inv_C2); g1_new(inv_C2);
+        g1_t C1_share; g1_null(C1_share); g1_new(C1_share);
+
+        gt_t share_point; gt_null(share_point); gt_new(share_point);
+        g1_mul(C1_share, C.C1, it -> coeff);
+       
+        pc_map(share_point, C1_share, decrypt_d);
+        g1_mul(inv_C2, C.C2, it -> coeff);
+        g1_neg(inv_C2, inv_C2);
+        pc_map(inv_tmp, inv_C2, sk.D[attr_index].D2);
+        //gt_inv(inv_tmp, inv_tmp);
+        gt_mul(share_point, share_point, inv_tmp);
+        //gt_exp(share_point, share_point, it -> coeff);
+        gt_mul(result, result, share_point);
+    }  
+    gt_inv(result, result);  
+    gt_mul(result, result, C.C0);
+    //cout << "res\n";
+    int cmp  = gt_is_unity(result); 
+    if (cmp != 1) {
+        cout << "Value of result after decrypt\n";
+        gt_print(result);
+    } 
+}
 
 void print_secret_key_oe(struct alp_sk_oe sk, int bound) {
     for (int i = 0; i < bound-1; i++) {
