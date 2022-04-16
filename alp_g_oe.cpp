@@ -5,7 +5,7 @@
 #include "alp_common.cpp"
 using namespace std;
 
-void test_naive(int N_ATTR) {
+void test_g(int N_ATTR) {
     int bound = N_ATTR+1;
     printf("alp naive, N_attr = %d", N_ATTR);
 
@@ -94,15 +94,15 @@ void test_naive(int N_ATTR) {
 
 
 int main (int argc, char **argv) {
-    test_naive(2);
-    test_naive(4);
-    test_naive(8);
-    test_naive(16);
-    test_naive(32);
-    test_naive(64);
-    test_naive(128);
-    test_naive(256);
-    test_naive(512);
-    test_naive(1024);
+    test_g(2);
+    test_g(4);
+    test_g(8);
+    test_g(16);
+    test_g(32);
+    test_g(64);
+    test_g(128);
+    test_g(256);
+    test_g(512);
+    test_g(1024);
     return 0;
 }

@@ -674,3 +674,10 @@ int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk) {
         return EXIT_SUCCESS;
     }
 }
+
+int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertext_oe *C){
+    gt_null(C -> C0); gt_null(C -> C0)
+    g1_null(C -> C1); g1_new(C -> C1);
+    g1_null(C->C2); gt_new(C->C2);
+    g1_null(C->C3); g1_new(C->C3);
+} 

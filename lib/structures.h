@@ -628,6 +628,14 @@ struct alp_pp_naive_oe {
     g2_t *H2;
     g1_t *U1;
     g2_t *U2;
+    bn_t order;
+};
+
+struct alp_ciphertext_oe {
+    gt_t C0;
+    g1_t C1;
+    g1_t C2;
+    g1_t C3;
 };
 
 struct alp_sk_oe {
@@ -643,5 +651,6 @@ struct alp_sk_attr_oe {
 int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_naive_oe *pp);
 int init_secret_key_attr_alp_oe(const uint32_t bound, struct alp_sk_attr_oe *sk);
 int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk);
+int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertext_oe *C);
 
 #endif
