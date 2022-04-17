@@ -69,11 +69,10 @@ void test_naive(int N_ATTR) {
         bn_new(attributes[i]); 
         bn_set_dig(attributes[i], i+1);
     }
-    
+    coeff_array(p_Coeffs, attributes, bound);
     struct alp_ciphertext_oe C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
-        coeff_array(p_Coeffs, attributes, bound);
         encrypt_naive_oe(pp, p_Coeffs, &C);
     } print_results("Results Encrypt():          ", t, NTESTS);
 
@@ -86,7 +85,7 @@ void test_naive(int N_ATTR) {
 
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        decrypt_naive_oe(pp, sk, C, attributes, tree_root);
+        decrypt_naive_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);

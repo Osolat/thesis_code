@@ -681,3 +681,47 @@ int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertex
     g1_null(C->C2); gt_new(C->C2);
     g1_null(C->C3); g1_new(C->C3);
 } 
+
+int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_pre_oe *pp){
+    pp->bound = bound;
+
+    pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
+
+    pp->t_pre_u1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
+
+    pp->t_pre_u2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+
+    pp->H1 = (g1_t *)malloc(bound*sizeof(g1_t));
+
+    pp->t_pre_h1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->H2 = (g2_t *)malloc(bound*sizeof(g2_t));
+
+    pp->t_pre_h2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+
+

@@ -5,9 +5,9 @@
 #include "alp_common.cpp"
 using namespace std;
 
-void test_g(int N_ATTR) {
+void test_naive(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp general optimisation, N_attr = %d", N_ATTR);
+    printf("alp naive, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -45,7 +45,7 @@ void test_g(int N_ATTR) {
     struct alp_pp_naive_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
-    setup_g_oe(&pp, alpha, order, bound);
+    setup_naive_oe(&pp, alpha, order, bound);
     //print_public_params(pp, bound);
 
     //cout << "Key Gen\n";
@@ -70,11 +70,11 @@ void test_g(int N_ATTR) {
         bn_set_dig(attributes[i], i+1);
     }
     
-    struct alp_ciphertext_oe C;
     coeff_array(p_Coeffs, attributes, bound);
+    struct alp_ciphertext_oe C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
-        encrypt_naive_oe(pp, p_Coeffs, &C);
+        encrypt_api_oe(pp, p_Coeffs, &C);
     } print_results("Results Encrypt():          ", t, NTESTS);
 
     try {
@@ -86,7 +86,7 @@ void test_g(int N_ATTR) {
 
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        decrypt_g_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
+        decrypt_naive_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);
@@ -94,15 +94,15 @@ void test_g(int N_ATTR) {
 
 
 int main (int argc, char **argv) {
-    test_g(2);
-    test_g(4);
-    test_g(8);
-    test_g(16);
-    test_g(32);
-    test_g(64);
-    test_g(128);
-    test_g(256);
-    test_g(512);
-    test_g(1024);
+    test_naive(2);
+    test_naive(4);
+    test_naive(8);
+    test_naive(16);
+    test_naive(32);
+    test_naive(64);
+    test_naive(128);
+    test_naive(256);
+    test_naive(512);
+    test_naive(1024);
     return 0;
 }

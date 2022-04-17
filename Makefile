@@ -164,6 +164,8 @@ alp:
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	$(CXX) -o objects/alp_naive $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_naive.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/alp_g $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_g_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_a $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_a_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
+	$(CXX) -o objects/alp_p $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_p_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 	
 policy_tree:
