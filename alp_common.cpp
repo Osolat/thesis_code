@@ -155,6 +155,31 @@ void ind_coeff_bn(bn_t *coeffs, const bn_t *roots, int n) {
         }
     } 
 }
+
+void ind_coeff_bn_mod(bn_t *coeffs, const bn_t *roots, int n, bn_t modulo) {
+    for (int i = 0; i < n; i++) {
+        bn_null(coeffs[n*i+i]); bn_new(coeffs[n*i+i]);
+        bn_set_dig(coeffs[n*i+i], 1);
+    }
+    for (int i = 1; i < n; i++){
+        for (int j = 0; j < i; j++) {
+            bn_null(coeffs[n*i+j]); bn_new(coeffs[n*i+j]);
+            if (j == 0) {  
+                bn_t tmp; bn_null(tmp); bn_new(tmp);
+                bn_mul(tmp, coeffs[n*(i-1)], roots[i-1]);
+                bn_neg(coeffs[n*i+j], tmp);
+                bn_mod(coeffs[n*i+j], coeffs[n*i+j], modulo);
+            } else {
+                bn_t tmp; bn_null(tmp); bn_new(tmp);
+                bn_mul(tmp, coeffs[n*(i-1)+j], roots[i-1]);
+                bn_neg(tmp, tmp);
+                bn_add(coeffs[n*i+j], tmp, coeffs[n*(i-1)+j-1]);
+                bn_mod(coeffs[n*i+j], coeffs[n*i+j], modulo);
+            }
+        }
+    } 
+}
+
 void coeff_array(bn_t *p_Coeffs, const bn_t *attributes, int bound){
     bn_t coeff_matrix[bound*bound];
     ind_coeff_bn(coeff_matrix, attributes, bound);
@@ -162,13 +187,23 @@ void coeff_array(bn_t *p_Coeffs, const bn_t *attributes, int bound){
         bn_null(p_Coeffs[i]); bn_new(p_Coeffs[i])
         bn_copy(p_Coeffs[i], coeff_matrix[bound*(bound-1)+i]);
     }
-    cout << "woah";
     for (size_t i = 0; i < bound*bound; i++) {
         bn_free(coeff_matrix[i]);
     }
 
 }
+void coeff_array_mod(bn_t *p_Coeffs, const bn_t *attributes, int bound, bn_t modulo){
+    bn_t coeff_matrix[bound*bound];
+    ind_coeff_bn_mod(coeff_matrix, attributes, bound, modulo);
+    for (size_t i = 0; i < bound; i++){
+        bn_null(p_Coeffs[i]); bn_new(p_Coeffs[i])
+        bn_copy(p_Coeffs[i], coeff_matrix[bound*(bound-1)+i]);
+    }
+    for (size_t i = 0; i < bound*bound; i++) {
+        bn_free(coeff_matrix[i]);
+    }
 
+}
 unsigned long long t[NTESTS];
 
 std::vector<policy_coefficient> lsss_vector;

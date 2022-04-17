@@ -5,9 +5,9 @@
 #include "alp_common.cpp"
 using namespace std;
 
-void test_naive(int N_ATTR) {
+void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp naive, N_attr = %d", N_ATTR);
+    printf("alp api, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -70,7 +70,7 @@ void test_naive(int N_ATTR) {
         bn_set_dig(attributes[i], i+1);
     }
     
-    coeff_array(p_Coeffs, attributes, bound);
+    coeff_array_mod(p_Coeffs, attributes, bound, order);
     struct alp_ciphertext_oe C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
@@ -94,15 +94,26 @@ void test_naive(int N_ATTR) {
 
 
 int main (int argc, char **argv) {
-    test_naive(2);
-    test_naive(4);
-    test_naive(8);
-    test_naive(16);
-    test_naive(32);
-    test_naive(64);
-    test_naive(128);
-    test_naive(256);
-    test_naive(512);
-    test_naive(1024);
+    t[0] = cpucycles();
+
+
+    //uint32_t N_ATTR = test_attr;
+    cout << "**********************\n";
+    //uint32_t N_ATTR = test_attr;
+    int *test_attrs;
+    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
+        test_attrs = (int *) malloc(sizeof(int) * argc-2);
+        for (int i = 2; i < argc; i++){
+            test(atoi(argv[i]));
+        }
+    } else {
+        test(2);
+    }
+    cout << "**********************\n";
+    //uint32_t *attr_int_list = NULL;
+    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
+    //test_abe(2);
+    //test_abe(8);
+    //test_abe(16);
     return 0;
 }

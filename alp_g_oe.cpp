@@ -5,7 +5,7 @@
 #include "alp_common.cpp"
 using namespace std;
 
-void test_g(int N_ATTR) {
+void test(int N_ATTR) {
     int bound = N_ATTR+1;
     printf("alp general optimisation, N_attr = %d", N_ATTR);
 
@@ -71,7 +71,7 @@ void test_g(int N_ATTR) {
     }
     
     struct alp_ciphertext_oe C;
-    coeff_array(p_Coeffs, attributes, bound);
+    coeff_array_mod(p_Coeffs, attributes, bound, order);
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
         encrypt_naive_oe(pp, p_Coeffs, &C);
@@ -94,15 +94,26 @@ void test_g(int N_ATTR) {
 
 
 int main (int argc, char **argv) {
-    test_g(2);
-    test_g(4);
-    test_g(8);
-    test_g(16);
-    test_g(32);
-    test_g(64);
-    test_g(128);
-    test_g(256);
-    test_g(512);
-    test_g(1024);
+    t[0] = cpucycles();
+
+
+    //uint32_t N_ATTR = test_attr;
+    cout << "**********************\n";
+    //uint32_t N_ATTR = test_attr;
+    int *test_attrs;
+    if (argc > 2 && strcmp("n_attr", argv[1]) == 0) {
+        test_attrs = (int *) malloc(sizeof(int) * argc-2);
+        for (int i = 2; i < argc; i++){
+            test(atoi(argv[i]));
+        }
+    } else {
+        test(2);
+    }
+    cout << "**********************\n";
+    //uint32_t *attr_int_list = NULL;
+    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
+    //test_abe(2);
+    //test_abe(8);
+    //test_abe(16);
     return 0;
 }
