@@ -644,6 +644,8 @@ struct alp_pp_pre_oe {
     g1_t **t_pre_u1;
     g2_t *U2;
     g2_t **t_pre_u2;
+    g1_t *t_pre_g1;
+    g2_t *t_pre_g2;
     bn_t order;
 };
 

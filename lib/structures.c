@@ -680,6 +680,11 @@ int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertex
     g1_null(C -> C1); g1_new(C -> C1);
     g1_null(C->C2); gt_new(C->C2);
     g1_null(C->C3); g1_new(C->C3);
+     if (C->C0 == NULL || C->C1 == NULL || C->C2 == NULL || C->C3 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
 } 
 
 int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_pre_oe *pp){
@@ -712,6 +717,8 @@ int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_pre_oe *pp){
     for (int i = 0; i < bound+1; i++) {
         pp->t_pre_h2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
     }
+    pp->t_pre_g1 = (g1_t *)malloc(RLC_EP_TABLE*sizeof(g1_t));
+    pp->t_pre_g2 = (g2_t *)malloc(RLC_EP_TABLE*sizeof(g2_t));
 
     g1_null(pp->g1); g1_new(pp->g1); 
     g1_null(pp->g2); g1_null(pp->g2); 

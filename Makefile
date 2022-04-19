@@ -166,6 +166,7 @@ alp:
 	$(CXX) -o objects/alp_g_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_g_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/alp_a_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_a_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
 	$(CXX) -o objects/alp_p_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_p_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_GAP_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_GAP_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 	
 policy_tree:
