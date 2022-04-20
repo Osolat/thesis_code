@@ -456,10 +456,12 @@ void keygen_a_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_ro
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
             bn_neg(rho_i, rho[j+1]);
-            g2_null(D.K[j]); g2_new(D.K[j]);                
-            g2_mul(D.K[j], pp.U2[1], rho_i);
-            g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul(D.K[j], D.K[j], r_i);
+            bn_mul(rho_i, rho_i, r_i);
+            g2_null(D.K[j]); g2_new(D.K[j]);   
+            //g2_mul(D.K[j], pp.U2[1], rho_i);
+            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+            g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+            //g2_mul(D.K[j], D.K[j], r_i);
         }
         sk->D[attr_index] = D; 
     }
@@ -528,10 +530,12 @@ void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
             bn_neg(rho_i, rho[j+1]);
+            bn_mul(rho_i, rho_i, r_i);
             g2_null(D.K[j]); g2_new(D.K[j]);                
-            g2_mul(D.K[j], pp.U2[1], rho_i);
-            g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul(D.K[j], D.K[j], r_i);
+            //g2_mul(D.K[j], pp.U2[1], rho_i);
+            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+            g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+            //g2_mul(D.K[j], D.K[j], r_i);
         }
         sk->D[attr_index] = D; 
     }
@@ -640,7 +644,38 @@ void encrypt_pre_oe(struct alp_pp_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_o
     g1_mul(C->C3, C->C3, s);
 }
 
+void encrypt_GAP_oe(struct alp_pp_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
+    gt_null(C->C0); gt_new(C->C0);
+    g1_null(C->C1); g1_null(C->C1);
+    g1_null(C->C2); g1_null(C->C2);
+    g1_null(C->C3); g1_null(C->C3);
 
+    bn_t s; bn_null(s); bn_new(s);
+    bn_rand_mod(s, pp.order);
+    gt_exp(C->C0, pp.gt, s);
+    g1_mul_fix(C->C1, pp.t_pre_g1, s);
+    //g1_copy(C->C2, pp.U1[0]);
+    g1_set_infty(C->C3);
+    g1_t U_subarray[pp.bound+1];
+    bn_t coeff_subarray[pp.bound+1];
+    for (int i = 0; i < pp.bound; i++) {
+        g1_null(U_subarray); g1_new(U_subarray);
+        bn_null(coeff_subarray[i]); bn_new(coeff_subarray[i]);
+        g1_copy(U_subarray[i], pp.U1[i+1]);
+        bn_copy(coeff_subarray[i], p_Coeffs[i]);
+    }
+    g1_copy(U_subarray[pp.bound], pp.U1[0]);
+    bn_null(coeff_subarray[pp.bound]); bn_new(coeff_subarray[pp.bound]);
+    bn_set_dig(coeff_subarray[pp.bound], 1);
+    g1_mul_sim_lot(C->C2, U_subarray, coeff_subarray, pp.bound+1);
+    //g1_add(C->C2, C->C2, pp.U1[0]);
+    g1_mul_sim_lot(C->C3, pp.H1, p_Coeffs, pp.bound);
+
+    g1_mul(C->C2, C->C2, s);
+    g1_mul(C->C3, C->C3, s);
+
+
+}
 void decrypt_naive_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) {
     lsss_vector = std::vector<policy_coefficient>();
     lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
@@ -887,6 +922,201 @@ void decrypt_GAP_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t
         gt_print(result);
     } 
 }
+
+void setup_GAP_ok(struct alp_pp_ok *pp, bn_t alpha, bn_t order, int bound) {
+    g1_t g1; g1_null(g1); g1_new(g1);
+    g2_t g2; g2_null(g2); g2_new(g2);
+
+    g1_get_gen(g1);
+    //cout << "g1\n";
+    //g1_print(g1);
+    g2_get_gen(g2);
+    //cout << "g2\n";
+    //g2_print(g2);
+    init_public_params_pre_ok(bound, pp);     
+    pp->bound = bound;
+
+
+    for(int i = 0; i < RLC_EP_TABLE; i++) {
+        g1_new(t_pre_g1[i]);
+        g1_new(t_pre_g2[i]);
+        for (int j = 0; j < bound+1; j++) {
+            g1_null(pp->t_pre_u1[j][i]); g1_new(pp->t_pre_u1[j][i]);
+            g2_new(pp->t_pre_u2[j][i]);
+            g1_new(pp->t_pre_h1[j][i]);
+            g2_new(pp->t_pre_h2[j][i]);
+        }
+    }  
+    g1_mul_pre(pp->t_pre_g1, g1);
+    g2_mul_pre(pp->t_pre_g2, g2);
+    for(int i = 0; i < bound+1; i++) {
+        bn_t alpha_i; bn_null(alpha_i); bn_new(alpha_i);
+        g1_null(pp->U1[i]); g1_new(pp->U1[i]);
+        g2_null(pp->U2[i]); g1_new(pp->U2[i]);
+        bn_rand_mod(alpha_i, order); 
+        g1_mul_fix(pp->U1[i], pp->t_pre_g1, alpha_i);
+        g1_mul_pre(pp->t_pre_u1[i], pp->U1[i]);
+        g2_mul_fix(pp->U2[i], pp->t_pre_g2, alpha_i);
+        g2_mul_pre(pp->t_pre_u2[i], pp->U2[i]);
+        if (i < bound) {
+            bn_t beta_i; bn_null(beta_i); bn_new(beta_i);   
+            g1_null(pp->H1[i]); g1_new(pp->H1[i]);
+            g2_null(pp->H2[i]); g2_new(pp->H2[i]);
+            bn_rand_mod(beta_i, order);
+            g1_mul_fix(pp->H1[i], pp->t_pre_g1, beta_i);
+            g1_mul_pre(pp->t_pre_h1[i], pp->H1[i]);
+            g2_mul_fix(pp->H2[i], pp->t_pre_g2, beta_i);
+            g2_mul_pre(pp->t_pre_h2[i], pp->H2[i]);
+        }
+    }
+
+    g1_copy(pp->g1, g1);
+    g2_copy(pp->g2, g2);
+    bn_copy(pp->order, order);
+    g1_t g_alpha; g1_null(g_alpha); g1_new(g_alpha);
+    g1_mul_fix(g_alpha, pp->t_pre_g1, alpha);
+    pc_map(pp->gt, g_alpha, g2); 
+}
+
+void keygen_GAP_ok(struct alp_pp_ok pp, struct alp_sk_ok *sk, struct node *tree_root, bn_t alpha) {
+    init_secret_key_alp_ok(pp.bound, sk);
+    std::vector<policy_coefficient> lsss_vector;
+    lsss_vector = std::vector<policy_coefficient>(); 
+    share_secret(tree_root, alpha, pp.order, lsss_vector, true); 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++){
+        struct alp_sk_attr_ok D;
+        init_secret_key_attr_alp_ok(pp.bound, &D);
+        size_t attr_index = it -> leaf_index-1;
+        bn_t rho[pp.bound];
+        bn_null(rho[0]); bn_new(rho[0]);
+        bn_set_dig(rho[0], 1);
+        for (size_t i = 1; i < pp.bound; i++) {
+            bn_null(rho[i]); bn_new(rho[i]);
+            bn_t i_read; bn_null(i_read); bn_new(i_read);
+            bn_set_dig(rho[i], it -> leaf_index);
+            bn_set_dig(i_read, i);
+            bn_mxp_basic(rho[i], rho[i], i_read, pp.order); 
+        }
+        bn_t r_i; bn_null(r_i); bn_new(r_i);
+        bn_rand_mod(r_i, pp.order); 
+        g1_mul_sim(D.D1, pp.g1, it -> share, pp.U1[0], r_i);
+        g1_mul_fix(D.D2, pp.t_pre_g1, r_i);
+        for (int j = 0; j < pp.bound-1; j++){
+            bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+            bn_neg(rho_i, rho[j+1]);
+            g1_null(D.K[j]); g2_new(D.K[j]);                
+            g1_mul(D.K[j], pp.U1[1], rho_i);
+            g1_add(D.K[j], D.K[j], pp.U1[j+2]);
+            g1_mul(D.K[j], D.K[j], r_i);
+        }
+        sk->D[attr_index] = D; 
+    }
+}
+
+void encrypt_GAP_ok(struct alp_pp_ok pp, bn_t *p_Coeffs, struct alp_ciphertext_ok *C) {
+    gt_null(C->C0); gt_new(C->C0);
+    g2_null(C->C1); g2_null(C->C1);
+    g2_null(C->C2); g2_null(C->C2);
+    g2_null(C->C3); g2_null(C->C3);
+
+    bn_t s; bn_null(s); bn_new(s);
+    bn_rand_mod(s, pp.order);
+    gt_exp(C->C0, pp.gt, s);
+    g2_mul_fix(C->C1, pp.t_pre_g2, s);
+    //g1_copy(C->C2, pp.U1[0]);
+    g2_set_infty(C->C3);
+    g2_t U_subarray[pp.bound+1];
+    bn_t coeff_subarray[pp.bound+1];
+    for (int i = 0; i < pp.bound; i++) {
+        g2_null(U_subarray); g1_new(U_subarray);
+        bn_null(coeff_subarray[i]); bn_new(coeff_subarray[i]);
+        g2_copy(U_subarray[i], pp.U2[i+1]);
+        bn_copy(coeff_subarray[i], p_Coeffs[i]);
+    }
+    g2_copy(U_subarray[pp.bound], pp.U2[0]);
+    bn_null(coeff_subarray[pp.bound]); bn_new(coeff_subarray[pp.bound]);
+    bn_set_dig(coeff_subarray[pp.bound], 1);
+    g2_mul_sim_lot(C->C2, U_subarray, coeff_subarray, pp.bound+1);
+    //g1_add(C->C2, C->C2, pp.U1[0]);
+    g2_mul_sim_lot(C->C3, pp.H2, p_Coeffs, pp.bound);
+
+    g2_mul(C->C2, C->C2, s);
+    g2_mul(C->C3, C->C3, s);
+
+
+}
+
+void decrypt_GAP_ok(struct alp_pp_ok pp, alp_sk_ok sk, alp_ciphertext_ok C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) { 
+    lsss_vector = std::vector<policy_coefficient>();
+    lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
+    //gt_t share_points[pp.bound-1]; 
+    gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
+    int vector_size = lsss_vector.size();
+    g1_t H_points_two[vector_size];
+    bn_t coeff_subarray[vector_size*pp.bound];
+    bn_t recon_coeffs[vector_size];
+    g1_t K_subarray[vector_size*pp.bound]; 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++) {
+        size_t attr_index = it -> leaf_index-1;
+        size_t row_index = attr_index*pp.bound;
+        //g2_null(H_points_one[attr_index]); g2_new(H_points_one[attr_index]);
+        for (int j = 0; j < pp.bound-1; j++){
+            g1_null(K_subarray[row_index+j]) g1_new(K_subarray[row_index+j])
+            bn_null(coeff_subarray[row_index+j]); bn_new(coeff_subarray[row_index+j]);
+            g1_copy(K_subarray[row_index+j], sk.D[attr_index].K[j]);
+            bn_mul(coeff_subarray[row_index+j], it->coeff, p_Coeffs[j+1]);
+        }
+        g1_null(K_subarray[row_index+pp.bound-1]) g1_new(K_subarray[row_index+pp.bound-1])
+        bn_null(coeff_subarray[row_index+pp.bound-1]); bn_new(coeff_subarray[row_index+pp.bound-1]);
+        g1_copy(K_subarray[row_index+pp.bound-1], sk.D[attr_index].D1);
+        bn_copy(coeff_subarray[row_index+pp.bound-1], it -> coeff);
+        //g2_mul_sim_lot(H_points_one[attr_index], K_subarray, coeff_subarray, pp.bound);
+        
+    
+
+        //g1_null(G_points_one[attr_index]); g1_new(G_points_one[attr_index]);
+        bn_null(recon_coeffs[attr_index]); g1_new(recon_coeffs[attr_index]);
+        bn_copy(recon_coeffs[attr_index], it -> coeff);
+         
+        //g1_mul(G_points_two[attr_index], C.C2, it -> coeff);
+        //g1_neg(G_points_two[attr_index], G_points_two[attr_index]);
+
+
+        
+        g1_null(H_points_two[attr_index]); gt_new(H_points[attr_index]);
+        g1_copy(H_points_two[attr_index], sk.D[attr_index].D2); 
+        //pc_map(inv_tmp, inv_C2, sk.D[attr_index].D2);
+        //gt_inv(inv_tmp, inv_tmp);
+        //gt_exp(share_point, share_point, it -> coeff);
+        //gt_mul(result, result, share_point);
+    }  
+
+    gt_t res1,res2; gt_null(res1); gt_null(res2); gt_new(res1); gt_new(res2);
+    g1_t D1_prod; g1_null(D1_prod); g1_new(D1_prod); 
+    g1_mul_sim_lot(D1_prod, K_subarray, coeff_subarray, vector_size*pp.bound);
+    //cout << "D1_prod\n";
+    //g2_print(D1_prod);
+    pc_map(res1, D1_prod, C.C1);
+    
+
+    g1_t D2_prod; g1_null(D2_prod); g1_new(D2_prod);
+    g1_mul_sim_lot(D2_prod, H_points_two, recon_coeffs, vector_size);
+    g2_t inv_C2; g2_null(inv_C2); g2_new(inv_C2);
+    g2_neg(inv_C2, C.C2);
+    pc_map(res2, D2_prod, inv_C2);
+
+    gt_mul(result, res1, res2);
+    gt_inv(result, result);  
+    gt_mul(result, result, C.C0);
+    //cout << "res\n";
+    int cmp  = gt_is_unity(result); 
+    if (cmp != 1) {
+        cout << "Value of result after decrypt\n";
+        gt_print(result);
+    } 
+}
+
+
 void print_secret_key_oe(struct alp_sk_oe sk, int bound) {
     for (int i = 0; i < bound-1; i++) {
         cout << "sk.D[" << i << "]" << ".D1\n"; 

@@ -666,10 +666,51 @@ struct alp_sk_attr_oe {
     g2_t *K;
 };
 
+
+struct alp_pp_ok {
+    uint32_t bound;
+    g1_t g1; 
+    g2_t g2;
+    gt_t gt;
+    g1_t *H1;
+    g1_t **t_pre_h1;
+    g2_t *H2;
+    g2_t **t_pre_h2;
+    g1_t *U1;
+    g1_t **t_pre_u1;
+    g2_t *U2;
+    g2_t **t_pre_u2;
+    g1_t *t_pre_g1;
+    g2_t *t_pre_g2;
+    bn_t order;
+};
+
+struct alp_ciphertext_ok {
+    gt_t C0;
+    g2_t C1;
+    g2_t C2;
+    g2_t C3;
+};
+
+struct alp_sk_ok {
+    struct alp_sk_attr_ok *D;
+};
+
+struct alp_sk_attr_ok {
+    g1_t D1;
+    g1_t D2;
+    g1_t *K;
+};
 int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_oe *pp);
 int init_secret_key_attr_alp_oe(const uint32_t bound, struct alp_sk_attr_oe *sk);
 int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk);
-int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertext_oe *C);
+int init_ciphertext_alp_oe(const struct alp_pp_naive_ok pp, struct alp_ciphertext_oe *C);
 int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_oe *pp);
+
+int init_public_params_alp_ok(const uint32_t bound, struct alp_pp_ok *pp);
+int init_secret_key_attr_alp_ok(const uint32_t bound, struct alp_sk_attr_ok *sk);
+int init_secret_key_alp_ok(const uint32_t bound, struct alp_sk_ok *sk);
+int init_ciphertext_alp_ok(const struct alp_pp_naive_ok pp, struct alp_ciphertext_ok *C);
+int init_public_params_pre_ok(const uint32_t bound, struct alp_pp_ok *pp);
 
 #endif
