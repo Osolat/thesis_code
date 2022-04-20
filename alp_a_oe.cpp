@@ -42,7 +42,7 @@ void test(int N_ATTR) {
 
     
     cout << "[";
-    struct alp_pp_naive_oe pp;
+    struct alp_pp_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
     setup_naive_oe(&pp, alpha, order, bound);

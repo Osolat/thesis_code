@@ -208,7 +208,7 @@ unsigned long long t[NTESTS];
 
 std::vector<policy_coefficient> lsss_vector;
 
-void setup_naive_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order, int bound) {
+void setup_naive_oe(struct alp_pp_oe *pp, bn_t alpha, bn_t order, int bound) {
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g2_new(g2);
 
@@ -245,7 +245,7 @@ void setup_naive_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order, int boun
     gt_exp(pp->gt, pp->gt, alpha);
 }
 
-void setup_g_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order, int bound) {
+void setup_g_oe(struct alp_pp_oe *pp, bn_t alpha, bn_t order, int bound) {
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g2_new(g2);
 
@@ -283,7 +283,7 @@ void setup_g_oe(struct alp_pp_naive_oe *pp, bn_t alpha, bn_t order, int bound) {
 }
 
 
-void setup_pre_oe(struct alp_pp_pre_oe *pp, bn_t alpha, bn_t order, int bound) {
+void setup_pre_oe(struct alp_pp_oe *pp, bn_t alpha, bn_t order, int bound) {
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g2_new(g2);
 
@@ -337,7 +337,7 @@ void setup_pre_oe(struct alp_pp_pre_oe *pp, bn_t alpha, bn_t order, int bound) {
     gt_exp(pp->gt, pp->gt, alpha);
 }
 
-void setup_GAP_oe(struct alp_pp_pre_oe *pp, bn_t alpha, bn_t order, int bound) {
+void setup_GAP_oe(struct alp_pp_oe *pp, bn_t alpha, bn_t order, int bound) {
     g1_t g1; g1_null(g1); g1_new(g1);
     g2_t g2; g2_null(g2); g2_new(g2);
 
@@ -392,7 +392,7 @@ void setup_GAP_oe(struct alp_pp_pre_oe *pp, bn_t alpha, bn_t order, int bound) {
     pc_map(pp->gt, g_alpha, g2); 
 }
 
-void keygen_naive_oe(struct alp_pp_naive_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
+void keygen_naive_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
     init_secret_key_alp_oe(pp.bound, sk);
     std::vector<policy_coefficient> lsss_vector;
     lsss_vector = std::vector<policy_coefficient>(); 
@@ -430,7 +430,7 @@ void keygen_naive_oe(struct alp_pp_naive_oe pp, struct alp_sk_oe *sk, struct nod
         sk->D[attr_index] = D; 
     }
 }
-void keygen_a_oe(struct alp_pp_naive_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
+void keygen_a_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
     init_secret_key_alp_oe(pp.bound, sk);
     std::vector<policy_coefficient> lsss_vector;
     lsss_vector = std::vector<policy_coefficient>(); 
@@ -464,7 +464,7 @@ void keygen_a_oe(struct alp_pp_naive_oe pp, struct alp_sk_oe *sk, struct node *t
         sk->D[attr_index] = D; 
     }
 }
-void keygen_pre_oe(struct alp_pp_pre_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
+void keygen_pre_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
     init_secret_key_alp_oe(pp.bound, sk);
     std::vector<policy_coefficient> lsss_vector;
     lsss_vector = std::vector<policy_coefficient>(); 
@@ -502,7 +502,7 @@ void keygen_pre_oe(struct alp_pp_pre_oe pp, struct alp_sk_oe *sk, struct node *t
         sk->D[attr_index] = D; 
     }
 }
-void keygen_GAP_oe(struct alp_pp_pre_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) {
+void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) {
     init_secret_key_alp_oe(pp.bound, sk);
     std::vector<policy_coefficient> lsss_vector;
     lsss_vector = std::vector<policy_coefficient>(); 
@@ -536,7 +536,7 @@ void keygen_GAP_oe(struct alp_pp_pre_oe pp, struct alp_sk_oe *sk, struct node *t
         sk->D[attr_index] = D; 
     }
 }
-void encrypt_naive_oe(struct alp_pp_naive_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
+void encrypt_naive_oe(struct alp_pp_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
     gt_null(C->C0); gt_new(C->C0);
     g1_null(C->C1); g1_null(C->C1);
     g1_null(C->C2); g1_null(C->C2);
@@ -572,7 +572,7 @@ void encrypt_naive_oe(struct alp_pp_naive_oe pp, bn_t *p_Coeffs, struct alp_ciph
 
 
 }
-void encrypt_api_oe(struct alp_pp_naive_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
+void encrypt_api_oe(struct alp_pp_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
     gt_null(C->C0); gt_new(C->C0);
     g1_null(C->C1); g1_null(C->C1);
     g1_null(C->C2); g1_null(C->C2);
@@ -584,13 +584,19 @@ void encrypt_api_oe(struct alp_pp_naive_oe pp, bn_t *p_Coeffs, struct alp_cipher
     g1_mul(C->C1, pp.g1, s);
     //g1_copy(C->C2, pp.U1[0]);
     g1_set_infty(C->C3);
-    g1_t U_subarray[pp.bound];
+    g1_t U_subarray[pp.bound+1];
+    bn_t coeff_subarray[pp.bound+1];
     for (int i = 0; i < pp.bound; i++) {
         g1_null(U_subarray); g1_new(U_subarray);
+        bn_null(coeff_subarray[i]); bn_new(coeff_subarray[i]);
         g1_copy(U_subarray[i], pp.U1[i+1]);
+        bn_copy(coeff_subarray[i], p_Coeffs[i]);
     }
-    g1_mul_sim_lot(C->C2, U_subarray, p_Coeffs, pp.bound);
-    g1_add(C->C2, C->C2, pp.U1[0]);
+    g1_copy(U_subarray[pp.bound], pp.U1[0]);
+    bn_null(coeff_subarray[pp.bound]); bn_new(coeff_subarray[pp.bound]);
+    bn_set_dig(coeff_subarray[pp.bound], 1);
+    g1_mul_sim_lot(C->C2, U_subarray, coeff_subarray, pp.bound+1);
+    //g1_add(C->C2, C->C2, pp.U1[0]);
     g1_mul_sim_lot(C->C3, pp.H1, p_Coeffs, pp.bound);
 
     g1_mul(C->C2, C->C2, s);
@@ -599,7 +605,7 @@ void encrypt_api_oe(struct alp_pp_naive_oe pp, bn_t *p_Coeffs, struct alp_cipher
 
 }
 
-void encrypt_pre_oe(struct alp_pp_pre_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
+void encrypt_pre_oe(struct alp_pp_oe pp, bn_t *p_Coeffs, struct alp_ciphertext_oe *C) {
     gt_null(C->C0); gt_new(C->C0);
     g1_null(C->C1); g1_null(C->C1);
     g1_null(C->C2); g1_null(C->C2);
@@ -635,7 +641,7 @@ void encrypt_pre_oe(struct alp_pp_pre_oe pp, bn_t *p_Coeffs, struct alp_cipherte
 }
 
 
-void decrypt_naive_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) {
+void decrypt_naive_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) {
     lsss_vector = std::vector<policy_coefficient>();
     lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
     //gt_t share_points[pp.bound-1]; 
@@ -671,16 +677,70 @@ void decrypt_naive_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe
     } 
 }
 
-void decrypt_g_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) {
+void decrypt_g_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) {
     lsss_vector = std::vector<policy_coefficient>();
     lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
     //gt_t share_points[pp.bound-1]; 
     gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
+    g2_t D1_prod; g2_null(D1_prod); g2_new(D1_prod); g2_set_infty(D1_prod);
+    g2_t D2_prod; g2_null(D2_prod); g2_new(D2_prod); g2_set_infty(D2_prod);
     for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++) {
         size_t attr_index = it -> leaf_index-1;
         g2_t decrypt_d; g2_null(decrypt_d); g2_new(decrypt_d);
-        bn_t coeff_subarray[pp.bound];
-        g2_t K_subarray[pp.bound]; 
+        g2_t Ky; g2_null(Ky); g2_new(Ky); g2_set_infty(Ky);
+        for (int j = 0; j < pp.bound-1; j++){
+            g2_t Ky_j; g2_null(Ky_j); g2_new(Ky_j);
+            g2_mul(Ky_j, sk.D[attr_index].K[j], p_Coeffs[j+1]);
+            g2_add(Ky, Ky, Ky_j);
+        }
+        
+        g2_add(decrypt_d, sk.D[attr_index].D1, Ky);
+        g2_mul(decrypt_d, decrypt_d, it -> coeff);
+        g2_add(D1_prod, D1_prod, decrypt_d);
+        g2_t share_tmp2; 
+        gt_t inv_tmp; gt_null(inv_tmp); gt_new(inv_tmp);
+        g1_t C1_share; g1_null(C1_share); g1_new(C1_share);
+
+        gt_t share_point; gt_null(share_point); gt_new(share_point);
+        //g1_mul(C1_share, C.C1, it -> coeff);
+
+        g2_t D2_temp; g2_null(D2_temp); g2_new(D2_temp);
+        g2_mul(D2_temp, sk.D[attr_index].D2, it -> coeff); 
+        g2_add(D2_prod, D2_prod, D2_temp);
+        //pc_map(share_point, C1_share, decrypt_d);
+        //g1_mul(inv_C2, C.C2, it -> coeff);
+        //g1_neg(inv_C2, inv_C2);
+        //pc_map(inv_tmp, inv_C2, sk.D[attr_index].D2);
+        //gt_inv(inv_tmp, inv_tmp);
+        //gt_mul(share_point, share_point, inv_tmp);
+        //gt_exp(share_point, share_point, it -> coeff);
+        //gt_mul(result, result, share_point);
+    }  
+    pc_map(result, C.C1, D1_prod);
+    gt_t res_temp; gt_null(res_temp); gt_new(res_temp);
+    g1_t inv_C2; g1_null(inv_C2); g1_new(inv_C2);
+    g1_neg(inv_C2, C.C2);
+    pc_map(res_temp, inv_C2, D2_prod);
+    gt_mul(result, result, res_temp);
+    gt_inv(result, result);  
+    gt_mul(result, result, C.C0);
+    //cout << "res\n";
+    int cmp  = gt_is_unity(result); 
+    if (cmp != 1) {
+        cout << "Value of result after decrypt\n";
+        gt_print(result);
+    } 
+}
+void decrypt_a_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t*attributes, struct node tree_root, bn_t *p_Coeffs){
+    lsss_vector = std::vector<policy_coefficient>();
+    lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
+    int vector_size = lsss_vector.size();
+    //gt_t share_points[pp.bound-1]; 
+    gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
+    bn_t coeff_subarray[vector_size];
+    g2_t K_subarray[vector_size]; 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++) {
+        size_t attr_index = it -> leaf_index-1;
         for (int j = 0; j < pp.bound-1; j++){
             g2_null(K_subarray[j]) g2_new(K_subarray[j])
             bn_null(coeff_subarray[j]); bn_new(coeff_subarray[j]);
@@ -691,8 +751,8 @@ void decrypt_g_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, 
         bn_null(coeff_subarray[pp.bound-1]); bn_new(coeff_subarray[pp.bound-1]);
         g2_copy(K_subarray[pp.bound-1], sk.D[attr_index].D1);
         bn_set_dig(coeff_subarray[pp.bound-1], 1);
+        g2_t decrypt_d; g2_null(decrypt_d); g2_new(decrypt_d);
         g2_mul_sim_lot(decrypt_d, K_subarray, coeff_subarray, pp.bound);
-        //g2_add(decrypt_d, decrypt_d, sk.D[attr_index].D1);
         g2_t share_tmp2; 
         gt_t inv_tmp; gt_null(inv_tmp); gt_new(inv_tmp);
         g1_t inv_C2; g1_null(inv_C2); g1_new(inv_C2);
@@ -718,8 +778,11 @@ void decrypt_g_oe(struct alp_pp_naive_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, 
         cout << "Value of result after decrypt\n";
         gt_print(result);
     } 
+ 
 }
-void decrypt_pre_oe(struct alp_pp_pre_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) { 
+
+
+void decrypt_pre_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) { 
     lsss_vector = std::vector<policy_coefficient>();
     lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
     //gt_t share_points[pp.bound-1]; 
@@ -755,7 +818,7 @@ void decrypt_pre_oe(struct alp_pp_pre_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, 
     } 
 }
 
-void decrypt_GAP_oe(struct alp_pp_pre_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) { 
+void decrypt_GAP_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t *attributes, struct node tree_root, bn_t *p_Coeffs) { 
     lsss_vector = std::vector<policy_coefficient>();
     lsss_vector = recover_coefficients(&tree_root, attributes, pp.bound-1);
     //gt_t share_points[pp.bound-1]; 
@@ -826,7 +889,7 @@ void print_secret_key_oe(struct alp_sk_oe sk, int bound) {
     }
 }
 
-void print_public_params(struct alp_pp_naive_oe pp, int bound) {
+void print_public_params(struct alp_pp_oe pp, int bound) {
     cout << "pp.g1\n";
     g1_print(pp.g1);
     cout << "pp.g2\n";
@@ -847,7 +910,7 @@ void print_public_params(struct alp_pp_naive_oe pp, int bound) {
     } 
 } 
 
-void print_share_component(struct alp_sk_oe sk, struct alp_pp_naive_oe pp, bn_t *p_coeffs, bn_t share, bn_t r, int bound, int attr_index, g2_t res) {
+void print_share_component(struct alp_sk_oe sk, struct alp_pp_oe pp, bn_t *p_coeffs, bn_t share, bn_t r, int bound, int attr_index, g2_t res) {
     gt_null(res); gt_new(res); g2_set_infty(res);
     //prod k_i_j ^ y_j
     //for (int i = 0; i < bound; i++) {

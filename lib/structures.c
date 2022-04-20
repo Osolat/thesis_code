@@ -638,7 +638,7 @@ int init_tmp_si_ub_ok(const uint32_t n_attr, const uint32_t kss, struct tmp_si_u
 //ALP
 
 
-int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_naive_oe *pp){
+int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_oe *pp){
     pp->bound = bound;
     pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
     pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
@@ -687,7 +687,7 @@ int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertex
     }
 } 
 
-int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_pre_oe *pp){
+int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_oe *pp){
     pp->bound = bound;
 
     pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));

@@ -7,7 +7,7 @@ using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp naive, N_attr = %d", N_ATTR);
+    printf("alp GAP, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -42,7 +42,7 @@ void test(int N_ATTR) {
 
     
     cout << "[";
-    struct alp_pp_pre_oe pp;
+    struct alp_pp_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
     setup_GAP_oe(&pp, alpha, order, bound);
@@ -73,7 +73,7 @@ void test(int N_ATTR) {
     struct alp_ciphertext_oe C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
-        encrypt_pre_oe(pp, p_Coeffs, &C);
+        encrypt_api_oe(pp, p_Coeffs, &C);
     } print_results("Results Encrypt():          ", t, NTESTS);
 
     try {

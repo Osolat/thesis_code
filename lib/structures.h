@@ -631,7 +631,7 @@ struct alp_pp_naive_oe {
     bn_t order;
 };
 
-struct alp_pp_pre_oe {
+struct alp_pp_oe {
     uint32_t bound;
     g1_t g1; 
     g2_t g2;
@@ -666,10 +666,10 @@ struct alp_sk_attr_oe {
     g2_t *K;
 };
 
-int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_naive_oe *pp);
+int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_oe *pp);
 int init_secret_key_attr_alp_oe(const uint32_t bound, struct alp_sk_attr_oe *sk);
 int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk);
 int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertext_oe *C);
-int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_pre_oe *pp);
+int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_oe *pp);
 
 #endif
