@@ -7,7 +7,7 @@ using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp GAP, N_attr = %d", N_ATTR);
+    printf("alp GAP ok, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
