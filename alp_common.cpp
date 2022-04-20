@@ -824,35 +824,34 @@ void decrypt_GAP_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t
     //gt_t share_points[pp.bound-1]; 
     gt_t result; gt_null(result); gt_new(result); gt_set_unity(result); 
     int vector_size = lsss_vector.size();
-    g1_t G_points_one[vector_size];
-    g1_t G_points_two[vector_size];
-    g2_t H_points_one[vector_size];
     g2_t H_points_two[vector_size];
+    bn_t coeff_subarray[vector_size*pp.bound];
+    bn_t recon_coeffs[vector_size];
+    g2_t K_subarray[vector_size*pp.bound]; 
     for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++) {
         size_t attr_index = it -> leaf_index-1;
-        g2_null(H_points_one[attr_index]); g2_new(H_points_one[attr_index]);
-        bn_t coeff_subarray[pp.bound];
-        g2_t K_subarray[pp.bound]; 
+        size_t row_index = attr_index*pp.bound;
+        //g2_null(H_points_one[attr_index]); g2_new(H_points_one[attr_index]);
         for (int j = 0; j < pp.bound-1; j++){
-            g2_null(K_subarray[j]) g2_new(K_subarray[j])
-            bn_null(coeff_subarray[j]); bn_new(coeff_subarray[j]);
-            g2_copy(K_subarray[j], sk.D[attr_index].K[j]);
-            bn_copy(coeff_subarray[j], p_Coeffs[j+1]);
+            g2_null(K_subarray[row_index+j]) g2_new(K_subarray[row_index+j])
+            bn_null(coeff_subarray[row_index+j]); bn_new(coeff_subarray[row_index+j]);
+            g2_copy(K_subarray[row_index+j], sk.D[attr_index].K[j]);
+            bn_mul(coeff_subarray[row_index+j], it->coeff, p_Coeffs[j+1]);
         }
-        g2_null(K_subarray[pp.bound-1]) g2_new(K_subarray[pp.bound-1])
-        bn_null(coeff_subarray[pp.bound-1]); bn_new(coeff_subarray[pp.bound-1]);
-        g2_copy(K_subarray[pp.bound-1], sk.D[attr_index].D1);
-        bn_set_dig(coeff_subarray[pp.bound-1], 1);
-        g2_mul_sim_lot(H_points_one[attr_index], K_subarray, coeff_subarray, pp.bound);
+        g2_null(K_subarray[row_index+pp.bound-1]) g2_new(K_subarray[row_index+pp.bound-1])
+        bn_null(coeff_subarray[row_index+pp.bound-1]); bn_new(coeff_subarray[row_index+pp.bound-1]);
+        g2_copy(K_subarray[row_index+pp.bound-1], sk.D[attr_index].D1);
+        bn_copy(coeff_subarray[row_index+pp.bound-1], it -> coeff);
+        //g2_mul_sim_lot(H_points_one[attr_index], K_subarray, coeff_subarray, pp.bound);
         
     
 
-        g1_null(G_points_one[attr_index]); g1_new(G_points_one[attr_index]);
-        g1_null(G_points_two[attr_index]); g1_new(G_points[attr_index]);
-        g1_mul(G_points_one[attr_index], C.C1, it -> coeff);
+        //g1_null(G_points_one[attr_index]); g1_new(G_points_one[attr_index]);
+        bn_null(recon_coeffs[attr_index]); g1_new(recon_coeffs[attr_index]);
+        bn_copy(recon_coeffs[attr_index], it -> coeff);
          
-        g1_mul(G_points_two[attr_index], C.C2, it -> coeff);
-        g1_neg(G_points_two[attr_index], G_points_two[attr_index]);
+        //g1_mul(G_points_two[attr_index], C.C2, it -> coeff);
+        //g1_neg(G_points_two[attr_index], G_points_two[attr_index]);
 
 
         
@@ -863,9 +862,21 @@ void decrypt_GAP_oe(struct alp_pp_oe pp, alp_sk_oe sk, alp_ciphertext_oe C, bn_t
         //gt_exp(share_point, share_point, it -> coeff);
         //gt_mul(result, result, share_point);
     }  
+
     gt_t res1,res2; gt_null(res1); gt_null(res2); gt_new(res1); gt_new(res2);
-    pc_map_sim(res1, G_points_one, H_points_one, vector_size);
-    pc_map_sim(res2, G_points_two, H_points_two, vector_size);
+    g2_t D1_prod; g2_null(D1_prod); g2_new(D1_prod); 
+    g2_mul_sim_lot(D1_prod, K_subarray, coeff_subarray, vector_size*pp.bound);
+    //cout << "D1_prod\n";
+    //g2_print(D1_prod);
+    pc_map(res1, C.C1, D1_prod);
+    
+
+    g2_t D2_prod; g2_null(D2_prod); g2_new(D2_prod);
+    g2_mul_sim_lot(D2_prod, H_points_two, recon_coeffs, vector_size);
+    g1_t inv_C2; g1_null(inv_C2); g1_new(inv_C2);
+    g1_neg(inv_C2, C.C2);
+    pc_map(res2, inv_C2, D2_prod);
+
     gt_mul(result, res1, res2);
     gt_inv(result, result);  
     gt_mul(result, result, C.C0);
