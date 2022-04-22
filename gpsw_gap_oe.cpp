@@ -120,6 +120,14 @@ int main(int argc, char **argv) {
         g1_mul_pre(pre_T[i], mpk.T_values[i]);
     }
 
+    g2_t pre_h[RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        /* code */
+        g2_null(pre_h[i]);
+        g2_new(pre_h[i]);
+    }
+    g2_mul_pre(pre_h, h);
+
     /*Y = e(g,g)^y*/
     pc_map(mpk.Y, g, h);
     gt_exp(mpk.Y, mpk.Y, msk.y);
@@ -150,7 +158,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g2_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+            g2_mul_fix(sk.D_values[it->leaf_index - 1], pre_h, temp);
         }
     }
     printf("[");
