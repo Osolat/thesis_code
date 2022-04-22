@@ -7,7 +7,7 @@ using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp pre, N_attr = %d", N_ATTR);
+    printf("alp pre oe, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -42,7 +42,7 @@ void test(int N_ATTR) {
 
     
     cout << "[";
-    struct alp_pp_pre_oe pp;
+    struct alp_pp_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
     setup_pre_oe(&pp, alpha, order, bound);

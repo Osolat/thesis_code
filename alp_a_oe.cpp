@@ -7,7 +7,7 @@ using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp api, N_attr = %d", N_ATTR);
+    printf("alp api oe, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -42,7 +42,7 @@ void test(int N_ATTR) {
 
     
     cout << "[";
-    struct alp_pp_naive_oe pp;
+    struct alp_pp_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
     setup_naive_oe(&pp, alpha, order, bound);
@@ -57,7 +57,7 @@ void test(int N_ATTR) {
     bn_t shares[N_ATTR]; bn_t r[N_ATTR];
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        keygen_naive_oe(pp, &sk, &tree_root, alpha);
+        keygen_a_oe(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
 
