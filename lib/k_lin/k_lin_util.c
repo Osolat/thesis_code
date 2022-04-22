@@ -568,16 +568,24 @@ g1_t *vector_trans_mul_matrix_g1_sim(g1_t out[], bn_t v[], g1_t A[], int v_cols,
             }
         } else if (v_cols % 2 == 0){
             for (int j = 0; j < v_cols/2; ++j, z += A_cols) {
-                g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
-                g1_add(tmp_add, tmp_add, sim_res);
+                if (v_cols/2 == 1) {
+                    g1_mul_sim(tmp_add, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                } else {
+                    g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                    g1_add(tmp_add, tmp_add, sim_res);
+                }
                 i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
             }
             i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
 
         } else if (v_cols % 2 != 0 && v_cols > 1){
             for (int j = 0; j < (v_cols-1)/2; ++j, z += A_cols) {
-                g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
-                g1_add(tmp_add, tmp_add, sim_res);
+                if (v_cols/2 == 1) {
+                    g1_mul_sim(tmp_add, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                } else {
+                    g1_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                    g1_add(tmp_add, tmp_add, sim_res);
+                }
                 i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
 
                 if (j == ((v_cols-1)/2)-1){
@@ -618,16 +626,24 @@ g2_t *vector_trans_mul_matrix_g2_sim(g2_t out[], bn_t v[], g2_t A[], int v_cols,
             }
         } else if (v_cols % 2 == 0){
             for (int j = 0; j < v_cols/2; ++j, z += A_cols) {
-                g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
-                g2_add(tmp_add, tmp_add, sim_res);
+                if (v_cols/2 == 1){
+                    g2_mul_sim(tmp_add, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                } else {
+                    g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                    g2_add(tmp_add, tmp_add, sim_res);
+                }
                 i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
             }
             i_ctr = 1; j_ctr = 0; z_ctr = 0; z_ctr += (i+1);
 
         } else if (v_cols % 2 != 0 && v_cols > 1){
             for (int j = 0; j < (v_cols-1)/2; ++j, z += A_cols) {
-                g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
-                g2_add(tmp_add, tmp_add, sim_res);
+                if (v_cols/2 == 1){
+                    g2_mul_sim(tmp_add, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                } else {
+                    g2_mul_sim(sim_res, A[z_ctr], v[j_ctr], A[z_ctr+A_cols], v[((j_ctr) % kss)+1]);
+                    g2_add(tmp_add, tmp_add, sim_res);
+                }
                 i_ctr++ ; j_ctr +=2 ; z_ctr += A_cols + A_cols;
 
                 if (j == ((v_cols-1)/2)-1){
