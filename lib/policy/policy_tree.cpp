@@ -429,7 +429,7 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     bn_t temp;
     bn_null(temp);
     bn_new(temp);
-
+    int count = 0;
     if (num_attributes == 1) {
         policy_coefficient p = policy_coefficient();
         p.leaf_index = tree_root->leaf_index;
@@ -471,9 +471,12 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
     while (!node_stack.empty()) {
         current_node = node_stack.top();
         bn_copy(temp, *coefficients.top());
+        bn_free(*coefficients.top())
         node_stack.pop();
         coefficients.pop();
-
+        //print_node(current_node);
+        //cout << node_stack.size() << endl;
+        //count++;
         if (current_node->gate == LEAF) {
             policy_coefficient p = policy_coefficient();
             p.leaf_index = current_node->leaf_index;
@@ -541,7 +544,7 @@ std::vector<policy_coefficient> recover_coefficients(struct node* tree_root, bn_
             }
         }
     }
-
+    //cout << "Nodes seen = " << count << endl;
     return result;
 }
 

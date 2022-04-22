@@ -90,6 +90,7 @@ basic_bench:
 	$(CXX) -o objects/bench_split_sim $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_split_sim.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
 	$(CXX) -o objects/bench_negate_vs_inv $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_negate_vs_inv.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
 	$(CXX) -o objects/bench_mulgen_mulfix $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_mulgen_mulfix.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
+	$(CXX) -o objects/bench_standard_tree $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_standard_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
 	rm *.o
 
 kLin_KP:
