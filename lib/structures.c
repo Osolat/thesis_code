@@ -634,3 +634,192 @@ int init_tmp_si_ub_ok(const uint32_t n_attr, const uint32_t kss, struct tmp_si_u
         return EXIT_SUCCESS;
     }
 }
+
+//ALP
+
+
+int init_public_params_alp_oe(const uint32_t bound, struct alp_pp_oe *pp){
+    pp->bound = bound;
+    pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
+    pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
+    pp->H1 = (g1_t *)malloc(bound*sizeof(g1_t));
+    pp->H2 = (g2_t *)malloc(bound*sizeof(g2_t));
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_attr_alp_oe(const uint32_t bound, struct alp_sk_attr_oe *sk) { 
+    g2_null(sk -> D1); g2_new(sk -> D1); 
+    g2_null(sk -> D2); g2_new(sk -> D2);
+    uint32_t k_length = bound-1;
+    sk -> K = (g2_t *)malloc( k_length*sizeof(g2_t) ); 
+    if (sk -> D1 == NULL || sk -> D2 == NULL || sk -> K == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_alp_oe(const uint32_t bound, struct alp_sk_oe *sk) {
+    sk -> D = (struct alp_sk_attr_oe *)malloc(bound * sizeof(struct alp_sk_attr_oe));
+    if (sk -> D == NULL){
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_ciphertext_alp_oe(const struct alp_pp_naive_oe pp, struct alp_ciphertext_oe *C){
+    gt_null(C -> C0); gt_null(C -> C0)
+    g1_null(C -> C1); g1_new(C -> C1);
+    g1_null(C->C2); g1_new(C->C2);
+    g1_null(C->C3); g1_new(C->C3);
+     if (C->C0 == NULL || C->C1 == NULL || C->C2 == NULL || C->C3 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+} 
+
+int init_public_params_pre_oe(const uint32_t bound, struct alp_pp_oe *pp){
+    pp->bound = bound;
+
+    pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
+
+    pp->t_pre_u1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
+
+    pp->t_pre_u2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+
+    pp->H1 = (g1_t *)malloc(bound*sizeof(g1_t));
+
+    pp->t_pre_h1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->H2 = (g2_t *)malloc(bound*sizeof(g2_t));
+
+    pp->t_pre_h2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+    pp->t_pre_g1 = (g1_t *)malloc(RLC_EP_TABLE*sizeof(g1_t));
+    pp->t_pre_g2 = (g2_t *)malloc(RLC_EP_TABLE*sizeof(g2_t));
+
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_public_params_alp_ok(const uint32_t bound, struct alp_pp_ok *pp){
+    pp->bound = bound;
+    pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
+    pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
+    pp->H1 = (g1_t *)malloc(bound*sizeof(g1_t));
+    pp->H2 = (g2_t *)malloc(bound*sizeof(g2_t));
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_attr_alp_ok(const uint32_t bound, struct alp_sk_attr_ok *sk) { 
+    g1_null(sk -> D1); g1_new(sk -> D1); 
+    g1_null(sk -> D2); g1_new(sk -> D2);
+    uint32_t k_length = bound-1;
+    sk -> K = (g1_t *)malloc( k_length*sizeof(g1_t) ); 
+    if (sk -> D1 == NULL || sk -> D2 == NULL || sk -> K == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_secret_key_alp_ok(const uint32_t bound, struct alp_sk_ok *sk) {
+    sk -> D = (struct alp_sk_attr_ok *)malloc(bound * sizeof(struct alp_sk_attr_ok));
+    if (sk -> D == NULL){
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+int init_ciphertext_alp_ok(const struct alp_pp_ok pp, struct alp_ciphertext_ok *C){
+    gt_null(C -> C0); gt_null(C -> C0)
+    g2_null(C -> C1); g2_new(C -> C1);
+    g1_null(C->C2); g2_new(C->C2);
+    g2_null(C->C3); g2_new(C->C3);
+     if (C->C0 == NULL || C->C1 == NULL || C->C2 == NULL || C->C3 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+} 
+
+int init_public_params_pre_ok(const uint32_t bound, struct alp_pp_ok *pp){
+    pp->bound = bound;
+
+    pp->U1 = (g1_t *)malloc((bound+1)*sizeof(g1_t));
+
+    pp->t_pre_u1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->U2 = (g2_t *)malloc((bound+1)*sizeof(g2_t));
+
+    pp->t_pre_u2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < (bound+1); i++) {
+        pp->t_pre_u2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+
+    pp->H1 = (g1_t *)malloc(bound*sizeof(g1_t));
+
+    pp->t_pre_h1 = (g1_t **)malloc((bound+1) * sizeof(g1_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h1[i] = (g1_t *)malloc( RLC_EP_TABLE*sizeof(g1_t) );
+    }
+
+    pp->H2 = (g2_t *)malloc(bound*sizeof(g2_t));
+
+    pp->t_pre_h2 = (g2_t **)malloc((bound+1) * sizeof(g2_t*));
+    for (int i = 0; i < bound+1; i++) {
+        pp->t_pre_h2[i] = (g2_t *)malloc( RLC_EP_TABLE*sizeof(g2_t) );
+    }
+    pp->t_pre_g1 = (g1_t *)malloc(RLC_EP_TABLE*sizeof(g1_t));
+    pp->t_pre_g2 = (g2_t *)malloc(RLC_EP_TABLE*sizeof(g2_t));
+
+    g1_null(pp->g1); g1_new(pp->g1); 
+    g1_null(pp->g2); g1_null(pp->g2); 
+    gt_null(pp->gt); gt_null(pp->gt); 
+    if (pp->U1 == NULL || pp->H1 == NULL || pp->H2 == NULL || pp->U2 == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
+
