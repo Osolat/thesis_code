@@ -218,48 +218,43 @@ int main(int argc, char **argv) {
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
         t[no] = cpucycles();
-        for (int i = 0; i < (two_k); ++i) {
-            bn_t *Wr;
-            bn_t *jW1;
-            bn_t *W0_W1;
-            bn_t *W0_w1_rj;
-            bn_t *v_plus_w;
-            bn_t output1[two_k];
-            bn_t output3[two_k * kss];
-            bn_t output4[two_k * kss];
-            bn_t output5[two_k];
-            bn_t output1_v_plus_w[two_k];
+        bn_t *Wr;
+        bn_t *jW1;
+        bn_t *W0_W1;
+        bn_t *W0_w1_rj;
+        bn_t *v_plus_w;
+        bn_t output1[two_k];
+        bn_t output3[two_k * kss];
+        bn_t output4[two_k * kss];
+        bn_t output5[two_k];
+        bn_t output1_v_plus_w[two_k];
 
+        for (int i = 0; i < (two_k); ++i) {
             res = std::vector<policy_coefficient>();
             share_secret(&tree_root, msk.v_secret[i], order, res, true);
             for (auto it = res.begin(); it != res.end(); ++it) {
-                //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
-                for (int k = 0; k < (kss); k++) {
-                    bn_rand_mod(vj.rj[it->leaf_index - 1].vec_rj[k], order);
-                    g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_two[k], vj.rj[it->leaf_index - 1].vec_rj[k]);
-                }
-                //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
-                //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
                 bn_copy(vj.vj[it->leaf_index - 1].vec_j[i], it->share);
                 g1_mul_gen(sk.sk4[it->leaf_index - 1].sk_four[i], vj.vj[it->leaf_index - 1].vec_j[i]);
+            }
+        }
 
-                jW1 = matrix_mul_scalar(output3, msk.W1_matrix, it->leaf_index - 1, two_k, kss,order);
-                W0_W1 = matrix_add_matrix(output4, msk.W0_matrix, jW1, two_k, kss, two_k, kss,order);
-                W0_w1_rj = matrix_mul_vector(output5, W0_W1, vj.rj[it->leaf_index - 1].vec_rj, two_k, kss, kss, order);
-
-                for (int s = 0; s < (two_k); ++s) {
-                    g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_three[s], W0_w1_rj[s]);
-                }
+        for (auto it = res.begin(); it != res.end(); ++it) {
+            //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
+            for (int k = 0; k < (kss); k++) {
+                bn_rand_mod(vj.rj[it->leaf_index - 1].vec_rj[k], order);
+                g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_two[k], vj.rj[it->leaf_index - 1].vec_rj[k]);
             }
 
-            for (auto it2 = res.begin(); it2 != res.end(); ++it2) {
-                //Computes W_j * rj by matrix-vector multiplication.
-                Wr = matrix_mul_vector(output1, msk.W_matrix, vj.rj[it2->leaf_index - 1].vec_rj, two_k, kss, kss,order);
-                v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it2->leaf_index - 1].vec_j, Wr, two_k, two_k,order);
-                //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
-                for (int u = 0; u < (two_k); ++u) {
-                    g1_mul_gen(sk.sk13[it2->leaf_index - 1].sk_one[u], v_plus_w[u]);
-                }
+            jW1 = matrix_mul_scalar(output3, msk.W1_matrix, it->leaf_index - 1, two_k, kss, order);
+            W0_W1 = matrix_add_matrix(output4, msk.W0_matrix, jW1, two_k, kss, two_k, kss, order);
+            W0_w1_rj = matrix_mul_vector(output5, W0_W1, vj.rj[it->leaf_index - 1].vec_rj, two_k, kss, kss, order);
+
+            Wr = matrix_mul_vector(output1, msk.W_matrix, vj.rj[it->leaf_index - 1].vec_rj, two_k, kss, kss, order);
+            v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it->leaf_index - 1].vec_j, Wr, two_k, two_k, order);
+
+            for (int s = 0; s < (two_k); ++s) {
+                g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_three[s], W0_w1_rj[s]);
+                g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_one[s], v_plus_w[s]);
             }
         }
         //progress2 = ((float) (no+1) / NTESTS);

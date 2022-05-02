@@ -9,5 +9,7 @@
 
 # Built Visual Studio Code Extensions
 *.vsix
+*.iml
+*.xml
 
 objects/*

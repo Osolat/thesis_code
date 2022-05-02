@@ -193,18 +193,10 @@ int main(int argc, char **argv) {
         bn_t *Wr;
         bn_t output1[kss + 1];
 
-        //For all kss+1 secrets in v:
         for (int i = 0; i < (kss + 1); ++i) {
             res = std::vector<policy_coefficient>();
             share_secret(&tree_root, msk.v_share[i], order, res, true);
             for (auto it2 = res.begin(); it2 != res.end(); ++it2) {
-                //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
-                for (int k = 0; k < (kss); k++) {
-                    bn_rand_mod(vj.rj[it2->leaf_index - 1].vec_rj[k], order);
-                    g2_mul_gen(sk.sk[it2->leaf_index - 1].sk_two[k], vj.rj[it2->leaf_index - 1].vec_rj[k]);
-                }
-                //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
-                //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
                 bn_copy(vj.vj[it2->leaf_index - 1].vec_j[i], it2->share);
             }
         }
@@ -212,6 +204,20 @@ int main(int argc, char **argv) {
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
 
+        for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+            for (int k = 0; k < (kss); k++) {
+                bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
+                g2_mul_gen(sk.sk[it3->leaf_index - 1].sk_two[k], vj.rj[it3->leaf_index - 1].vec_rj[k]);
+            }
+            Wr = matrix_mul_vector(output1, msk.atts[(it3->leaf_index - 1) + 1].w, vj.rj[it3->leaf_index - 1].vec_rj, (kss + 1), kss, kss, order);
+            v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it3->leaf_index - 1].vec_j, Wr, (kss + 1), (kss + 1), order);
+
+            for (int u = 0; u < (kss + 1); ++u) {
+                g2_mul_gen(sk.sk[it3->leaf_index - 1].sk_one[u], v_plus_w[u]);
+            }
+        }
+
+        /*
         for (int kj = 0; kj < N_ATTR; kj++) {
             //Computes W_j * rj by matrix-vector multiplication.
             Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, (kss + 1), kss, kss, order);
@@ -222,6 +228,7 @@ int main(int argc, char **argv) {
                 g2_mul_gen(sk.sk[kj].sk_one[u], v_plus_w[u]);
             }
         }
+        */
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
@@ -235,7 +242,7 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < NTESTS; qo++) {
+    for (int qo = 0; qo < 1; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
@@ -300,7 +307,7 @@ int main(int argc, char **argv) {
     gt_t tmp_res;
     init_null_new_gt_t_var(tmp_res);
 
-    for (int go = 0; go < NTESTS; go++) {
+    for (int go = 0; go < 1; go++) {
         //progressBar(100,progress4);
 
         t[go] = cpucycles();
