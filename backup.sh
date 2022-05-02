@@ -4,6 +4,9 @@
 #make gpsw
 #make kLin_KP
 cd objects
-ulimit -s unlimited &&  ./gpsw_gap_ok 2 >> gpsw.txt && 
-./gpsw_gap_ok 4 >> gpsw.txt && ./gpsw_gap_ok 8 >> gpsw.txt && ./gpsw_gap_ok 16 >> gpsw.txt && ./gpsw_gap_ok 32 >> gpsw.txt && ./gpsw_gap_ok 64 >> gpsw.txt && ./gpsw_gap_ok 128 >> gpsw.txt && ./gpsw_gap_ok 256 >> gpsw.txt && ./gpsw_gap_ok 512 >> gpsw.txt
+ulimit -s unlimited && 
+./bench_tree_coeffs_vs_rand 2 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 4 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 8 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 16 >> basic_bench.txt &&
+./bench_tree_coeffs_vs_rand 32 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 64 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 128 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 256 >> basic_bench.txt &&
+./bench_tree_coeffs_vs_rand 512 >> basic_bench.txt && ./bench_tree_coeffs_vs_rand 1024 >> basic_bench.txt &&
+./gpsw_gap_ok 1024 >> gpsw.txt
 #make clean
