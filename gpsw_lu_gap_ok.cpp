@@ -102,16 +102,20 @@ int main(int argc, char **argv) {
         g2_rand(mpk.t_values[i]);
     }
 
-    /* g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
-    for (size_t i = 0; i < N_ATTR; i++) {
-
-        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            g2_null(pre_T[i][j]);
-            g2_new(pre_T[i][j]);
-        }
-        g2_mul_pre(pre_T[i], mpk.T_values[i]);
+    g2_t pre_g2[RLC_EP_TABLE_MAX];
+    g1_t pre_g[RLC_EP_TABLE_MAX];
+    g1_t pre_g1[RLC_EP_TABLE_MAX];
+    for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+        g2_null(pre_g2[j]);
+        g2_new(pre_g2[j]);
+        g1_null(pre_g[j]);
+        g1_new(pre_g[j]);
+        g1_null(pre_g1[j]);
+        g1_new([pre_g1[j]]);
     }
- */
+    g2_mul_pre(pre_g2, mpk.g2);
+    g1_mul_pre(pre_g, g);
+    g1_mul_pre(pre_g1, mpk.g1);
 
     /*KeyGeneration*/
     struct secret_key_kp_gpsw_lu_ok sk;
@@ -142,11 +146,10 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_rand_mod(r, order);
             bn_set_dig(x, it->leaf_index);
-            t_function_g2(&temp, x, mpk.g2, mpk.t_values, N_ATTR, order); 
-            //g2_rand(temp);           
+            t_function_g2_pre(&temp, x, pre_g2, mpk.t_values, N_ATTR, order);
+            // g2_rand(temp);
             g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
-            g1_mul_gen(sk.R_values[it->leaf_index - 1], r);
-       
+            g1_mul_fix(sk.R_values[it->leaf_index - 1], pre_g, r);
         }
     }
     printf("[");
@@ -154,9 +157,7 @@ int main(int argc, char **argv) {
     /*Setup precomputation tables for sk*/
     g1_t pre_R_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
-        /* code */
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            /* code */
             g1_null(pre_R_values[i][j]);
             g1_new(pre_R_values[i][j]);
         }
@@ -165,9 +166,7 @@ int main(int argc, char **argv) {
 
     g2_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
-        /* code */
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            /* code */
             g2_null(pre_D_values[i][j]);
             g2_new(pre_D_values[i][j]);
         }
@@ -200,15 +199,14 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         bn_rand_mod(s, order);
-        g1_mul(g1_prime, mpk.g1, s);
+        g1_mul_fix(g1_prime, pre_g1, s);
         pc_map(E.E_prime, g1_prime, mpk.g2);
         gt_mul(E.E_prime, E.E_prime, message);
-        g1_mul_gen(E.E_prime_prime, s);
+        g1_mul_fix(E.E_prime_prime, pre_g, s);
 
         for (int i = 0; i < test_attr; i++) {
-            bn_set_dig(x, i+1);
-            t_function_g2(&T, x, mpk.g2, mpk.t_values, N_ATTR, order);
-            //g2_rand(T);
+            bn_set_dig(x, i + 1);
+            t_function_g2_pre(&T, x, pre_g2, mpk.t_values, N_ATTR, order);
             g2_mul(E.E_values[i], T, s);
         }
     }
@@ -255,16 +253,14 @@ int main(int argc, char **argv) {
         g2_t E_vals[res.size()];
         g1_t R_vals[res.size()];
 
-
         bn_t coeffs[res.size()];
 
         if (res.size() > g2_pre_sim_switchpoint) {
-
             for (auto it = res.begin(); it != res.end(); it++) {
                 g1_null(R_vals[it->leaf_index - 1]);
                 g1_new(R_vals[it->leaf_index - 1]);
                 g1_mul_fix(R_vals[it->leaf_index - 1], pre_R_values[it->leaf_index - 1], it->coeff);
-                
+
                 g2_null(E_vals[it->leaf_index - 1]);
                 g2_new(E_vals[it->leaf_index - 1]);
 

@@ -17,7 +17,7 @@
 
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
-const int kss = 1;                                                    //Here kss=1 means (SXLIN) and kss=2 means (DLIN)
+const int kss = 2;                                                    //Here kss=1 means (SXLIN) and kss=2 means (DLIN)
 
 #include <stdint.h>
 
