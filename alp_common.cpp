@@ -466,6 +466,60 @@ void keygen_a_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_ro
         sk->D[attr_index] = D; 
     }
 }
+
+void keygen_a_lot_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
+    init_secret_key_alp_oe(pp.bound, sk);
+    std::vector<policy_coefficient> lsss_vector;
+    lsss_vector = std::vector<policy_coefficient>(); 
+    share_secret(tree_root, alpha, pp.order, lsss_vector, true); 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++){
+        struct alp_sk_attr_oe D;
+        init_secret_key_attr_alp_oe(pp.bound, &D);
+        size_t attr_index = it -> leaf_index-1;
+        bn_t rho[pp.bound];
+        bn_null(rho[0]); bn_new(rho[0]);
+        bn_set_dig(rho[0], 1);
+        for (size_t i = 1; i < pp.bound; i++) {
+            bn_null(rho[i]); bn_new(rho[i]);
+            bn_t i_read; bn_null(i_read); bn_new(i_read);
+            bn_set_dig(rho[i], it -> leaf_index);
+            bn_set_dig(i_read, i);
+            bn_mxp_basic(rho[i], rho[i], i_read, pp.order); 
+        }
+        
+        g2_t g2_double_one[2]; g2_null(g2_double_one[0]); g2_new(g2_double_one[0]); g2_null(g2_double_one[1]); g2_new(g2_double_one[1]);
+        bn_t bn_double_one[2]; bn_null(bn_double_one[0]); bn_new(bn_double_one[0]); bn_null(bn_double_one[1]); bn_new(bn_double_one[1]);
+
+        bn_rand_mod(bn_double_one[1], pp.order);
+        bn_copy(bn_double_one[0], it -> share);
+
+        g2_copy(g2_double_one[0], pp.g2);
+        g2_copy(g2_double_one[1], pp.U2[0]);
+
+        g2_mul_sim_lot(D.D1, g2_double_one, bn_double_one, 2);
+        g2_mul(D.D2, pp.g2, bn_double_one[1]);
+
+        g2_t g2_double_two[2]; g2_null(g2_double_two[0]); g2_new(g2_double_two[0]); g2_null(g2_double_two[1]); g2_new(g2_double_two[1]);
+        bn_t bn_double_two[2]; bn_null(bn_double_two[1]); bn_new(bn_double_two[1]);
+        bn_copy(bn_double_two[1], bn_double_one[1]);
+        g2_copy(g2_double_two[0], pp.U2[1]);
+        for (int j = 0; j < pp.bound-1; j++){
+            bn_null(bn_double_two[0]); bn_new(bn_double_two[0]);
+            bn_neg(bn_double_two[0], rho[j+1]);
+            bn_mul(bn_double_two[0], bn_double_two[0], bn_double_one[1]);
+
+            g2_copy(g2_double_two[1], pp.U2[j+2]);
+
+            g2_null(D.K[j]); g2_new(D.K[j]);   
+            //g2_mul(D.K[j], pp.U2[1], rho_i);
+            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+            g2_mul_sim_lot(D.K[j], g2_double_two, bn_double_two, 2);
+            //g2_mul(D.K[j], D.K[j], r_i);
+        }
+        sk->D[attr_index] = D; 
+    }
+}
+
 void keygen_pre_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
     init_secret_key_alp_oe(pp.bound, sk);
     std::vector<policy_coefficient> lsss_vector;
@@ -535,6 +589,59 @@ void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
             //g2_mul(D.K[j], pp.U2[1], rho_i);
             //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
             g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+            //g2_mul(D.K[j], D.K[j], r_i);
+        }
+        sk->D[attr_index] = D; 
+    }
+}
+
+void keygen_GAP_lot_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_root, bn_t alpha) { 
+    init_secret_key_alp_oe(pp.bound, sk);
+    std::vector<policy_coefficient> lsss_vector;
+    lsss_vector = std::vector<policy_coefficient>(); 
+    share_secret(tree_root, alpha, pp.order, lsss_vector, true); 
+    for (auto it = lsss_vector.begin(); it != lsss_vector.end(); it++){
+        struct alp_sk_attr_oe D;
+        init_secret_key_attr_alp_oe(pp.bound, &D);
+        size_t attr_index = it -> leaf_index-1;
+        bn_t rho[pp.bound];
+        bn_null(rho[0]); bn_new(rho[0]);
+        bn_set_dig(rho[0], 1);
+        for (size_t i = 1; i < pp.bound; i++) {
+            bn_null(rho[i]); bn_new(rho[i]);
+            bn_t i_read; bn_null(i_read); bn_new(i_read);
+            bn_set_dig(rho[i], it -> leaf_index);
+            bn_set_dig(i_read, i);
+            bn_mxp_basic(rho[i], rho[i], i_read, pp.order); 
+        }
+        
+        g2_t g2_double_one[2]; g2_null(g2_double_one[0]); g2_new(g2_double_one[0]); g2_null(g2_double_one[1]); g2_new(g2_double_one[1]);
+        bn_t bn_double_one[2]; bn_null(bn_double_one[0]); bn_new(bn_double_one[0]); bn_null(bn_double_one[1]); bn_new(bn_double_one[1]);
+
+        bn_rand_mod(bn_double_one[1], pp.order);
+        bn_copy(bn_double_one[0], it -> share);
+
+        g2_copy(g2_double_one[0], pp.g2);
+        g2_copy(g2_double_one[1], pp.U2[0]);
+
+        g2_mul_sim_lot(D.D1, g2_double_one, bn_double_one, 2);
+        g2_mul_fix(D.D2, pp.t_pre_g2, bn_double_one[1]);
+
+        g2_t g2_double_two[2]; g2_null(g2_double_two[0]); g2_new(g2_double_two[0]); g2_null(g2_double_two[1]); g2_new(g2_double_two[1]);
+        bn_t bn_double_two[2]; bn_null(bn_double_two[1]); bn_new(bn_double_two[1]);
+        bn_copy(bn_double_two[1], bn_double_one[1]);
+        g2_copy(g2_double_two[0], pp.U2[1]);
+        for (int j = 0; j < pp.bound-1; j++){
+            bn_null(bn_double_two[0]); bn_new(bn_double_two[0]);
+            bn_neg(bn_double_two[0], rho[j+1]);
+            bn_mul(bn_double_two[0], bn_double_two[0], bn_double_one[1]);
+
+            g2_copy(g2_double_two[1], pp.U2[j+2]);
+
+            g2_null(D.K[j]); g2_new(D.K[j]);   
+            //g2_mul(D.K[j], pp.U2[1], rho_i);
+            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+            g2_mul_sim_lot(D.K[j], g2_double_two, bn_double_two, 2);
             //g2_mul(D.K[j], D.K[j], r_i);
         }
         sk->D[attr_index] = D; 

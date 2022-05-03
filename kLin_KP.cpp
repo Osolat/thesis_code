@@ -115,6 +115,10 @@ int main(int argc, char **argv) {
     init_null_new_g1_t_var(group1);
     init_null_new_g2_t_var(group2);
 
+    //std::cout << "Size of g1 : " << sizeof(g1_t) << " byte" << std::endl;
+    //std::cout << "Size of g2 : " << sizeof(g2_t) << " byte" << std::endl;
+    //std::cout << "Size of gt : " << sizeof(gt_t) << " byte" << std::endl;
+    //std::cout << "Size of bn : " << sizeof(bn_t) << " byte" << std::endl;
     /* Setup */
     //float progress = 0.0;
     //TODO: Run only once then remove the loop around setup function. Else could measure memory of setup.
@@ -195,6 +199,31 @@ int main(int argc, char **argv) {
         bn_t *Wr;
         bn_t output1[kss + 1];
 
+        for (int i = 0; i < (kss + 1); ++i) {
+            res = std::vector<policy_coefficient>();
+            share_secret(&tree_root, msk.v_share[i], order, res, true);
+            for (auto it2 = res.begin(); it2 != res.end(); ++it2) {
+                bn_copy(vj.vj[it2->leaf_index - 1].vec_j[i], it2->share);
+            }
+        }
+
+        bn_t *v_plus_w;
+        bn_t output1_v_plus_w[kss + 1];
+        for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+            //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
+            for (int k = 0; k < (kss); k++) {
+                bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
+                g2_mul(sk.sk[it3->leaf_index - 1].sk_two[k], group2, vj.rj[it3->leaf_index - 1].vec_rj[k]);
+            }
+            Wr = matrix_mul_vector(output1, msk.atts[(it3->leaf_index - 1) + 1].w, vj.rj[it3->leaf_index - 1].vec_rj, (kss + 1), kss, kss, order);
+            v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it3->leaf_index - 1].vec_j, Wr, (kss + 1), (kss + 1), order);
+
+            for (int u = 0; u < (kss + 1); ++u) {
+                g2_mul(sk.sk[it3->leaf_index - 1].sk_one[u], group2, v_plus_w[u]);
+            }
+        }
+
+        /*
         //For all kss+1 secrets in v:
         for (int i = 0; i < (kss + 1); ++i) {
             res = std::vector<policy_coefficient>();
@@ -210,7 +239,9 @@ int main(int argc, char **argv) {
                 bn_copy(vj.vj[it2->leaf_index - 1].vec_j[i], it2->share);
             }
         }
+        */
 
+        /*
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
         //TODO: This should be a loop just like the above using iterator over shares.
@@ -224,6 +255,7 @@ int main(int argc, char **argv) {
                 g2_mul(sk.sk[kj].sk_one[u], group2, v_plus_w[u]);
             }
         }
+        */
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
@@ -238,7 +270,7 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < NTESTS; qo++) {
+    for (int qo = 0; qo < 1; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
@@ -305,7 +337,7 @@ int main(int argc, char **argv) {
     bn_t pack_coef[N_ATTR];
     //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
 
-    for (int go = 0; go < NTESTS; go++) {
+    for (int go = 0; go < 1; go++) {
         //progressBar(100,progress4);
 
         t[go] = cpucycles();
