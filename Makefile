@@ -59,14 +59,14 @@ gpsw:
 	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/gpsw_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_a_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_a_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_g_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_g_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_p_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_p_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_gap_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_gap_od $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_gap_od.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/gpsw_lu_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_a_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_a_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_g_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_g_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_p_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_p_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_gap_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_gap_od $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw/gpsw_gap_od.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_lu_gap_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu/gpsw_lu_gap_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 
 basic_bench:
