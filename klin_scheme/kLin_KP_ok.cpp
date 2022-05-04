@@ -1,13 +1,13 @@
 //
-// Created by jonas on 3/22/22.
+// Created by jonas on 3/23/22.
 //
 
-#include "lib/k_lin/k_lin_util.h"
+#include "../lib/k_lin/k_lin_util.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 
 long long cpucycles(void) {
@@ -46,6 +46,13 @@ static void print_results(const char *s, unsigned long long *t, size_t tlen) {
     printf("%llu,", average(t, tlen - 1));
 }
 
+static void do_stuff(unsigned long long *t, size_t tlen){
+    size_t i;
+    for (i = 0; i < tlen - 1; i++) {
+        t[i] = t[i + 1] - t[i];
+    }
+}
+
 static void test_stuff(unsigned long long *array, int idx, unsigned long long *t, size_t tlen){
     std::cout << std::endl;
     size_t i;
@@ -77,10 +84,11 @@ static void print_result_array(unsigned long long *array) {
 }
 
 unsigned long long t[NTESTS];
+
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_OD\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_OK\n";
 
 
     if (argc == 1) {
@@ -90,11 +98,12 @@ int main(int argc, char **argv) {
 
     int test_attr = atoi(argv[1]);
 
-    //for (int iters = 10; iters < (test_attr+10); ++iters) {
+    //for (int iters = 2; iters < (test_attr+2); ++iters) {
+
         srand(time(NULL));
         std::string keyInput = "";
         std::string encInput = "";
-        std::string keyInputWrong = "";
+        //std::string keyInputWrong = "";
 
         uint32_t N_ATTR = test_attr;
 
@@ -115,6 +124,7 @@ int main(int argc, char **argv) {
             d++;
         }
 
+        //keyInputWrong = "attr1|attr2|attr3|attr4";
 
         bn_t attributes[test_attr];
         for (int i = 0; i < N_ATTR; ++i) {
@@ -125,11 +135,11 @@ int main(int argc, char **argv) {
         std::cout << keyInput;
         //std::cout << keyInputWrong;
 
-        struct master_key_k_lin_od msk;
-        struct public_key_k_lin_od mpk;
+        struct master_key_k_lin_ok msk;
+        struct public_key_k_lin_ok mpk;
 
-        init_master_key_k_lin_od(N_ATTR, kss, &msk);
-        init_public_key_k_lin_od(N_ATTR, kss, &mpk);
+        init_master_key_k_lin_ok(N_ATTR, kss, &msk);
+        init_public_key_k_lin_ok(N_ATTR, kss, &mpk);
 
         core_init();
 
@@ -152,6 +162,7 @@ int main(int argc, char **argv) {
             init_null_new_g1_t_var(t_pre_g[i]);
             init_null_new_g2_t_var(t_pre_h[i]);
         }
+
         g1_t group1;
         g2_t group2;
         init_null_new_g1_t_var(group1);
@@ -166,7 +177,6 @@ int main(int argc, char **argv) {
         //float progress = 0.0;
         for (int jo = 0; jo < NTESTS; jo++) {
             //progressBar(100, progress);
-
             t[jo] = cpucycles();
             bn_t A_tmp[(kss + 1) * kss];
             //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
@@ -200,15 +210,15 @@ int main(int argc, char **argv) {
                         bn_zero(msk.atts[j].w[m]);
                     }
                 }
-
+                //Here matrix multiplication is being calculated.
                 bn_t *AWi;
                 bn_t output[kss * kss];
                 AWi = matrixA_mul_matrixW(output, A_tmp, msk.atts[j].w, kss, (kss + 1), (kss + 1), kss, order);
 
                 //Initializes the "n" AW_i (masker public key).
                 for (int x = 0; x < (kss * kss); ++x) {
-                    g1_mul_fix(mpk.mats[j].w[x], t_pre_g, AWi[x]);
-                    //g1_copy(mpk.mats[j].w[x], AWi[x]);
+                    //g2_copy(mpk.mats[j].w[x], AWi[x]);
+                    g2_mul_fix(mpk.mats[j].w[x], t_pre_h, AWi[x]);
                 }
             }
             //progress = ((float) (jo+1) / NTESTS);
@@ -220,16 +230,18 @@ int main(int argc, char **argv) {
 
         /* Key Generation */
         //float progress2 = 0.0;
-        struct secret_key_K_Lin_od sk;
-        struct sk_tmp_vj_od vj;
-        init_secret_key_K_Lin_od(N_ATTR, &sk);
-        init_sk_tmp_vj_od(N_ATTR, kss, &vj);
+        struct secret_key_K_Lin_ok sk;
+        struct sk_tmp_vj_ok vj;
+        init_secret_key_K_Lin_ok(N_ATTR, &sk);
+        init_sk_tmp_vj_ok(N_ATTR, kss, &vj);
 
         struct node tree_root;
         std::vector <policy_coefficient> res;
 
         for (int no = 0; no < NTESTS; no++) {
-            //progressBar(100,progress2);
+
+            //progressBar(100, progress2);
+
             t[no] = cpucycles();
             free_tree(&tree_root);
             tree_root = node();
@@ -245,7 +257,7 @@ int main(int argc, char **argv) {
                     //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
                     for (int k = 0; k < (kss); k++) {
                         bn_rand_mod(vj.rj[it2->leaf_index - 1].vec_rj[k], order);
-                        g2_mul_fix(sk.sk[it2->leaf_index - 1].sk_two[k], t_pre_h, vj.rj[it2->leaf_index - 1].vec_rj[k]);
+                        g1_mul_fix(sk.sk[it2->leaf_index - 1].sk_two[k], t_pre_g, vj.rj[it2->leaf_index - 1].vec_rj[k]);
                     }
                     //Sets the vj's to contain the j shares for the (kss+1) secrets of v.
                     //To clarify each vj is a vector of size (kss+1) and there are a total of j vectors.
@@ -266,21 +278,24 @@ int main(int argc, char **argv) {
                     g1_mul_fix(sk.sk[kj].sk_one[u], t_pre_g, v_plus_w[u]);
                 }
             }
+
             //progress2 = ((float) (no+1) / NTESTS);
         }
-
         //test_stuff(resultArray, 1, t, NTESTS);
+
         print_results("Results keyGen():           ", t, NTESTS);
 
         /* Encryption */
         //Initialize ciphertext struct
         //float progress3 = 0.0;
-        struct ciphertext_K_Lin_od CT_A;
-        init_ciphertext_K_Lin_od(N_ATTR, kss, &CT_A);
+        struct ciphertext_K_Lin_ok CT_A;
+        init_ciphertext_K_Lin_ok(N_ATTR, kss, &CT_A);
         bn_t rnd_s[kss];
 
         for (int qo = 0; qo < NTESTS; qo++) {
+
             //progressBar(100, progress3);
+
             t[qo] = cpucycles();
             gt_t gt_mul_test;
             gt_t gt_st_test;
@@ -317,112 +332,96 @@ int main(int argc, char **argv) {
             //set ct_2i
             //For all N_ATTR + 1 calculate sTAW_i and the reason for doing it over N_ATTR+1 opposed to N_ATTR is because W_0 = 0 and is done to support that the lsss map can be rho(j) = 0.
             for (int a = 0; a < (N_ATTR + 1); ++a) {
-                g1_t *ct2_i;
-                g1_t output[kss];
-                ct2_i = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
+                g2_t *ct2_i;
+                g2_t output[kss];
+                ct2_i = vector_trans_mul_matrix_g2_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
                 //Finishing c_2i, by doing the exponentiation of g.
                 for (int v = 0; v < kss; ++v) {
-                    g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
+                    g2_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
                 }
             }
+
             //progress3 = ((float) (qo+1) / NTESTS);
         }
-
         //test_stuff(resultArray, 2, t, NTESTS);
+
         print_results("Results encryption():           ", t, NTESTS);
 
         /* Decryption */
-        //printf("\n");
-
-        //float progress4 = 0.0;
+        //List of all the wj coefficients since j = N_ATTR and because we have (kss+1) secrets to be shared from v, the total amount of coefficients becomes N_ATTR * (kss+1).
         bn_t pack_coef[N_ATTR];
-        g1_t pair_g1_test_2[kss];
-        g2_t pair_g2_test_2[kss];
-        g1_t neg_ct[kss+1];
-        //g1_t pairing_g1_fin[N_ATTR];
-        //g2_t pairing_g2_fin[N_ATTR];
+
+        //Two lists used for the pp_map_sim_oatep_k12 operation.
+        //Since ct2j and sk2j are vectors of size (kss) and ct1 and sk1j are vectors of size (kss+1) we need to do ((kss+1)+kss) component wise operations.
+        g1_t pair_g1[(kss + 1) + kss];
+        g2_t pair_g2[(kss + 1) + kss];
 
         gt_t exp_val;
-        gt_t prod_test;
-        gt_t prod_test2;
-        g1_t K1_prod[kss+1];
-        g1_t sk1_tmp[N_ATTR];
-        //g1_t ct2_tmp[N_ATTR];
-        gt_t test_res;
-
-        for (int hg = 0; hg < kss+1; ++hg) {
-            init_null_new_g1_t_var(K1_prod[hg]);
-            init_null_new_g1_t_var(sk1_tmp[hg]);
-            init_null_new_g1_t_var(neg_ct[hg]);
-            g1_set_infty(K1_prod[hg]);
-        }
-
+        gt_t prod;
         init_null_new_gt_t_var(exp_val);
-        init_null_new_gt_t_var(prod_test);
-        init_null_new_gt_t_var(prod_test2);
-        init_null_new_gt_t_var(test_res);
+        init_null_new_gt_t_var(prod);
 
-        gt_t map_test;
-        gt_t map_sim_test_1;
-        gt_t map_sim_test_2;
-        init_null_new_gt_t_var(map_test);
-        init_null_new_gt_t_var(map_sim_test_1);
-        init_null_new_gt_t_var(map_sim_test_2);
-
+        //Temporary variable supposed to hold intermediate result of the calculations.
+        gt_t tmp_res;
+        init_null_new_gt_t_var(tmp_res);
+        //float progress4 = 0.0;
         for (int go = 0; go < NTESTS; go++) {
-            //progressBar(100, progress4);
-            t[go] = cpucycles();
-            fp12_set_dig(prod_test, 1);
-            fp12_set_dig(prod_test2,1);
 
-            for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
-                init_null_new_bn_t_var(pack_coef[it4->leaf_index-1]);                       //Same as for std.
-                //init_null_new_g1_t_var(pairing_g1_fin[it4->leaf_index-1]);
-                //init_null_new_g2_t_var(pairing_g2_fin[it4->leaf_index-1]);
-            }
+            //progressBar(100, progress4);
+
+            t[go] = cpucycles();
+            gt_t map_sim;
+            init_null_new_gt_t_var(map_sim);
+
+            //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
+            fp12_set_dig(prod, 1);
+
+            //Sets tmp_res to one so that the final multiplications starts out correct.
+            fp12_set_dig(tmp_res, 1);
 
             try {
                 check_satisfiability(&tree_root, attributes, N_ATTR);
             } catch (struct TreeUnsatisfiableException *e) {
                 printf("Fail");
             }
+
             res = std::vector<policy_coefficient>();
             res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-            for (int po = 0; po < kss + 1; ++po) {
-                int idx2 = 0;
-                for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-                    idx2 = it5->leaf_index - 1;
-                    if (po == 0) {
-                        bn_copy(pack_coef[idx2], it5->coeff);                                                                   //Same as std.
-                        //g1_copy(ct2_tmp[idx2], CT_A.C_2[idx2 + 1].c_2_mat[po % kss]);
-                        for (int jk2 = 0; jk2 < kss; ++jk2) {
-                            g1_mul(pair_g1_test_2[jk2], CT_A.C_2[idx2 + 1].c_2_mat[jk2], pack_coef[idx2]);
-                            g2_copy(pair_g2_test_2[jk2], sk.sk[idx2].sk_two[jk2]);
-                        }
-                        //g1_mul_sim_lot(pair_g1_test_2[po % kss], ct2_tmp, pack_coef, N_ATTR);
-                        pp_map_sim_oatep_k12(map_sim_test_2, pair_g1_test_2, pair_g2_test_2, kss);
-                        gt_mul(prod_test2, prod_test2, map_sim_test_2);
+            int idx = 0;
+            for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+                idx = it3->leaf_index - 1;
+                //Copy all the coefficients to the pack_coef list.
+                init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
+                bn_copy(pack_coef[idx], it3->coeff);
+                //Set up the two lists used for the pp_map_sim_oatep_k12 operation
+                for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
+                    if (jk < (kss + 1)) {
+                        g2_neg(pair_g2[jk], CT_A.C_1[jk]);
+                        g1_copy(pair_g1[jk], sk.sk[idx].sk_one[jk]);
+                    } else {
+                        g2_copy(pair_g2[jk], CT_A.C_2[idx + 1].c_2_mat[(jk + 1) % kss]);
+                        g1_copy(pair_g1[jk], sk.sk[idx].sk_two[(jk + 1) % kss]);
                     }
-                    g1_copy(sk1_tmp[idx2], sk.sk[idx2].sk_one[po]);
                 }
-                g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-                g1_neg(neg_ct[po], K1_prod[po]);
+                pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
+                //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+                gt_exp(exp_val, map_sim, pack_coef[idx]);
+                //Here we basically compute the product of [-sTAv_j]^(wj) and saves the result in tmp_mul_list[r]
+                gt_mul(prod, prod, exp_val);
             }
-            pp_map_sim_oatep_k12(map_sim_test_1, neg_ct, CT_A.C_1, (kss+1));
-            //pp_map_sim_oatep_k12(map_test, pairing_g1_fin, pairing_g2_fin, ((kss + 1) + kss));
-            gt_mul(test_res, map_sim_test_1, prod_test2);
-            gt_mul(test_res, test_res, CT_A.C_3_one_val);
+            //Here we complete the product of [-sTAv_j]^(wj)
+            gt_mul(tmp_res, prod, CT_A.C_3_one_val);
 
             //Uncomment for correctness check;
-            assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
+            assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
             std::cout << "[*] PASSED" << std::endl;
+
             //progress4 = ((float) (go+1) / NTESTS);
         }
 
         //test_stuff(resultArray, 3, t, NTESTS);
-
         print_results("Results decryption():           ", t, NTESTS);
         printf("]\n");
     //}
@@ -434,6 +433,7 @@ int main(int argc, char **argv) {
     //print_mpk(&mpk, N_ATTR, kss);
     //print_sk(&sk, &vj, N_ATTR, kss);
     //print_ct(&CT_A, N_ATTR, kss);
+
     return 0;
 }
 

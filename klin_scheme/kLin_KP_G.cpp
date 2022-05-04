@@ -1,13 +1,13 @@
 //
-// Created by jonas on 4/1/22.
+// Created by jonas on 2/18/22.
 //
 
-#include "lib/k_lin/k_lin_util.h"
+#include "../lib/k_lin/k_lin_util.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 
 long long cpucycles(void) {
@@ -80,7 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_GAP_OE on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_G on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
+
     srand(time(NULL));
     uint32_t N_ATTR = test_attr;
 
@@ -96,6 +97,7 @@ int main(int argc, char **argv) {
         init_null_new_bn_t_var(attributes[i]);
         bn_set_dig(attributes[i], i + 1);
     }
+
 
     struct master_key_k_lin msk;
     struct public_key_k_lin mpk;
@@ -109,31 +111,19 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
-    /* Generate pre-computation tables for g, h */
-    g1_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
-    g1_t t_pre_AW[N_ATTR+1][kss * kss][RLC_EP_TABLE_MAX];
-    g1_t t_pre_g[RLC_EP_TABLE_MAX];
-    g2_t t_pre_h[RLC_EP_TABLE_MAX];
-
-    for (int i = 0; i < RLC_EP_TABLE_MAX; i++) {
-        init_null_new_g1_t_var(t_pre_g[i]);
-        init_null_new_g2_t_var(t_pre_h[i]);
-    }
-
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
     init_null_new_g2_t_var(group2);
-    g1_get_gen(group1);
-    g2_get_gen(group2);
 
     /* Setup */
     //float progress = 0.0;
     for (int jo = 0; jo < 1; jo++) {
         //progressBar(100, progress);
         //t[jo] = cpucycles();
-        g1_mul_pre(t_pre_g, group1);
-        g2_mul_pre(t_pre_h, group2);
+
+        g1_rand(group1);
+        g2_rand(group2);
 
         bn_t A_tmp[(kss + 1) * kss];
         //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
@@ -144,13 +134,7 @@ int main(int argc, char **argv) {
             //Initializes the bn_t entries of the A-matrix as just random bn_t value modulo the order.
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
-            g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
-
-            for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
-                init_null_new_g1_t_var(t_pre_A[d][j]);
-            }
-            g1_mul_pre(t_pre_A[d], mpk.a_mat[d]);
-
+            g1_mul(mpk.a_mat[d], group1, A_tmp[d]);
         }
 
         bn_t *Av;
@@ -180,15 +164,12 @@ int main(int argc, char **argv) {
 
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
-                g1_mul_fix(mpk.mats[j].w[x], t_pre_g, AWi[x]);
-                for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
-                    init_null_new_g1_t_var(t_pre_AW[j][x][d]);
-                }
-                g1_mul_pre(t_pre_AW[j][x], mpk.mats[j].w[x]);
+                g1_mul(mpk.mats[j].w[x], group1, AWi[x]);
             }
         }
         //progress = ((float) (jo+1) / NTESTS);
     }
+
     //test_stuff(resultArray, 0, t, NTESTS);
 
     //printf("[");
@@ -221,18 +202,19 @@ int main(int argc, char **argv) {
                 bn_copy(vj.vj[it2->leaf_index - 1].vec_j[i], it2->share);
             }
         }
+
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
         for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
             for (int k = 0; k < (kss); k++) {
-                bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
-                g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_two[k], t_pre_h, vj.rj[it3->leaf_index - 1].vec_rj[k]);
+                    bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
+                    g2_mul(sk.sk[it3->leaf_index - 1].sk_two[k], group2, vj.rj[it3->leaf_index - 1].vec_rj[k]);
             }
             Wr = matrix_mul_vector(output1, msk.atts[(it3->leaf_index - 1) + 1].w, vj.rj[it3->leaf_index - 1].vec_rj, (kss + 1), kss, kss, order);
             v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it3->leaf_index - 1].vec_j, Wr, (kss + 1), (kss + 1), order);
 
             for (int u = 0; u < (kss + 1); ++u) {
-                g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_one[u], t_pre_h, v_plus_w[u]);
+                g2_mul(sk.sk[it3->leaf_index - 1].sk_one[u], group2, v_plus_w[u]);
             }
         }
         //progress2 = ((float) (no+1) / NTESTS);
@@ -252,7 +234,8 @@ int main(int argc, char **argv) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
-        gt_t gt_mul_test; gt_t gt_st_test;
+        gt_t gt_mul_test;
+        gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -276,7 +259,7 @@ int main(int argc, char **argv) {
         g1_t output[kss + 1];
 
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
+        ct_1 = vector_trans_mul_matrix_g1(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
@@ -284,7 +267,7 @@ int main(int argc, char **argv) {
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
-            ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
+            ct2_i = vector_trans_mul_matrix_g1(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
             for (int v = 0; v < (kss + 1); ++v) {
@@ -302,26 +285,39 @@ int main(int argc, char **argv) {
 
     /* Decryption */
     //float progress4 = 0.0;
+
     bn_t pack_coef[N_ATTR];
-    g1_t g1_list_lol[(N_ATTR * kss) + (kss + 1)];
-    g2_t g2_list_lol[(N_ATTR * kss) + (kss + 1)];
-    g2_t K1_prod[kss + 1];
-    g2_t sk1_tmp[N_ATTR];
+    //g1_t neg_ct[kss + 1];
+    gt_t prod_test2;
     gt_t test_res;
 
-    for (int hg = 0; hg < kss + 1; ++hg) {
-        init_null_new_g2_t_var(K1_prod[hg]);
-        init_null_new_g2_t_var(sk1_tmp[hg]);
-        g2_set_infty(K1_prod[hg]);
-    }
+    init_null_new_gt_t_var(prod_test2);
     init_null_new_gt_t_var(test_res);
-
-    gt_t map_sim_test_1;
-    init_null_new_gt_t_var(map_sim_test_1);
 
     for (int go = 0; go < 1; go++) {
         //progressBar(100, progress4);
         t[go] = cpucycles();
+
+        gt_t map_tmp_1;
+        init_null_new_gt_t_var(map_tmp_1);
+
+        gt_t map_tmp_test;
+        init_null_new_gt_t_var(map_tmp_test);
+
+        gt_t map_tmp_prod_1;
+        init_null_new_gt_t_var(map_tmp_prod_1);
+
+        gt_t map_tmp_prod_2;
+        init_null_new_gt_t_var(map_tmp_prod_2);
+
+        g1_t exp_tmp_1;
+        init_null_new_g1_t_var(exp_tmp_1);
+
+        g2_t tmp_prod_g2[kss + 1];
+        g2_t tmp_add_g2[kss + 1];
+
+        fp12_set_dig(prod_test2, 1);
+
         for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
             init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
         }
@@ -334,28 +330,35 @@ int main(int argc, char **argv) {
         res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        int lel = 0;
-        int kul = 0;
+        fp12_set_dig(map_tmp_prod_2, 1);
+
         for (int po = 0; po < kss + 1; ++po) {
+            g2_set_infty(tmp_add_g2[po]);
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
                 if (po == 0) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
+                    fp12_set_dig(map_tmp_prod_1, 1);
                     for (int jk2 = 0; jk2 < kss; ++jk2) {
-                        g1_mul(g1_list_lol[lel], CT_A.C_2[it5->leaf_index].c_2_mat[jk2], pack_coef[it5->leaf_index - 1]);
-                        g2_copy(g2_list_lol[lel], sk.sk[it5->leaf_index - 1].sk_two[jk2]);
-                        lel++;
+                        g1_mul(exp_tmp_1, CT_A.C_2[it5->leaf_index].c_2_mat[jk2], pack_coef[it5->leaf_index - 1]);
+                        pp_map_oatep_k12(map_tmp_1, exp_tmp_1, sk.sk[it5->leaf_index - 1].sk_two[jk2]);
+                        gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
                     }
+                    gt_mul(prod_test2, prod_test2, map_tmp_prod_1);
                 }
-                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
+                g2_mul(tmp_prod_g2[po], sk.sk[it5->leaf_index - 1].sk_one[po], pack_coef[it5->leaf_index - 1]);
+                g2_add(tmp_add_g2[po], tmp_add_g2[po], tmp_prod_g2[po]);
             }
-            kul = lel + po;
-            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(g1_list_lol[kul], CT_A.C_1[po]);
-            g2_copy(g2_list_lol[kul], K1_prod[po]);
+            //g1_neg(neg_ct[po], CT_A.C_1[po]);
+            pp_map_oatep_k12(map_tmp_test, CT_A.C_1[po], tmp_add_g2[po]);
+            gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_test);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, g1_list_lol, g2_list_lol, (N_ATTR*kss)+(kss + 1));
-        gt_mul(test_res, map_sim_test_1, CT_A.C_3_one_val);
+        gt_t inv_elem;
+        init_null_new_gt_t_var(inv_elem);
+        gt_inv(inv_elem, map_tmp_prod_2);
+
+        gt_mul(test_res, inv_elem, prod_test2);
+        gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
         //Uncomment for correctness check;
         //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
@@ -364,6 +367,7 @@ int main(int argc, char **argv) {
     }
 
     //test_stuff(resultArray, 3, t, NTESTS);
+
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
     std::cout<<"\n"<<std::endl;

@@ -1,13 +1,13 @@
 //
-// Created by jonas on 4/10/22.
+// Created by jonas on 3/29/22.
 //
 
-#include "lib/k_lin/k_lin_util.h"
+#include "../lib/k_lin/k_lin_util.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 
 long long cpucycles(void) {
@@ -80,8 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_A on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
-
+    std::cout << "Benchmarking KP-ABE from K-Lin_P on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -111,6 +110,17 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
+    /* Generate pre-computation tables for g, h */
+    g1_t t_pre_g[RLC_EP_TABLE_MAX];
+    g2_t t_pre_h[RLC_EP_TABLE_MAX];
+    g1_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW[N_ATTR+1][kss * kss][RLC_EP_TABLE_MAX];
+
+    for (int i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        init_null_new_g1_t_var(t_pre_g[i]);
+        init_null_new_g2_t_var(t_pre_h[i]);
+    }
+
     g1_t group1;
     g2_t group2;
     init_null_new_g1_t_var(group1);
@@ -122,8 +132,10 @@ int main(int argc, char **argv) {
         //progressBar(100, progress);
         //t[jo] = cpucycles();
 
-        g1_get_gen(group1);
-        g2_get_gen(group2);
+        g1_rand(group1);
+        g2_rand(group2);
+        g1_mul_pre(t_pre_g, group1);
+        g2_mul_pre(t_pre_h, group2);
 
         bn_t A_tmp[(kss + 1) * kss];
         //Initializes the v-vector and sets the entries to some random bn_t value modulo the order.
@@ -134,7 +146,12 @@ int main(int argc, char **argv) {
             //Initializes the bn_t entries of the A-matrix as just random bn_t value modulo the order.
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
-            g1_mul_gen(mpk.a_mat[d], A_tmp[d]);
+            g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
+
+            for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
+                init_null_new_g1_t_var(t_pre_A[d][j]);
+            }
+            g1_mul_pre(t_pre_A[d], mpk.a_mat[d]);
         }
 
         bn_t *Av;
@@ -164,7 +181,11 @@ int main(int argc, char **argv) {
 
             //Initializes the "n" AW_i (masker public key).
             for (int x = 0; x < (kss * kss); ++x) {
-                g1_mul_gen(mpk.mats[j].w[x], AWi[x]);
+                g1_mul_fix(mpk.mats[j].w[x], t_pre_g, AWi[x]);
+                for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
+                    init_null_new_g1_t_var(t_pre_AW[j][x][d]);
+                }
+                g1_mul_pre(t_pre_AW[j][x], mpk.mats[j].w[x]);
             }
         }
         //progress = ((float) (jo+1) / NTESTS);
@@ -203,32 +224,18 @@ int main(int argc, char **argv) {
 
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
-
         for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
             for (int k = 0; k < (kss); k++) {
                 bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
-                g2_mul_gen(sk.sk[it3->leaf_index - 1].sk_two[k], vj.rj[it3->leaf_index - 1].vec_rj[k]);
+                g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_two[k], t_pre_h, vj.rj[it3->leaf_index - 1].vec_rj[k]);
             }
             Wr = matrix_mul_vector(output1, msk.atts[(it3->leaf_index - 1) + 1].w, vj.rj[it3->leaf_index - 1].vec_rj, (kss + 1), kss, kss, order);
             v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it3->leaf_index - 1].vec_j, Wr, (kss + 1), (kss + 1), order);
 
             for (int u = 0; u < (kss + 1); ++u) {
-                g2_mul_gen(sk.sk[it3->leaf_index - 1].sk_one[u], v_plus_w[u]);
+                g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_one[u], t_pre_h, v_plus_w[u]);
             }
         }
-
-        /*
-        for (int kj = 0; kj < N_ATTR; kj++) {
-            //Computes W_j * rj by matrix-vector multiplication.
-            Wr = matrix_mul_vector(output1, msk.atts[kj + 1].w, vj.rj[kj].vec_rj, (kss + 1), kss, kss, order);
-            v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[kj].vec_j, Wr, (kss + 1), (kss + 1), order);
-
-            //Sets sk_1j by adding all vj vectors with the resulting Wr vectors.
-            for (int u = 0; u < (kss + 1); ++u) {
-                g2_mul_gen(sk.sk[kj].sk_one[u], v_plus_w[u]);
-            }
-        }
-        */
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
@@ -271,7 +278,7 @@ int main(int argc, char **argv) {
         g1_t output[kss + 1];
 
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-        ct_1 = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.a_mat, kss, kss + 1, kss);
+        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
@@ -279,7 +286,7 @@ int main(int argc, char **argv) {
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
             g1_t output[kss];
-            ct2_i = vector_trans_mul_matrix_g1_sim(output, rnd_s, mpk.mats[a].w, kss, kss, kss);
+            ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
 
             //Finishing c_2i, by doing the exponentiation of g.
             for (int v = 0; v < (kss + 1); ++v) {
@@ -297,7 +304,7 @@ int main(int argc, char **argv) {
 
     /* Decryption */
     //float progress4 = 0.0;
-    bn_t pack_coef[N_ATTR];
+
     gt_t exp_val;
     gt_t prod;
     init_null_new_gt_t_var(exp_val);
@@ -306,16 +313,30 @@ int main(int argc, char **argv) {
     //Temporary variable supposed to hold intermediate result of the calculations.
     gt_t tmp_res;
     init_null_new_gt_t_var(tmp_res);
+    bn_t pack_coef[N_ATTR];
 
     for (int go = 0; go < 1; go++) {
         //progressBar(100,progress4);
 
         t[go] = cpucycles();
-        gt_t map_sim;
-        init_null_new_gt_t_var(map_sim);
 
-        g1_t pair_g1[(kss + 1) + kss];
-        g2_t pair_g2[(kss + 1) + kss];
+        gt_t map_tmp_1;
+        init_null_new_gt_t_var(map_tmp_1);
+
+        gt_t map_tmp_2;
+        init_null_new_gt_t_var(map_tmp_2);
+
+        gt_t map_tmp_prod_1;
+        init_null_new_gt_t_var(map_tmp_prod_1);
+
+        gt_t map_tmp_prod_2;
+        init_null_new_gt_t_var(map_tmp_prod_2);
+
+        gt_t invert_elem;
+        init_null_new_gt_t_var(invert_elem);
+
+        gt_t map_res;
+        init_null_new_gt_t_var(map_res);
 
         //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
         fp12_set_dig(prod, 1);
@@ -333,22 +354,25 @@ int main(int argc, char **argv) {
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
         for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
+            fp12_set_dig(map_tmp_prod_1, 1);
+            fp12_set_dig(map_tmp_prod_2, 1);
+
             //Copy all the coefficients to the pack_coef list.
             init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
             bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
-            //Set up the two lists used for the pp_map_sim_oatep_k12 operation
 
-            for (int jk = 0; jk < ((kss + 1) + kss); ++jk) {
-                if (jk < (kss + 1)) {
-                    g1_neg(pair_g1[jk], CT_A.C_1[jk]);
-                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_one[jk]);
-                } else {
-                    g1_copy(pair_g1[jk], CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[(jk + 1) % kss]);
-                    g2_copy(pair_g2[jk], sk.sk[it3->leaf_index - 1].sk_two[(jk + 1) % kss]);
+            for (int ole = 0; ole < (kss + 1); ++ole) {
+                if (ole < kss) {
+                    pp_map_oatep_k12(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[ole],sk.sk[it3->leaf_index - 1].sk_two[ole]);
+                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
                 }
+                pp_map_oatep_k12(map_tmp_1, CT_A.C_1[ole], sk.sk[it3->leaf_index - 1].sk_one[ole]);
+                gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
             }
-            pp_map_sim_oatep_k12(map_sim, pair_g1, pair_g2, ((kss + 1) + kss));
-            gt_exp(exp_val, map_sim, pack_coef[it3->leaf_index - 1]);
+
+            gt_inv(invert_elem, map_tmp_prod_1);
+            gt_mul(map_res, invert_elem, map_tmp_prod_2);
+            gt_exp(exp_val, map_res, pack_coef[it3->leaf_index - 1]);
             gt_mul(prod, prod, exp_val);
         }
         gt_mul(tmp_res, prod, CT_A.C_3_one_val);
@@ -365,8 +389,3 @@ int main(int argc, char **argv) {
     std::cout<<"\n"<<std::endl;
     return 0;
 }
-
-
-
-
-
