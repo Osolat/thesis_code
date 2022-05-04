@@ -3,12 +3,12 @@
 //
 
 //#include "kLin_KP.h"
-#include "lib/k_lin/k_lin_util.h"
+#include "../lib/k_lin/k_lin_util.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 
 long long cpucycles(void) {
@@ -81,7 +81,7 @@ unsigned long long t[NTESTS];
 //unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE_GAP_UB_OK from K-Lin on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
+    std::cout << "Benchmarking KP-ABE_GAP_UB_OD from K-Lin on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
     srand(time(NULL));
 
     if (argc == 1) {
@@ -100,11 +100,11 @@ int main(int argc, char **argv) {
         bn_set_dig(attributes[i], i + 1);
     }
 
-    struct master_key_k_lin_ub_ok msk;
-    struct public_key_k_lin_ub_ok mpk;
+    struct master_key_k_lin_ub_od msk;
+    struct public_key_k_lin_ub_od mpk;
 
-    init_master_key_k_lin_ub_ok(N_ATTR, kss, &msk);
-    init_public_key_k_lin_ub_ok(N_ATTR, kss, &mpk);
+    init_master_key_k_lin_ub_od(N_ATTR, kss, &msk);
+    init_public_key_k_lin_ub_od(N_ATTR, kss, &mpk);
 
     core_init();
     bn_t order;
@@ -112,11 +112,13 @@ int main(int argc, char **argv) {
     pc_param_print();
     g1_get_ord(order);
 
-    g2_t t_pre_A[two_k * kss][RLC_EP_TABLE_MAX];
-    g2_t t_pre_AW[kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_A_g1[two_k * kss][RLC_EP_TABLE_MAX];
+    g2_t t_pre_A_g2[two_k * kss][RLC_EP_TABLE_MAX];
+
+    g1_t t_pre_AW[kss * kss][RLC_EP_TABLE_MAX];
     //g1_t t_pre_AW0[kss * kss][RLC_EP_TABLE_MAX];
-    g2_t t_pre_AW1[kss * kss][RLC_EP_TABLE_MAX];
-    g2_t t_pre_C2[kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW1[kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_C2[kss * kss][RLC_EP_TABLE_MAX];
 
     g1_t group1;
     g2_t group2;
@@ -142,12 +144,15 @@ int main(int argc, char **argv) {
             bn_rand_mod(msk.W_matrix[d], order);
             bn_rand_mod(msk.W1_matrix[d], order);
             bn_rand_mod(msk.W0_matrix[d], order);
-            g2_mul_gen(mpk.A1_mat[d], A1_tmp[d]);
+            g1_mul_gen(mpk.A1_mat_g1[d], A1_tmp[d]);
+            g2_mul_gen(mpk.A1_mat_g2[d], A1_tmp[d]);
 
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
-                init_null_new_g2_t_var(t_pre_A[d][j]);
+                init_null_new_g1_t_var(t_pre_A_g1[d][j]);
+                init_null_new_g2_t_var(t_pre_A_g2[d][j]);
             }
-            g2_mul_pre(t_pre_A[d], mpk.A1_mat[d]);
+            g1_mul_pre(t_pre_A_g1[d], mpk.A1_mat_g1[d]);
+            g2_mul_pre(t_pre_A_g2[d], mpk.A1_mat_g2[d]);
         }
 
         bn_t *Av;
@@ -185,17 +190,17 @@ int main(int argc, char **argv) {
                 pp_map_oatep_k12(map_tmp[k], group1, group2);
                 gt_exp(mpk.e_mat[k], map_tmp[k], Av[k]);
             }
-            g2_mul_gen(mpk.AW_mat[k], AW[k]);
-            g2_mul_gen(mpk.AW0_mat[k], AW0[k]);
-            g2_mul_gen(mpk.AW1_mat[k], AW1[k]);
+            g1_mul_gen(mpk.AW_mat[k], AW[k]);
+            g1_mul_gen(mpk.AW0_mat[k], AW0[k]);
+            g1_mul_gen(mpk.AW1_mat[k], AW1[k]);
             for (int d = 0; d < RLC_EP_TABLE_MAX; ++d) {
-                init_null_new_g2_t_var(t_pre_AW[k][d]);
-                //init_null_new_g2_t_var(t_pre_AW0[k][d]);
-                init_null_new_g2_t_var(t_pre_AW1[k][d]);
+                init_null_new_g1_t_var(t_pre_AW[k][d]);
+                //init_null_new_g1_t_var(t_pre_AW0[k][d]);
+                init_null_new_g1_t_var(t_pre_AW1[k][d]);
             }
-            g2_mul_pre(t_pre_AW[k], mpk.AW_mat[k]);
-            //g2_mul_pre(t_pre_AW0[k], mpk.AW0_mat[k]);
-            g2_mul_pre(t_pre_AW1[k], mpk.AW1_mat[k]);
+            g1_mul_pre(t_pre_AW[k], mpk.AW_mat[k]);
+            //g1_mul_pre(t_pre_AW0[k], mpk.AW0_mat[k]);
+            g1_mul_pre(t_pre_AW1[k], mpk.AW1_mat[k]);
         }
         //progress = ((float) (jo+1) / NTESTS);
     }
@@ -206,13 +211,13 @@ int main(int argc, char **argv) {
 
     /* Key Generation */
     //float progress2 = 0.0;
-    struct secret_key_K_Lin_ub_ok sk;
-    struct sk_tmp_vectors_ub_ok vj;
+    struct secret_key_K_Lin_ub_od sk;
+    struct sk_tmp_vectors_ub_od vj;
     struct node tree_root;
 
     std::vector <policy_coefficient> res;
-    init_secret_key_K_Lin_ub_ok(N_ATTR, &sk);
-    init_sk_tmp_vectors_ub_ok(N_ATTR, kss, &vj);
+    init_secret_key_K_Lin_ub_od(N_ATTR, &sk);
+    init_sk_tmp_vectors_ub_od(N_ATTR, kss, &vj);
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
@@ -242,7 +247,7 @@ int main(int argc, char **argv) {
             //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
             for (int k = 0; k < (kss); k++) {
                 bn_rand_mod(vj.rj[it->leaf_index - 1].vec_rj[k], order);
-                g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_two[k], vj.rj[it->leaf_index - 1].vec_rj[k]);
+                g2_mul_gen(sk.sk13[it->leaf_index - 1].sk_two[k], vj.rj[it->leaf_index - 1].vec_rj[k]);
             }
 
             jW1 = matrix_mul_scalar(output3, msk.W1_matrix, it->leaf_index - 1, two_k, kss, order);
@@ -253,7 +258,7 @@ int main(int argc, char **argv) {
             v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it->leaf_index - 1].vec_j, Wr, two_k, two_k, order);
 
             for (int s = 0; s < (two_k); ++s) {
-                g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_three[s], W0_w1_rj[s]);
+                g2_mul_gen(sk.sk13[it->leaf_index - 1].sk_three[s], W0_w1_rj[s]);
                 g1_mul_gen(sk.sk13[it->leaf_index - 1].sk_one[s], v_plus_w[s]);
             }
         }
@@ -266,10 +271,10 @@ int main(int argc, char **argv) {
     /* Encryption */
     //float progress3 = 0.0;
     //Initialize ciphertext struct
-    struct ciphertext_K_Lin_ub_ok CT_A;
-    struct tmp_si_ub_ok si;
-    init_ciphertext_K_Lin_ub_ok(N_ATTR, kss, &CT_A);
-    init_tmp_si_ub_ok(N_ATTR, kss, &si);
+    struct ciphertext_K_Lin_ub_od CT_A;
+    struct tmp_si_ub_od si;
+    init_ciphertext_K_Lin_ub_od(N_ATTR, kss, &CT_A);
+    init_tmp_si_ub_od(N_ATTR, kss, &si);
     bn_t rnd_s[kss];
 
     for (int qo = 0; qo < NTESTS; qo++) {
@@ -299,7 +304,7 @@ int main(int argc, char **argv) {
         //set ct_1
         g2_t *ct_1_g2;
         g2_t output_g2[two_k];
-        ct_1_g2 = vector_trans_mul_matrix_g2_pre(output_g2, rnd_s, t_pre_A, kss, two_k, kss);
+        ct_1_g2 = vector_trans_mul_matrix_g2_pre(output_g2, rnd_s, t_pre_A_g2, kss, two_k, kss);
 
         for (int t = 0; t < (two_k); ++t) {
             g2_copy(CT_A.C_1[t], ct_1_g2[t]);
@@ -311,43 +316,43 @@ int main(int argc, char **argv) {
             }
 
             //set ct_3
-            g2_t *ct_3;
-            g2_t output_ct_3[two_k];
+            g1_t *ct_3;
+            g1_t output_ct_3[two_k];
 
             //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-            ct_3 = vector_trans_mul_matrix_g2_pre(output_ct_3, si.si[z].si_vec, t_pre_A, kss, two_k, kss);
+            ct_3 = vector_trans_mul_matrix_g1_pre(output_ct_3, si.si[z].si_vec, t_pre_A_g1, kss, two_k, kss);
 
-            g2_t *sTAW;
-            g2_t output[kss];
-            sTAW = vector_trans_mul_matrix_g2_pre(output, rnd_s, t_pre_AW, kss, kss, kss);
+            g1_t *sTAW;
+            g1_t output[kss];
+            sTAW = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW, kss, kss, kss);
 
-            g2_t *i_A1_W1;
-            g2_t *W0_i_A1_W1;
-            g2_t *res_sT_W0;
-            g2_t *res_Add_val;
-            g2_t output_i_A1_W1[kss * kss];
-            g2_t output_W0_i_A1_W1[kss * kss];
-            g2_t output_res_sT_W0[kss];
-            g2_t output_res_Add_val[kss];
+            g1_t *i_A1_W1;
+            g1_t *W0_i_A1_W1;
+            g1_t *res_sT_W0;
+            g1_t *res_Add_val;
+            g1_t output_i_A1_W1[kss * kss];
+            g1_t output_W0_i_A1_W1[kss * kss];
+            g1_t output_res_sT_W0[kss];
+            g1_t output_res_Add_val[kss];
 
-            i_A1_W1 = matrix_mul_scalar_g2_pre(output_i_A1_W1, t_pre_AW1, (z), kss, kss);
-            W0_i_A1_W1 = matrix_add_matrix_g2(output_W0_i_A1_W1, mpk.AW0_mat, i_A1_W1, kss, kss, kss, kss);
+            i_A1_W1 = matrix_mul_scalar_g1_pre(output_i_A1_W1, t_pre_AW1, (z), kss, kss);
+            W0_i_A1_W1 = matrix_add_matrix_g1(output_W0_i_A1_W1, mpk.AW0_mat, i_A1_W1, kss, kss, kss, kss);
 
             for (int i = 0; i < kss * kss; ++i) {
                 for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
-                    init_null_new_g2_t_var(t_pre_C2[i][j]);
+                    init_null_new_g1_t_var(t_pre_C2[i][j]);
                 }
-                g2_mul_pre(t_pre_C2[i], W0_i_A1_W1[i]);
+                g1_mul_pre(t_pre_C2[i], W0_i_A1_W1[i]);
             }
 
-            res_sT_W0 = vector_trans_mul_matrix_g2_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
-            res_Add_val = vector_add_vector_g2(output_res_Add_val, sTAW, res_sT_W0, kss, kss);
+            res_sT_W0 = vector_trans_mul_matrix_g1_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
+            res_Add_val = vector_add_vector_g1(output_res_Add_val, sTAW, res_sT_W0, kss, kss);
 
             for (int p = 0; p < two_k; ++p) {
                 if (p < kss) {
-                    g2_copy(CT_A.C_23[z].c_2_vec[p], res_Add_val[p]);
+                    g1_copy(CT_A.C_23[z].c_2_vec[p], res_Add_val[p]);
                 }
-                g2_copy(CT_A.C_23[z].c_3_vec[p], ct_3[p]);
+                g1_copy(CT_A.C_23[z].c_3_vec[p], ct_3[p]);
             }
         }
         //progress3 = ((float) (qo+1) / NTESTS);
@@ -412,20 +417,20 @@ int main(int argc, char **argv) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
                     for (int im = 0; im < two_k; ++im) {
                         if (im < kss) {
-                            g1_mul(full_pairings_g1[im + c], sk.sk13[it5->leaf_index - 1].sk_two[im],pack_coef[it5->leaf_index - 1]);
-                            g2_copy(full_pairings_g2[im + c], CT_A.C_23[it5->leaf_index - 1].c_2_vec[im]);
+                            g1_mul(full_pairings_g1[im + c], CT_A.C_23[it5->leaf_index - 1].c_2_vec[im],pack_coef[it5->leaf_index - 1]);
+                            g2_copy(full_pairings_g2[im + c], sk.sk13[it5->leaf_index - 1].sk_two[im]);
                             a++;
                         }
                         //TODO could use pack_coef_neg instead. Faster than g1_neg???
-                        g1_mul(full_pairings_g1[im + c + kss], sk.sk13[it5->leaf_index - 1].sk_three[im],pack_coef[it5->leaf_index - 1]);
+                        g1_mul(full_pairings_g1[im + c + kss], CT_A.C_23[it5->leaf_index - 1].c_3_vec[im],pack_coef[it5->leaf_index - 1]);
                         g1_neg(full_pairings_g1[im + c + kss], full_pairings_g1[im + c + kss]);
-                        g2_copy(full_pairings_g2[im + c + kss], CT_A.C_23[it5->leaf_index - 1].c_3_vec[im]);
+                        g2_copy(full_pairings_g2[im + c + kss], sk.sk13[it5->leaf_index - 1].sk_three[im]);
                         b++;
                     }
-                    c = b + a;
+                    c = a + b;
                 }
                 g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[po]);
-                //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[po]);
+                //g1_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[po]);
             }
             d = c + po;
             g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
@@ -437,7 +442,7 @@ int main(int argc, char **argv) {
         }
 
         //TODO could refactor so do only one pp_map_sim over 2*two_k
-        pp_map_sim_oatep_k12(map_tmp_1, full_pairings_g1,  full_pairings_g2, ((kss + two_k) * N_ATTR) + two_k);
+        pp_map_sim_oatep_k12(map_tmp_1, full_pairings_g1, full_pairings_g2, ((kss + two_k) * N_ATTR) + two_k);
         //pp_map_sim_oatep_k12(map_tmp_2, CT_A.C_1, K4_prod, two_k);
 
         //TODO multiply cases where X_rho(j)=1 and rho(j)=0 "Multiply map_tmp_2 with tmp_res
@@ -461,7 +466,6 @@ int main(int argc, char **argv) {
     std::cout << "\n" << std::endl;
     return 0;
 }
-
 
 
 

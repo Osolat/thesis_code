@@ -1,13 +1,13 @@
 //
-// Created by jonas on 3/31/22.
+// Created by jonas on 3/29/22.
 //
 
-#include "lib/k_lin/k_lin_util.h"
+#include "../lib/k_lin/k_lin_util.h"
 
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 
 long long cpucycles(void) {
@@ -80,7 +80,7 @@ unsigned long long t[NTESTS];
 unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
-    std::cout << "Benchmarking KP-ABE from K-Lin_GAP_OD on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
+    std::cout << "Benchmarking KP-ABE from K-Lin_GAP on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
 
     if (argc == 1) {
         printf("Need to give argument\n");
@@ -88,7 +88,6 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
-
     srand(time(NULL));
     uint32_t N_ATTR = test_attr;
 
@@ -98,11 +97,11 @@ int main(int argc, char **argv) {
         bn_set_dig(attributes[i], i + 1);
     }
 
-    struct master_key_k_lin_od msk;
-    struct public_key_k_lin_od mpk;
+    struct master_key_k_lin msk;
+    struct public_key_k_lin mpk;
 
-    init_master_key_k_lin_od(N_ATTR, kss, &msk);
-    init_public_key_k_lin_od(N_ATTR, kss, &mpk);
+    init_master_key_k_lin(N_ATTR, kss, &msk);
+    init_public_key_k_lin(N_ATTR, kss, &mpk);
 
     core_init();
     bn_t order;
@@ -111,8 +110,8 @@ int main(int argc, char **argv) {
     g1_get_ord(order);
 
     /* Generate pre-computation tables for g, h */
-    g2_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
-    g1_t t_pre_AW[N_ATTR + 1][kss * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_A[(kss + 1) * kss][RLC_EP_TABLE_MAX];
+    g1_t t_pre_AW[N_ATTR+1][kss * kss][RLC_EP_TABLE_MAX];
     g1_t t_pre_g[RLC_EP_TABLE_MAX];
     g2_t t_pre_h[RLC_EP_TABLE_MAX];
 
@@ -127,13 +126,12 @@ int main(int argc, char **argv) {
     init_null_new_g2_t_var(group2);
     g1_get_gen(group1);
     g2_get_gen(group2);
-    //printf("here\n");
+
     /* Setup */
     //float progress = 0.0;
     for (int jo = 0; jo < 1; jo++) {
         //progressBar(100, progress);
         //t[jo] = cpucycles();
-
 
         g1_mul_pre(t_pre_g, group1);
         g2_mul_pre(t_pre_h, group2);
@@ -147,12 +145,12 @@ int main(int argc, char **argv) {
             //Initializes the bn_t entries of the A-matrix as just random bn_t value modulo the order.
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
-            g2_mul_fix(mpk.a_mat[d], t_pre_h, A_tmp[d]);
-
+            g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
-                init_null_new_g2_t_var(t_pre_A[d][j]);
+                init_null_new_g1_t_var(t_pre_A[d][j]);
             }
-            g2_mul_pre(t_pre_A[d], mpk.a_mat[d]);
+            g1_mul_pre(t_pre_A[d], mpk.a_mat[d]);
+
         }
 
         bn_t *Av;
@@ -191,7 +189,6 @@ int main(int argc, char **argv) {
         }
         //progress = ((float) (jo+1) / NTESTS);
     }
-    //std::cout<<"After\n"<<std::endl;
     //test_stuff(resultArray, 0, t, NTESTS);
 
     //printf("[");
@@ -200,14 +197,14 @@ int main(int argc, char **argv) {
     /* Key Generation */
     //float progress2 = 0.0;
 
-    struct secret_key_K_Lin_od sk;
-    struct sk_tmp_vj_od vj;
+    struct secret_key_K_Lin sk;
+    struct sk_tmp_vj vj;
 
     struct node tree_root;
     std::vector <policy_coefficient> res;
 
-    init_secret_key_K_Lin_od(N_ATTR, &sk);
-    init_sk_tmp_vj_od(N_ATTR, kss, &vj);
+    init_secret_key_K_Lin(N_ATTR, &sk);
+    init_sk_tmp_vj(N_ATTR, kss, &vj);
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
     for (int no = 0; no < NTESTS; no++) {
@@ -229,7 +226,6 @@ int main(int argc, char **argv) {
         bn_t *v_plus_w;
         bn_t output1_v_plus_w[kss + 1];
         for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
-            //Create and set r_j which is a vector of size k of random elements g2 elements, and sets sk_2j = r_j
             for (int k = 0; k < (kss); k++) {
                 bn_rand_mod(vj.rj[it3->leaf_index - 1].vec_rj[k], order);
                 g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_two[k], t_pre_h, vj.rj[it3->leaf_index - 1].vec_rj[k]);
@@ -238,7 +234,7 @@ int main(int argc, char **argv) {
             v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it3->leaf_index - 1].vec_j, Wr, (kss + 1), (kss + 1), order);
 
             for (int u = 0; u < (kss + 1); ++u) {
-                g1_mul_fix(sk.sk[it3->leaf_index - 1].sk_one[u], t_pre_g, v_plus_w[u]);
+                g2_mul_fix(sk.sk[it3->leaf_index - 1].sk_one[u], t_pre_h, v_plus_w[u]);
             }
         }
         //progress2 = ((float) (no+1) / NTESTS);
@@ -250,16 +246,15 @@ int main(int argc, char **argv) {
     /* Encryption */
     //Initialize ciphertext struct
     //float progress3 = 0.0;
-    struct ciphertext_K_Lin_od CT_A;
-    init_ciphertext_K_Lin_od(N_ATTR, kss, &CT_A);
+    struct ciphertext_K_Lin CT_A;
+    init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
     for (int qo = 0; qo < 1; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
-        gt_t gt_mul_test;
-        gt_t gt_st_test;
+        gt_t gt_mul_test; gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -279,11 +274,10 @@ int main(int argc, char **argv) {
         gt_mul(CT_A.C_3_one_val, gt_st_test, CT_A.M);
 
         //set ct_1
-        g2_t *ct_1;
-        g2_t output[kss + 1];
+        g1_t *ct_1;
+        g1_t output[kss + 1];
+        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
 
-        //Calculate sT*A using vector-matrix multiplication for a transposed vector.
-        ct_1 = vector_trans_mul_matrix_g2_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
@@ -298,7 +292,7 @@ int main(int argc, char **argv) {
                 if (v < kss){
                     g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
                 }
-                g2_copy(CT_A.C_1[v], ct_1[v]);
+                g1_copy(CT_A.C_1[v], ct_1[v]);
             }
         }
         //progress3 = ((float) (qo+1) / NTESTS);
@@ -312,18 +306,18 @@ int main(int argc, char **argv) {
     bn_t pack_coef[N_ATTR];
     g1_t g1_list_lol[(N_ATTR * kss) + (kss + 1)];
     g2_t g2_list_lol[(N_ATTR * kss) + (kss + 1)];
-    g1_t K1_prod[kss + 1];
-    g1_t sk1_tmp[N_ATTR];
+    g2_t K1_prod[kss + 1];
+    g2_t sk1_tmp[N_ATTR];
     gt_t test_res;
 
     for (int hg = 0; hg < kss + 1; ++hg) {
-        init_null_new_g1_t_var(K1_prod[hg]);
-        init_null_new_g1_t_var(sk1_tmp[hg]);
+        init_null_new_g2_t_var(K1_prod[hg]);
+        init_null_new_g2_t_var(sk1_tmp[hg]);
+        g2_set_infty(K1_prod[hg]);
     }
-    init_null_new_gt_t_var(test_res);
 
+    init_null_new_gt_t_var(test_res);
     gt_t map_sim_test_1;
-    init_null_new_gt_t_var(map_sim_test_1);
 
     for (int go = 0; go < 1; go++) {
         //progressBar(100, progress4);
@@ -352,12 +346,12 @@ int main(int argc, char **argv) {
                         lel++;
                     }
                 }
-                g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
+                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
             }
             kul = lel + po;
-            g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(g1_list_lol[kul], K1_prod[po]);
-            g2_copy(g2_list_lol[kul], CT_A.C_1[po]);
+            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(g1_list_lol[kul], CT_A.C_1[po]);
+            g2_copy(g2_list_lol[kul], K1_prod[po]);
         }
 
         pp_map_sim_oatep_k12(map_sim_test_1, g1_list_lol, g2_list_lol, (N_ATTR*kss)+(kss + 1));
@@ -370,11 +364,9 @@ int main(int argc, char **argv) {
     }
 
     //test_stuff(resultArray, 3, t, NTESTS);
-
     print_results("Results decryption():           ", t, NTESTS);
     printf("]\n");
-
-    std::cout << "\n" << std::endl;
+    std::cout<<"\n"<<std::endl;
     return 0;
 }
 
