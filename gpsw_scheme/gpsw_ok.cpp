@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <string>
 
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 long long cpucycles(void) {
     unsigned long long result;

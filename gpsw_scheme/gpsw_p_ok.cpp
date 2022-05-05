@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <string>
 
-#include "bench_defs.h"
+#include "../bench_defs.h"
 
 long long cpucycles(void) {
     unsigned long long result;
@@ -75,20 +75,33 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
-    std::cout << "gpsw_a with " << N_ATTR << std::endl;
+    std::cout << "gpsw_p_ok with " << N_ATTR << std::endl;
 
     /* Setup */
 
     /*Generator of G1*/
+    /*Cyclical group so all elements are generators*/
     g1_t g;
     g1_null(g);
     g1_new(g);
-    g1_get_gen(g);
+    g1_rand(g);
 
     g2_t h;
     g2_null(h);
     g2_new(h);
-    g2_get_gen(h);
+    g2_rand(h);
+
+    g1_t pre_g[RLC_EP_TABLE_MAX];
+    g2_t pre_h[RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < RLC_EP_TABLE_MAX; i++) {
+        /* code */
+        g1_null(pre_g[i]);
+        g1_new(pre_g[i]);
+        g2_null(pre_h[i]);
+        g2_new(pre_h[i]);
+    }
+    g1_mul_pre(pre_g, g);
+    g2_mul_pre(pre_h, h);
 
     /*For each attribute, t_i random*/
     for (int i = 0; i < N_ATTR; i++) {
@@ -107,7 +120,18 @@ int main(int argc, char **argv) {
     for (int i = 0; i < N_ATTR; i++) {
         g2_null(mpk.T_values[i]);
         g2_new(mpk.T_values[i]);
-        g2_mul_gen(mpk.T_values[i], msk.t_values[i]);
+        g2_mul_fix(mpk.T_values[i], pre_h, msk.t_values[i]);
+    }
+
+    g2_t pre_T[N_ATTR][RLC_EP_TABLE_MAX];
+    for (size_t i = 0; i < N_ATTR; i++) {
+        /* code */
+        for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
+            /* code */
+            g2_null(pre_T[i][j]);
+            g2_new(pre_T[i][j]);
+        }
+        g2_mul_pre(pre_T[i], mpk.T_values[i]);
     }
 
     /*Y = e(g,g)^y*/
@@ -120,6 +144,7 @@ int main(int argc, char **argv) {
     struct node tree_root;
     std::vector<policy_coefficient> res;
     init_secret_key_kp_gpsw(N_ATTR, &sk);
+
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
@@ -129,7 +154,6 @@ int main(int argc, char **argv) {
         }
         /*Secret sharing of y, according to policy tree*/
 
-        /* code */
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 
@@ -141,7 +165,7 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_mod_inv(temp, msk.t_values[it->leaf_index - 1], order);
             bn_mul(temp, temp, it->share);
-            g1_mul_gen(sk.D_values[it->leaf_index - 1], temp);
+            g1_mul_fix(sk.D_values[it->leaf_index - 1], pre_g, temp);
         }
     }
     printf("[");
@@ -170,7 +194,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < test_attr; i++) {
             g2_null(E.E_values[i]);
             g2_new(E.E_values[i]);
-            g2_mul(E.E_values[i], mpk.T_values[i], s);
+            g2_mul_fix(E.E_values[i], pre_T[i], s);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
@@ -211,24 +235,13 @@ int main(int argc, char **argv) {
         g1_null(g1_temp);
         g1_new(g1_temp);
 
-        g1_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
         for (auto it = res.begin(); it != res.end(); it++) {
-            g1_null(D_vals[it->leaf_index - 1]);
-            g1_new(D_vals[it->leaf_index - 1]);
-            g2_null(E_vals[it->leaf_index - 1]);
-            g2_new(E_vals[it->leaf_index - 1]);
-            g1_mul(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], it->coeff);
-            g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-        }
-
-        /*for (auto it = res.begin(); it != res.end(); it++) {
-            //g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
+            // g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
             pc_map(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
             gt_exp(mapping, mapping, it->coeff);
             gt_mul(F_root, F_root, mapping);
-        }*/
-        pc_map_sim(F_root, D_vals, E_vals, res.size());
+        }
+        // pc_map_sim(F_root, D_vals, E_vals, res.size());
 
         gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);

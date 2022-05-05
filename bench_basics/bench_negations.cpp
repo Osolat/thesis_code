@@ -91,6 +91,14 @@ int main(int argc, char **argv) {
     gt_new(temp);
     gt_null(temp);
 
+    gt_t temp1;
+    gt_new(temp1);
+    gt_null(temp1);
+
+    gt_t temp2;
+    gt_new(temp2);
+    gt_null(temp2);
+
     gt_t prod;
     gt_new(prod);
     gt_null(prod);
@@ -121,6 +129,16 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         pc_map_sim(temp, g1_operands, g2_operands, operands);
+        gt_inv(temp, temp);
+    }
+    print_results("Results gen param():           ", t, NTESTS);
+
+    //For comparing doing (two sPP + gt_mul + 1 INV) vs. doing (one sPP + neg) over the same size!
+    for (size_t i = 0; i < NTESTS; i++) {
+        t[i] = cpucycles();
+        pc_map_sim(temp1, g1_operands, g2_operands, operands/2);
+        pc_map_sim(temp2, g1_operands, g2_operands, operands/2);
+        gt_mul(temp, temp1, temp2);
         gt_inv(temp, temp);
     }
     print_results("Results gen param():           ", t, NTESTS);
