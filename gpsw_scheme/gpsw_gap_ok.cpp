@@ -232,8 +232,6 @@ int main(int argc, char **argv) {
 
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        // TODO: Is this legal? fp12_set_dig
-        fp12_set_dig(F_root, 1);
         gt_t mapping;
         gt_null(mapping);
         gt_new(mapping);

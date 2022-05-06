@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin_ok(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < 1; qo++) {
+    for (int qo = 0; qo < NTESTS; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
     gt_t map_sim_test_1;
     init_null_new_gt_t_var(map_sim_test_1);
 
-    for (int go = 0; go < 1; go++) {
+    for (int go = 0; go < NTESTS; go++) {
         //progressBar(100, progress4);
         t[go] = cpucycles();
 

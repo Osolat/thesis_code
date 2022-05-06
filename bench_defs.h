@@ -33,7 +33,7 @@ extern "C" {
 
 /* Number of tests per operation during measurement */
 
-#define NTESTS 3000
+#define NTESTS 10
 #define g1_pre_sim_switchpoint 32
 #define g2_pre_sim_switchpoint 32
 #endif
