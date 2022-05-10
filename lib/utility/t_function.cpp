@@ -83,7 +83,7 @@ void t_function_g2(g2_t* res, bn_t X, g2_t g2, g2_t* t_i_components, size_t n, b
     } */
 }
 
-void t_function_g2_pre(g2_t* res, bn_t X, g2_t* g2, g2_t* t_i_components, size_t n, bn_t order) {
+void t_function_g2_gap(g2_t* res, bn_t X, g2_t* g2, g2_t* t_i_components, size_t n, bn_t order) {
     bn_t lags[n + 1];
 
     for (size_t i = 0; i < n + 1; i++) {

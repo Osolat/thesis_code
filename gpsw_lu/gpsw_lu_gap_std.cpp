@@ -102,18 +102,18 @@ int main(int argc, char **argv) {
         g2_rand(mpk.t_values[i]);
     }
 
-    g2_t pre_g2[RLC_EP_TABLE_MAX];
+    g2_t pre_h1[RLC_EP_TABLE_MAX];
     g1_t pre_g[RLC_EP_TABLE_MAX];
     g1_t pre_g1[RLC_EP_TABLE_MAX];
     for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-        g2_null(pre_g2[j]);
-        g2_new(pre_g2[j]);
+        g2_null(pre_h1[j]);
+        g2_new(pre_h1[j]);
         g1_null(pre_g[j]);
         g1_new(pre_g[j]);
         g1_null(pre_g1[j]);
         g1_new([pre_g1[j]]);
     }
-    g2_mul_pre(pre_g2, mpk.g2);
+    g2_mul_pre(pre_h1, mpk.g2);
     g1_mul_pre(pre_g, g);
     g1_mul_pre(pre_g1, mpk.g1);
 
@@ -141,17 +141,12 @@ int main(int argc, char **argv) {
         res = std::vector<policy_coefficient>();
         share_secret(&tree_root, msk.y, order, res, true);
 
-        /*Accessing q_leaf(0) <= second.element().m_ZP*/
-        /*Dx = g^(q_x(0)/t_x)*/
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_rand_mod(r, order);
             bn_set_dig(x, it->leaf_index);
-            // std::cout << "it -> leaf-index = " << it->leaf_index << std::endl;
-            t_function_g2_pre(&temp, x, pre_g2, mpk.t_values, N_ATTR, order);
-            // std::cout << "BLOKOKOKOKOKOKOKOKOKOKO" << std::endl;
-            // g2_print(temp);
-            //  g2_rand(temp);
+            t_function_g2_gap(&temp, x, pre_h1, mpk.t_values, N_ATTR, order);
             g2_norm(temp, temp);
+
             g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
             g1_mul_fix(sk.R_values[it->leaf_index - 1], pre_g, r);
         }
@@ -210,7 +205,7 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < N_ATTR; i++) {
             bn_set_dig(x, i + 1);
-            t_function_g2_pre(&T, x, pre_g2, mpk.t_values, N_ATTR, order);
+            t_function_g2_gap(&T, x, pre_h1, mpk.t_values, N_ATTR, order);
             g2_norm(T, T);
             g2_mul(E.E_values[i], T, s);
         }
