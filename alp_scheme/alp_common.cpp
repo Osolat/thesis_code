@@ -718,13 +718,24 @@ void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
         g2_mul_fix(D.D2, pp.t_pre_g2, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
-            bn_neg(rho_i, rho[j+1]);
-            bn_mul(rho_i, rho_i, r_i);
-            g2_null(D.K[j]); g2_new(D.K[j]);                
-            //g2_mul(D.K[j], pp.U2[1], rho_i);
-            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
-            //g2_mul(D.K[j], D.K[j], r_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                g2_null(D.K[j]); g2_new(D.K[j]);                
+                g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+            
+                g2_null(D.K[j]); g2_new(D.K[j]);   
+                //g2_mul(D.K[j], pp.U2[1], rho_i);
+                //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+                //g2_mul(D.K[j], D.K[j], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }
@@ -1245,11 +1256,18 @@ void keygen_GAP_ok(struct alp_pp_ok pp, struct alp_sk_ok *sk, struct node *tree_
         g1_mul_fix(D.D2, pp.t_pre_g1, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
-            bn_neg(rho_i, rho[j+1]);
-            g1_null(D.K[j]); g2_new(D.K[j]);                
-            g1_mul(D.K[j], pp.U1[1], rho_i);
-            g1_add(D.K[j], D.K[j], pp.U1[j+2]);
-            g1_mul(D.K[j], D.K[j], r_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_neg(rho_i, rho[j+1]);
+                g1_null(D.K[j]); g2_new(D.K[j]);                
+                g1_mul(D.K[j], pp.U1[1], rho_i);
+                g1_add(D.K[j], D.K[j], pp.U1[j+2]);
+                g1_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+                g1_null(D.K[j]); g2_new(D.K[j]);                
+                g1_mul_sim(D.K[j], pp.U1[1], rho_i, pp.U1[j+2], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }

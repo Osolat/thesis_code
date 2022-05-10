@@ -7,7 +7,7 @@ using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp naive oe, N_attr = %d", N_ATTR);
+    printf("alp general optimisation oe, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -41,15 +41,11 @@ void test(int N_ATTR) {
     pc_get_ord(order);
 
     
-    //cout << "[";
-    //benchmark_g2_mul(N_ATTR, order, t);
-    //cout << "]";
-    //return;
-
+    cout << "[";
     struct alp_pp_oe pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
-    setup_naive_oe(&pp, alpha, order, bound);
+    setup_g_oe(&pp, alpha, order, bound);
     //print_public_params(pp, bound);
 
     //cout << "Key Gen\n";
@@ -65,6 +61,7 @@ void test(int N_ATTR) {
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
 
+
     bn_t attributes[N_ATTR];
     bn_t p_Coeffs[bound];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -72,8 +69,9 @@ void test(int N_ATTR) {
         bn_new(attributes[i]); 
         bn_set_dig(attributes[i], i+1);
     }
-    coeff_array_mod(p_Coeffs, attributes, bound, order);
+    
     struct alp_ciphertext_oe C;
+    coeff_array_mod(p_Coeffs, attributes, bound, order);
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
         encrypt_naive_oe(pp, p_Coeffs, &C);
@@ -88,7 +86,7 @@ void test(int N_ATTR) {
 
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        decrypt_naive_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
+        decrypt_g_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);
@@ -112,5 +110,10 @@ int main (int argc, char **argv) {
         test(2);
     }
     cout << "**********************\n";
+    //uint32_t *attr_int_list = NULL;
+    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
+    //test_abe(2);
+    //test_abe(8);
+    //test_abe(16);
     return 0;
 }
