@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <string>
 #include <cmath>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 #include "alp_common.cpp"
 using namespace std;
 
