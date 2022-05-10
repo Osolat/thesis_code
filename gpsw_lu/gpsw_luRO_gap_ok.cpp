@@ -107,25 +107,25 @@ int main(int argc, char **argv) {
     bn_rand_mod(msk.y, order);
 
     /*Setup PK*/
-    g1_mul_gen(mpk.g1, msk.y);
-    g2_rand(mpk.g2);
-
-    for (size_t i = 0; i < N_ATTR + 1; i++) {
-        g2_rand(mpk.t_values[i]);
-    }
+    g1_rand(mpk.g1);
+    g2_mul_gen(mpk.g2, msk.y);
 
     g2_t pre_g2[RLC_EP_TABLE_MAX];
+    g2_t pre_h[RLC_EP_TABLE_MAX];
     g1_t pre_g[RLC_EP_TABLE_MAX];
     g1_t pre_g1[RLC_EP_TABLE_MAX];
     for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
         g2_null(pre_g2[j]);
         g2_new(pre_g2[j]);
+        g2_null(pre_h[j]);
+        g2_new(pre_h[j]);
         g1_null(pre_g[j]);
         g1_new(pre_g[j]);
         g1_null(pre_g1[j]);
         g1_new([pre_g1[j]]);
     }
     g2_mul_pre(pre_g2, mpk.g2);
+    g2_mul_pre(pre_h, h);
     g1_mul_pre(pre_g, g);
     g1_mul_pre(pre_g1, mpk.g1);
 
@@ -136,9 +136,9 @@ int main(int argc, char **argv) {
     init_secret_key_kp_gpsw_lu_ok(N_ATTR, &sk);
 
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
-    g2_t temp;
-    g2_null(temp);
-    g2_new(temp);
+    g1_t temp;
+    g1_null(temp);
+    g1_new(temp);
 
     bn_t x;
     bn_null(x);
@@ -158,32 +158,32 @@ int main(int argc, char **argv) {
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_rand_mod(r, order);
             unsigned char *attribute_charred = uint32_to_u_char_array(it->leaf_index);
-            g2_map(temp, attribute_charred, 4);
+            g1_map(temp, attribute_charred, 4);
             free(attribute_charred);
-            g2_norm(temp, temp);
-            g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
-            g1_mul_fix(sk.R_values[it->leaf_index - 1], pre_g, r);
+            g1_norm(temp, temp);
+            g1_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
+            g2_mul_fix(sk.R_values[it->leaf_index - 1], pre_h, r);
         }
     }
     printf("[");
     print_results("Results gen param():           ", t, NTESTS);
     /*Setup precomputation tables for sk*/
-    g1_t pre_R_values[N_ATTR][RLC_EP_TABLE_MAX];
+    g2_t pre_R_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            g1_null(pre_R_values[i][j]);
-            g1_new(pre_R_values[i][j]);
+            g2_null(pre_R_values[i][j]);
+            g2_new(pre_R_values[i][j]);
         }
-        g1_mul_pre(pre_R_values[i], sk.R_values[i]);
+        g2_mul_pre(pre_R_values[i], sk.R_values[i]);
     }
 
-    g2_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
+    g1_t pre_D_values[N_ATTR][RLC_EP_TABLE_MAX];
     for (size_t i = 0; i < N_ATTR; i++) {
         for (size_t j = 0; j < RLC_EP_TABLE_MAX; j++) {
-            g2_null(pre_D_values[i][j]);
-            g2_new(pre_D_values[i][j]);
+            g1_null(pre_D_values[i][j]);
+            g1_new(pre_D_values[i][j]);
         }
-        g2_mul_pre(pre_D_values[i], sk.D_values[i]);
+        g1_mul_pre(pre_D_values[i], sk.D_values[i]);
     }
 
     /* Encryption */
@@ -202,9 +202,9 @@ int main(int argc, char **argv) {
     g1_null(g1_prime);
     g1_new(g1_prime);
 
-    g2_t T;
-    g2_null(T);
-    g2_new(T);
+    g1_t T;
+    g1_null(T);
+    g1_new(T);
 
     struct ciphertext_kp_gpsw_lu_ok E;
     init_ciphertext_kp_gpsw_lu_ok(test_attr, &E);
@@ -215,13 +215,13 @@ int main(int argc, char **argv) {
         g1_mul_fix(g1_prime, pre_g1, s);
         pc_map(E.E_prime, g1_prime, mpk.g2);
         gt_mul(E.E_prime, E.E_prime, message);
-        g1_mul_fix(E.E_prime_prime, pre_g, s);
+        g2_mul_fix(E.E_prime_prime, pre_h, s);
 
         for (int i = 0; i < N_ATTR; i++) {
             unsigned char *attribute_charred = uint32_to_u_char_array(i + 1);
-            g2_map(T, attribute_charred, 4);
-            g2_norm(T, T);
-            g2_mul(E.E_values[i], T, s);
+            g1_map(T, attribute_charred, 4);
+            g1_norm(T, T);
+            g1_mul(E.E_values[i], T, s);
             free(attribute_charred);
         }
     }
@@ -257,61 +257,63 @@ int main(int argc, char **argv) {
         gt_t upper_map;
         gt_null(upper_map);
         gt_new(upper_map);
-        g2_t g2_temp;
-        g2_null(g2_temp);
-        g2_new(g2_temp);
+        g1_t g1_temp;
+        g1_null(g1_temp);
+        g1_new(g1_temp);
 
-        g2_t D_vals[res.size()];
-        g2_t E_vals[res.size()+1];
-        g1_t R_vals[res.size()+1];
+        g1_t D_vals[res.size()];
+        g1_t E_vals[res.size()+1];
+        g2_t R_vals[res.size()+1];
 
         bn_t coeffs[res.size()];
 
         if (res.size() > g2_pre_sim_switchpoint) {
             for (auto it = res.begin(); it != res.end(); it++) {
-                g1_null(R_vals[it->leaf_index - 1]);
-                g1_new(R_vals[it->leaf_index - 1]);
-                g1_mul_fix(R_vals[it->leaf_index - 1], pre_R_values[it->leaf_index - 1], it->coeff);
-                g1_neg(R_vals[it->leaf_index - 1],R_vals[it->leaf_index - 1]);
+                g2_null(R_vals[it->leaf_index - 1]);
+                g2_new(R_vals[it->leaf_index - 1]);
 
-                g2_null(E_vals[it->leaf_index - 1]);
-                g2_new(E_vals[it->leaf_index - 1]);
+                g1_null(E_vals[it->leaf_index - 1]);
+                g1_new(E_vals[it->leaf_index - 1]);
 
-                g2_null(D_vals[it->leaf_index - 1]);
-                g2_new(D_vals[it->leaf_index - 1]);
+                g1_null(D_vals[it->leaf_index - 1]);
+                g1_new(D_vals[it->leaf_index - 1]);
+
+                g1_mul(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1], it->coeff);
+                g1_neg(E_vals[it->leaf_index - 1], E_vals[it->leaf_index - 1]);
 
                 bn_null(coeffs[it->leaf_index - 1]);
                 bn_new(coeffs[it->leaf_index - 1]);
                 bn_copy(coeffs[it->leaf_index - 1], it->coeff);
 
-                g2_copy(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1]);
-                g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-
+                g2_copy(R_vals[it->leaf_index - 1], sk.R_values[it->leaf_index - 1]);
+                g1_copy(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1]);
             }
-            g2_mul_sim_lot(g2_temp, D_vals, coeffs, res.size());
-        } else {
-            g2_t mul_temp;
-            g2_null(mul_temp);
-            g2_new(mul_temp);
-            g2_set_infty(g2_temp);
-            for (auto it = res.begin(); it != res.end(); it++) {
-                g1_null(R_vals[it->leaf_index - 1]);
-                g1_new(R_vals[it->leaf_index - 1]);
-                g1_mul_fix(R_vals[it->leaf_index - 1], pre_R_values[it->leaf_index - 1], it->coeff);
-                g1_neg(R_vals[it->leaf_index - 1], R_vals[it->leaf_index - 1]);
 
+            g1_mul_sim_lot(g1_temp, D_vals, coeffs, res.size());
+        } else {
+            g1_t mul_temp;
+            g1_null(mul_temp);
+            g1_new(mul_temp);
+            g1_set_infty(g1_temp);
+            for (auto it = res.begin(); it != res.end(); it++) {
+                g2_null(R_vals[it->leaf_index - 1]);
+                g2_new(R_vals[it->leaf_index - 1]);
+                
                 g2_null(E_vals[it->leaf_index - 1]);
                 g2_new(E_vals[it->leaf_index - 1]);
 
-                g2_mul_fix(mul_temp, pre_D_values[it->leaf_index - 1], it->coeff);
-                g2_add(g2_temp, g2_temp, mul_temp);
-                g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
+                g1_mul(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1], it->coeff);
+                g1_neg(E_vals[it->leaf_index - 1], E_vals[it->leaf_index - 1]);
+
+                g1_mul_fix(mul_temp, pre_D_values[it->leaf_index - 1], it->coeff);
+                g1_add(g1_temp, g1_temp, mul_temp);
+                g2_copy(R_vals[it->leaf_index - 1], sk.R_values[it->leaf_index - 1]);
             }
         }
 
-        g2_copy(E_vals[res.size()], g2_temp);
-        g1_copy(R_vals[res.size()], E.E_prime_prime);
-        pc_map_sim(F_root, R_vals, E_vals, res.size()+1);
+        g1_copy(E_vals[res.size()], g1_temp);
+        g2_copy(R_vals[res.size()], E.E_prime_prime);
+        pc_map_sim(F_root, E_vals, R_vals, res.size()+1);
         gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
