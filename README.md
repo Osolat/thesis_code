@@ -20,7 +20,7 @@ Follow guidelines from Relic, but here's an reiteration of important dependencie
     * ``sudo apt-get install libgmp-dev``       
 
 ## Running
-For large number of attributes the policy tree will need a lot of stack space
+For large number of attributes the policy tree will need a lot of stack space due to space allocation of Relic
 
 ``ulimit -s unlimited && objects/main 10000``
 
