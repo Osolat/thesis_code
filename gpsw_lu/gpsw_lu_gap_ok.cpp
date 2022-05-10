@@ -109,6 +109,9 @@ int main(int argc, char **argv) {
     /*Setup PK*/
     g1_rand(mpk.g1);
     g2_mul_gen(mpk.g2, msk.y);
+     for (size_t i = 0; i < N_ATTR + 1; i++) {
+        g2_rand(mpk.t_values[i]);
+    }
 
     g2_t pre_g2[RLC_EP_TABLE_MAX];
     g2_t pre_h[RLC_EP_TABLE_MAX];
@@ -157,9 +160,8 @@ int main(int argc, char **argv) {
         /*Dx = g^(q_x(0)/t_x)*/
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_rand_mod(r, order);
-            unsigned char *attribute_charred = uint32_to_u_char_array(it->leaf_index);
-            g1_map(temp, attribute_charred, 4);
-            free(attribute_charred);
+            bn_set_dig(x, it->leaf_index);
+            t_function_g1_gap(&temp, x, pre_g1, mpk.t_values, N_ATTR, order);
             g1_norm(temp, temp);
             g1_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g1, it->share, temp, r);
             g2_mul_fix(sk.R_values[it->leaf_index - 1], pre_h, r);
@@ -218,11 +220,10 @@ int main(int argc, char **argv) {
         g2_mul_fix(E.E_prime_prime, pre_h, s);
 
         for (int i = 0; i < N_ATTR; i++) {
-            unsigned char *attribute_charred = uint32_to_u_char_array(i + 1);
-            g1_map(T, attribute_charred, 4);
-            g1_norm(T, T);
+            bn_set_dig(x, i + 1);
+            t_function_g1_gap(&T, x, pre_g1, mpk.t_values, N_ATTR, order);
+            g2_norm(T, T);
             g1_mul(E.E_values[i], T, s);
-            free(attribute_charred);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);

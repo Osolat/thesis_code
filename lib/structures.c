@@ -127,13 +127,13 @@ int init_public_key_kp_gpsw_lu_std(const uint32_t n_attr, struct public_key_kp_g
 }
 
 int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gpsw_lu_ok *p) {
-    p->t_values = (g2_t *)malloc((n_attr + 1) * sizeof(g2_t));
+    p->t_values = (g1_t *)malloc((n_attr + 1) * sizeof(g1_t));
     if (p->t_values == NULL) {
         return EXIT_FAILURE;
     } else {
         for (size_t i = 0; i < n_attr + 1; i++) {
-            g2_new(p->t_values[i]);
-            g2_null(p->t_values[i]);
+            g1_new(p->t_values[i]);
+            g1_null(p->t_values[i]);
         }
     }
     g1_new(p->g1);

@@ -83,6 +83,10 @@ struct master_key_kp_gpsw_lu_ok {
     bn_t y;
 };
 
+struct master_key_kp_gpsw_lu_oe {
+    bn_t y;
+};
+
 struct public_key_kp_gpsw_lu_std {
     g1_t g1;
     g2_t g2;
@@ -95,6 +99,13 @@ struct public_key_kp_gpsw_lu_ok {
     g2_t g2;
     // TODO: Most likely don't need t_values if using T as a hashing function -> G_2
     g2_t *t_values;
+};
+
+struct public_key_kp_gpsw_lu_ok {
+    g1_t g1;
+    g2_t g2;
+    // TODO: Most likely don't need t_values if using T as a hashing function -> G_2
+    g1_t *t_values;
 };
 
 struct secret_key_kp_gpsw_lu_std {

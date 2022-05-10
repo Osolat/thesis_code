@@ -105,3 +105,26 @@ void t_function_g2_gap(g2_t* res, bn_t X, g2_t* g2, g2_t* t_i_components, size_t
 
     g2_add(*res, temp, *res);
 }
+
+void t_function_g1_gap(g1_t* res, bn_t X, g1_t* g2, g1_t* t_i_components, size_t n, bn_t order) {
+    bn_t lags[n + 1];
+
+    for (size_t i = 0; i < n + 1; i++) {
+        bn_null(lags[i]);
+        bn_new(lags[i]);
+        lagrange_coeff(lags, i + 1, n + 1, X, order);
+    }
+    g1_mul_sim_lot(*res, t_i_components, lags, n + 1);
+    bn_t xn;
+    bn_null(xn);
+    bn_new(xn);
+    g1_t temp;
+    g1_null(temp);
+    g1_new(temp);
+
+    bn_set_dig(xn, n);
+    bn_mxp(xn, X, xn, order);
+    g1_mul_fix(temp, g2, xn);
+
+    g1_add(*res, temp, *res);
+}
