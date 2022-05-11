@@ -284,9 +284,9 @@ int main(int argc, char **argv) {
         g2_null(temp_g2);
         g2_new(temp_g2);
         
-        g2_t temp_g1;
-        g2_null(temp_g1);
-        g2_new(temp_g1);
+        g1_t temp_g1;
+        g1_null(temp_g1);
+        g1_new(temp_g1);
 
         for (auto it = res.begin(); it != res.end(); it++) {
 
@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
             
             pc_map(lower_map, temp_g1, E.E_values[it ->leaf_index -1]);
             
-            gt_mul(mul_temp, lower_map, lower_map);
+            gt_mul(mul_temp, mul_temp, lower_map);
         }
         pc_map(upper_map, E.E_prime_prime, D_running);
 
