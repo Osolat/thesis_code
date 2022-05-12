@@ -73,11 +73,11 @@ int main(int argc, char **argv) {
 
     uint32_t N_ATTR = test_attr;
 
-    struct master_key_kp_gpsw_lu_ok msk;
-    struct public_key_kp_gpsw_lu_ok mpk;
+    struct master_key_kp_gpsw_lu_std msk;
+    struct public_key_kp_gpsw_lu_std mpk;
 
-    init_master_key_kp_gpsw_lu_ok(N_ATTR, &msk);
-    init_public_key_kp_gpsw_lu_ok(N_ATTR, &mpk);
+    init_master_key_kp_gpsw_lu_std(N_ATTR, &msk);
+    init_public_key_kp_gpsw_lu_std(N_ATTR, &mpk);
 
     core_init();
 
@@ -130,10 +130,10 @@ int main(int argc, char **argv) {
     g1_mul_pre(pre_g1, mpk.g1);
 
     /*KeyGeneration*/
-    struct secret_key_kp_gpsw_lu_ok sk;
+    struct secret_key_kp_gpsw_lu_std sk;
     struct node tree_root;
     std::vector<policy_coefficient> res;
-    init_secret_key_kp_gpsw_lu_ok(N_ATTR, &sk);
+    init_secret_key_kp_gpsw_lu_std(N_ATTR, &sk);
 
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     g2_t temp;
@@ -206,8 +206,8 @@ int main(int argc, char **argv) {
     g2_null(T);
     g2_new(T);
 
-    struct ciphertext_kp_gpsw_lu_ok E;
-    init_ciphertext_kp_gpsw_lu_ok(test_attr, &E);
+    struct ciphertext_kp_gpsw_lu_std E;
+    init_ciphertext_kp_gpsw_lu_std(test_attr, &E);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();

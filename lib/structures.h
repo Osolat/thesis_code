@@ -75,32 +75,65 @@ int init_secret_key_kp_gpsw_oe(const uint32_t n_attr, struct secret_key_kp_gpsw_
 int init_ciphertext_kp_gpsw(const uint32_t n_attr, struct ciphertext_kp_gpsw *E);
 int init_ciphertext_kp_gpsw_oe(const uint32_t n_attr, struct ciphertext_kp_gpsw_oe *E);
 
+struct master_key_kp_gpsw_lu_std {
+    bn_t y;
+};
+
 struct master_key_kp_gpsw_lu_ok {
     bn_t y;
 };
 
-struct public_key_kp_gpsw_lu_ok {
+struct master_key_kp_gpsw_lu_oe {
+    bn_t y;
+};
+
+struct public_key_kp_gpsw_lu_std {
     g1_t g1;
     g2_t g2;
     // TODO: Most likely don't need t_values if using T as a hashing function -> G_2
     g2_t *t_values;
 };
 
-struct secret_key_kp_gpsw_lu_ok {
+struct public_key_kp_gpsw_lu_ok {
+    g1_t g1;
+    g2_t g2;
+    // TODO: Most likely don't need t_values if using T as a hashing function -> G_2
+    g1_t *t_values;
+};
+
+struct secret_key_kp_gpsw_lu_std {
     g2_t *D_values;
     g1_t *R_values;
 };
 
-struct ciphertext_kp_gpsw_lu_ok {
+struct secret_key_kp_gpsw_lu_ok {
+    g2_t *R_values;
+    g1_t *D_values;
+};
+
+struct ciphertext_kp_gpsw_lu_std {
     bn_t gamma;
     gt_t E_prime;
     g1_t E_prime_prime;
     g2_t *E_values;
 };
 
+struct ciphertext_kp_gpsw_lu_ok {
+    bn_t gamma;
+    gt_t E_prime;
+    g2_t E_prime_prime;
+    g1_t *E_values;
+};
+
+int init_master_key_kp_gpsw_lu_std(const uint32_t n_attr, struct master_key_kp_gpsw_lu_std *m);
+int init_public_key_kp_gpsw_lu_std(const uint32_t n_attr, struct public_key_kp_gpsw_lu_std *p);
 int init_master_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct master_key_kp_gpsw_lu_ok *m);
 int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gpsw_lu_ok *p);
+
+int init_secret_key_kp_gpsw_lu_std(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_std *sk);
 int init_secret_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_ok *sk);
+
+int init_ciphertext_kp_gpsw_lu_std(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_std *E);
 int init_ciphertext_kp_gpsw_lu_ok(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_ok *E);
 
 

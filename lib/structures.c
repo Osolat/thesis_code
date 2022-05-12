@@ -97,13 +97,19 @@ int init_ciphertext_kp_gpsw_oe(const uint32_t n_attr, struct ciphertext_kp_gpsw_
 }
 
 // GPSW Large Universe
+int init_master_key_kp_gpsw_lu_std(const uint32_t n_attr, struct master_key_kp_gpsw_lu_std *m) {
+    bn_new(m->y);
+    bn_null(m->y);
+    return EXIT_SUCCESS;
+}
+
 int init_master_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct master_key_kp_gpsw_lu_ok *m) {
     bn_new(m->y);
     bn_null(m->y);
     return EXIT_SUCCESS;
 }
 
-int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gpsw_lu_ok *p) {
+int init_public_key_kp_gpsw_lu_std(const uint32_t n_attr, struct public_key_kp_gpsw_lu_std *p) {
     p->t_values = (g2_t *)malloc((n_attr + 1) * sizeof(g2_t));
     if (p->t_values == NULL) {
         return EXIT_FAILURE;
@@ -120,7 +126,24 @@ int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gp
     return EXIT_SUCCESS;
 }
 
-int init_secret_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_ok *sk) {
+int init_public_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct public_key_kp_gpsw_lu_ok *p) {
+    p->t_values = (g1_t *)malloc((n_attr + 1) * sizeof(g1_t));
+    if (p->t_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr + 1; i++) {
+            g1_new(p->t_values[i]);
+            g1_null(p->t_values[i]);
+        }
+    }
+    g1_new(p->g1);
+    g1_null(p->g1);
+    g2_new(p->g2);
+    g2_null(p->g2);
+    return EXIT_SUCCESS;
+}
+
+int init_secret_key_kp_gpsw_lu_std(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_std *sk) {
     sk->D_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (sk->D_values == NULL) {
         return EXIT_FAILURE;
@@ -142,7 +165,29 @@ int init_secret_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct secret_key_kp_gp
     return EXIT_SUCCESS;
 }
 
-int init_ciphertext_kp_gpsw_lu_ok(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_ok *E) {
+int init_secret_key_kp_gpsw_lu_ok(const uint32_t n_attr, struct secret_key_kp_gpsw_lu_ok *sk) {
+    sk->D_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
+    if (sk->D_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g1_new(sk->D_values[i]);
+            g1_null(sk->D_values[i]);
+        }
+    }
+    sk->R_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
+    if (sk->R_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g2_new(sk->R_values[i]);
+            g2_null(sk->R_values[i]);
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+int init_ciphertext_kp_gpsw_lu_std(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_std *E) {
     E->E_values = (g2_t *)malloc(n_attr * sizeof(g2_t));
     if (E->E_values == NULL) {
         return EXIT_FAILURE;
@@ -156,6 +201,23 @@ int init_ciphertext_kp_gpsw_lu_ok(const uint32_t n_attr, struct ciphertext_kp_gp
     gt_null(E->E_prime);
     g1_new(E->E_prime_prime);
     g1_null(E->E_prime_prime);
+    return EXIT_SUCCESS;
+}
+
+int init_ciphertext_kp_gpsw_lu_ok(const uint32_t n_attr, struct ciphertext_kp_gpsw_lu_ok *E) {
+    E->E_values = (g1_t *)malloc(n_attr * sizeof(g1_t));
+    if (E->E_values == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        for (size_t i = 0; i < n_attr; i++) {
+            g1_new(E->E_values[i]);
+            g1_null(E->E_values[i]);
+        }
+    }
+    gt_new(E->E_prime);
+    gt_null(E->E_prime);
+    g2_new(E->E_prime_prime);
+    g2_null(E->E_prime_prime);
     return EXIT_SUCCESS;
 }
 
