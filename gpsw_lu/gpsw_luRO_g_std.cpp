@@ -88,6 +88,9 @@ int main(int argc, char **argv) {
     pc_param_print();
     pc_get_ord(order);
 
+    std::cout << "gpsw_luRO_g_std " << N_ATTR << std::endl;
+
+
     /* Setup */
 
     /*Generator of G1*/
@@ -147,7 +150,7 @@ int main(int argc, char **argv) {
     bn_t r;
     bn_null(r);
     bn_new(r);
-    for (size_t i = 0; i < NTESTS; i++) {
+    for (size_t i = 0; i < 2; i++) {
         t[i] = cpucycles();
         /*Secret sharing of y, according to policy tree*/
         res = std::vector<policy_coefficient>();

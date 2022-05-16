@@ -88,6 +88,9 @@ int main(int argc, char **argv) {
     pc_param_print();
     pc_get_ord(order);
 
+    std::cout << "gpsw_luRO_std " << N_ATTR << std::endl;
+
+
     /* Setup */
 
     /*Generator of G1*/

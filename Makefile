@@ -72,6 +72,7 @@ gpsw:
 	$(CXX) -o objects/gpsw_luRO_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu/gpsw_luRO_std.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/gpsw_luRO_a_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu/gpsw_luRO_a_std.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	$(CXX) -o objects/gpsw_luRO_g_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu/gpsw_luRO_g_std.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/gpsw_luRO_p_std $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) gpsw_lu/gpsw_luRO_p_std.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 
 	rm *.o
 
