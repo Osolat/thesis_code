@@ -7,6 +7,18 @@
 
 #include "../bench_defs.h"
 
+unsigned char *uint32_to_u_char_array(const uint32_t n) {
+    unsigned char *a;
+
+    a = (unsigned char *)malloc(4 * sizeof(unsigned char));
+    a[0] = (n >> 24) & 0xff;
+    a[1] = (n >> 16) & 0xff;
+    a[2] = (n >> 8) & 0xff;
+    a[3] = n & 0xff;
+
+    return a;
+}
+
 long long cpucycles(void) {
     unsigned long long result;
     asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"
@@ -61,11 +73,11 @@ int main(int argc, char **argv) {
 
     uint32_t N_ATTR = test_attr;
 
-    struct master_key_kp_gpsw_lu_ok msk;
-    struct public_key_kp_gpsw_lu_ok mpk;
+    struct master_key_kp_gpsw_lu_std msk;
+    struct public_key_kp_gpsw_lu_std mpk;
 
-    init_master_key_kp_gpsw_lu_ok(N_ATTR, &msk);
-    init_public_key_kp_gpsw_lu_ok(N_ATTR, &mpk);
+    init_master_key_kp_gpsw_lu_std(N_ATTR, &msk);
+    init_public_key_kp_gpsw_lu_std(N_ATTR, &mpk);
 
     core_init();
 
@@ -95,7 +107,7 @@ int main(int argc, char **argv) {
     bn_rand_mod(msk.y, order);
 
     /*Setup PK*/
-    g1_mul_gen(mpk.g1, msk.y);
+   g1_mul_gen(mpk.g1, msk.y);
     g2_rand(mpk.g2);
 
     for (size_t i = 0; i < N_ATTR + 1; i++) {
@@ -118,10 +130,10 @@ int main(int argc, char **argv) {
     g1_mul_pre(pre_g1, mpk.g1);
 
     /*KeyGeneration*/
-    struct secret_key_kp_gpsw_lu_ok sk;
+    struct secret_key_kp_gpsw_lu_std sk;
     struct node tree_root;
     std::vector<policy_coefficient> res;
-    init_secret_key_kp_gpsw_lu_ok(N_ATTR, &sk);
+    init_secret_key_kp_gpsw_lu_std(N_ATTR, &sk);
 
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     g2_t temp;
@@ -145,10 +157,13 @@ int main(int argc, char **argv) {
         /*Dx = g^(q_x(0)/t_x)*/
         for (auto it = res.begin(); it != res.end(); it++) {
             bn_rand_mod(r, order);
-            bn_set_dig(x, it->leaf_index);
-            t_function_g2_pre(&temp, x, pre_g2, mpk.t_values, N_ATTR, order);
-            // g2_rand(temp);
-            g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
+            unsigned char *attribute_charred = uint32_to_u_char_array(it->leaf_index);
+            g2_map(temp, attribute_charred, 4);
+            free(attribute_charred);
+            g2_norm(temp, temp);
+            g2_mul(temp, temp, r);
+            g2_mul(sk.D_values[it->leaf_index - 1], mpk.g2, it->share);
+            g2_add(sk.D_values[it->leaf_index - 1], sk.D_values[it->leaf_index - 1], temp);
             g1_mul_fix(sk.R_values[it->leaf_index - 1], pre_g, r);
         }
     }
@@ -193,21 +208,24 @@ int main(int argc, char **argv) {
     g2_null(T);
     g2_new(T);
 
-    struct ciphertext_kp_gpsw_lu_ok E;
-    init_ciphertext_kp_gpsw_lu_ok(test_attr, &E);
+    struct ciphertext_kp_gpsw_lu_std E;
+    init_ciphertext_kp_gpsw_lu_std(test_attr, &E);
 
     for (size_t i = 0; i < NTESTS; i++) {
         t[i] = cpucycles();
         bn_rand_mod(s, order);
-        g1_mul_fix(g1_prime, pre_g1, s);
-        pc_map(E.E_prime, g1_prime, mpk.g2);
+        //g1_mul_fix(g1_prime, pre_g1, s);
+        pc_map(E.E_prime, mpk.g1, mpk.g2);
+        gt_exp(E.E_prime, E.E_prime, s);
         gt_mul(E.E_prime, E.E_prime, message);
         g1_mul_fix(E.E_prime_prime, pre_g, s);
 
-        for (int i = 0; i < test_attr; i++) {
-            bn_set_dig(x, i + 1);
-            t_function_g2_pre(&T, x, pre_g2, mpk.t_values, N_ATTR, order);
+        for (int i = 0; i < N_ATTR; i++) {
+            unsigned char *attribute_charred = uint32_to_u_char_array(i + 1);
+            g2_map(T, attribute_charred, 4);
+            g2_norm(T, T);
             g2_mul(E.E_values[i], T, s);
+            free(attribute_charred);
         }
     }
     print_results("Results gen param():           ", t, NTESTS);
@@ -238,85 +256,42 @@ int main(int argc, char **argv) {
 
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        // TODO: Is this legal? fp12_set_dig
-        fp12_set_dig(F_root, 1);
 
         gt_t upper_map;
         gt_null(upper_map);
         gt_new(upper_map);
 
-        g2_t g2_temp;
-        g2_null(g2_temp);
-        g2_new(g2_temp);
+        gt_t lower_map;
+        gt_null(lower_map);
+        gt_new(lower_map);
 
-        g2_t D_vals[res.size()];
-        g2_t E_vals[res.size()];
-        g1_t R_vals[res.size()];
+        g1_t g1_temp;
+        g1_null(g1_temp);
+        g1_new(g1_temp);
+            
 
-        bn_t coeffs[res.size()];
+        gt_t mul_temp;
+        gt_null(mul_temp);
+        gt_new(mul_temp);
+        gt_set_unity(mul_temp);
+        for (auto it = res.begin(); it != res.end(); it++) {
+            pc_map(upper_map, E.E_prime_prime, sk.D_values[it ->leaf_index -1]);
+            pc_map(lower_map, sk.R_values[it ->leaf_index -1], E.E_values[it ->leaf_index -1]);
+            gt_inv(lower_map, lower_map);
+            gt_mul(upper_map, upper_map, lower_map);
+            gt_exp(upper_map, upper_map, it -> coeff);
 
-        if (res.size() > g2_pre_sim_switchpoint) {
-            for (auto it = res.begin(); it != res.end(); it++) {
-                g1_null(R_vals[it->leaf_index - 1]);
-                g1_new(R_vals[it->leaf_index - 1]);
-                g1_mul_fix(R_vals[it->leaf_index - 1], pre_R_values[it->leaf_index - 1], it->coeff);
-
-                g2_null(E_vals[it->leaf_index - 1]);
-                g2_new(E_vals[it->leaf_index - 1]);
-
-                g2_null(D_vals[it->leaf_index - 1]);
-                g2_new(D_vals[it->leaf_index - 1]);
-
-                bn_null(coeffs[it->leaf_index - 1]);
-                bn_new(coeffs[it->leaf_index - 1]);
-                bn_copy(coeffs[it->leaf_index - 1], it->coeff);
-
-                g2_copy(D_vals[it->leaf_index - 1], sk.D_values[it->leaf_index - 1]);
-                g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            }
-            g2_mul_sim_lot(g2_temp, D_vals, coeffs, res.size());
-        } else {
-            g2_t mul_temp;
-            g2_null(mul_temp);
-            g2_new(mul_temp);
-            g2_set_infty(g2_temp);
-
-            for (auto it = res.begin(); it != res.end(); it++) {
-                g1_null(R_vals[it->leaf_index - 1]);
-                g1_new(R_vals[it->leaf_index - 1]);
-                g1_mul_fix(R_vals[it->leaf_index - 1], pre_R_values[it->leaf_index - 1], it->coeff);
-
-                g2_null(E_vals[it->leaf_index - 1]);
-                g2_new(E_vals[it->leaf_index - 1]);
-
-                g2_mul_fix(mul_temp, pre_D_values[it->leaf_index - 1], it->coeff);
-                g2_add(g2_temp, g2_temp, mul_temp);
-                g2_copy(E_vals[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            }
+            gt_mul(mul_temp, mul_temp, upper_map);
         }
-        pc_map(upper_map, E.E_prime_prime, g2_temp);
-
-        /*for (auto it = res.begin(); it != res.end(); it++) {
-            //g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            pc_map(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            gt_exp(mapping, mapping, it->coeff);
-            gt_mul(F_root, F_root, mapping);
-        }*/
-        pc_map_sim(F_root, R_vals, E_vals, res.size());
-        gt_inv(F_root, F_root);
-        gt_mul(F_root, upper_map, F_root);
-        gt_inv(F_root, F_root);
-        gt_mul(result, F_root, E.E_prime);
+                
+        gt_inv(mul_temp, mul_temp);
+        gt_mul(result, mul_temp, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
 
-    // free_tree(&tree_root);
-    /* printf("------------------ \n");
-    gt_print(result); */
     if (!gt_cmp(message, result) == RLC_EQ) {
         printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
     }
-
     return 0;
 }

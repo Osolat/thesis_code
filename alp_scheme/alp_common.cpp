@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <string>
 #include <cmath>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 using namespace std;
 
 
@@ -55,6 +55,119 @@ int powint(int base, int exp)
 	}
 
 	return result;
+}
+
+void benchmark_g2_mul(int N_ATTR, bn_t order, unsigned long long *t){
+    bn_t one; bn_null(one); bn_new(one);
+    bn_set_dig(one, 1);
+    g2_t g1;
+    g2_t g2; 
+
+    bn_set_dig(one, 1);
+    for (size_t j = 0; j < NTESTS; j++) {
+        t[j] = cpucycles();
+        g2_null(g1); g2_new(g1); g2_rand(g1);
+        g2_null(g2); g2_new(g2); g2_rand(g2);
+    
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        bn_rand_mod(r, order);
+        for (int j = 0; j> N_ATTR; j++) {
+            bn_t a; bn_null(a); bn_new(a);
+            bn_rand_mod(a, order);
+
+            bn_neg(a, a);
+            g2_mul(g1, g1, a);
+            g2_add(g1, g1, g2);
+            g2_mul(g1, g1, r);
+        }
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        t[j] = cpucycles();
+        g2_null(g1); g2_new(g1); g2_rand(g1);
+        g2_null(g2); g2_new(g2); g2_rand(g2);
+        bn_t r; bn_null(r); bn_new(r); 
+        bn_rand_mod(r, order);
+        for (int j = 0; j> N_ATTR; j++) {
+            bn_t a; bn_null(a); bn_new(a);
+            bn_rand_mod(a, order);
+
+            bn_neg(a, a);
+            bn_mul(a, a, r);
+            g2_mul_sim(g1, g1, a, g2, r);
+        }
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        t[j] = cpucycles();
+        g2_null(g1); g2_new(g1); g2_rand(g1);
+        g2_null(g2); g2_new(g2); g2_rand(g2);
+        bn_t r; bn_null(r); bn_new(r); 
+        bn_rand_mod(r, order);
+        for (int j = 0; j> N_ATTR; j++) {
+            bn_t a; bn_null(a); bn_new(a);
+            bn_rand_mod(a, order);
+
+            bn_neg(a, a);
+            bn_mul(a, a, r);
+            bn_mod(a, a, order);
+            g2_mul_sim(g1, g1, a, g2, r);
+        }
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        t[j] = cpucycles();
+        g2_null(g1); g2_new(g1); g2_rand(g1);
+        g2_null(g2); g2_new(g2); g2_rand(g2);
+    
+
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        bn_rand_mod(r, order);
+        for (int j = 0; j < N_ATTR; j++) {
+            bn_t a; bn_null(a); bn_new(a);
+            bn_rand_mod(a, order);
+ 
+            bn_neg(a, a);
+            g2_mul_sim(g1, g1, a, g2, one);
+            g2_mul(g1, g1, r);    
+        }
+        
+    } print_results("Results KeyGen():          ", t, NTESTS);
+}
+void benchmark_bn_mul(bn_t order, unsigned long long *t) {
+    bn_t a; bn_null(a); bn_new(a);
+    bn_t r; bn_null(r); bn_new(r); 
+    bn_rand_mod(r, order);
+    bn_rand_mod(a, order);
+    for (size_t j = 0; j < NTESTS; j++) { 
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        t[j] = cpucycles();
+        bn_neg(a, a);
+        bn_mul(a, a, r);
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        t[j] = cpucycles();
+        bn_mul(a, a, r);
+        bn_neg(a, a);
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        t[j] = cpucycles();
+        bn_mul(a, a, r);
+        bn_mod(a, a, order);
+        bn_neg(a, a);
+    } print_results("Results KeyGen():          ", t, NTESTS);
+    for (size_t j = 0; j < NTESTS; j++) {
+        bn_t a; bn_null(a); bn_new(a);
+        bn_t r; bn_null(r); bn_new(r); 
+        t[j] = cpucycles();
+        bn_neg(a, a);
+        bn_mul(a, a, r);
+        bn_mod(a, a, order);
+    } print_results("Results KeyGen():          ", t, NTESTS);
 }
 
 //Thanks to Titas Chanda from stack overflow 
@@ -413,11 +526,12 @@ void keygen_naive_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tre
         }
         bn_t r_i; bn_null(r_i); bn_new(r_i);
         bn_rand_mod(r_i, pp.order);
+
         g2_t u_0_tmp; g2_null(u_0_tmp); g2_new(u_0_tmp);
         g2_mul(u_0_tmp, pp.U2[0], r_i);
-
         g2_mul(D.D1, pp.g2, it -> share);  
         g2_add(D.D1, D.D1, u_0_tmp);
+
         g2_mul(D.D2, pp.g2, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
@@ -453,15 +567,36 @@ void keygen_a_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_ro
         bn_rand_mod(r_i, pp.order); 
         g2_mul_sim(D.D1, pp.g2, it -> share, pp.U2[0], r_i);
         g2_mul(D.D2, pp.g2, r_i);
+        /*
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
             bn_neg(rho_i, rho[j+1]);
-            bn_mul(rho_i, rho_i, r_i);
-            g2_null(D.K[j]); g2_new(D.K[j]);   
-            //g2_mul(D.K[j], pp.U2[1], rho_i);
-            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
-            //g2_mul(D.K[j], D.K[j], r_i);
+            g2_null(D.K[j]); g2_new(D.K[j]);                
+            g2_mul(D.K[j], pp.U2[1], rho_i);
+            g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+            g2_mul(D.K[j], D.K[j], r_i);
+        }
+        */
+        for (int j = 0; j < pp.bound-1; j++){
+            bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                g2_null(D.K[j]); g2_new(D.K[j]);                
+                g2_mul(D.K[j], pp.U2[1], rho_i);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+            
+                g2_null(D.K[j]); g2_new(D.K[j]);   
+                //g2_mul(D.K[j], pp.U2[1], rho_i);
+                //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+                //g2_mul(D.K[j], D.K[j], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }
@@ -583,13 +718,24 @@ void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
         g2_mul_fix(D.D2, pp.t_pre_g2, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
-            bn_neg(rho_i, rho[j+1]);
-            bn_mul(rho_i, rho_i, r_i);
-            g2_null(D.K[j]); g2_new(D.K[j]);                
-            //g2_mul(D.K[j], pp.U2[1], rho_i);
-            //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
-            //g2_mul(D.K[j], D.K[j], r_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                g2_null(D.K[j]); g2_new(D.K[j]);                
+                g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+            
+                g2_null(D.K[j]); g2_new(D.K[j]);   
+                //g2_mul(D.K[j], pp.U2[1], rho_i);
+                //g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul_sim(D.K[j], pp.U2[1], rho_i, pp.U2[j+2], r_i);
+                //g2_mul(D.K[j], D.K[j], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }
@@ -1110,11 +1256,18 @@ void keygen_GAP_ok(struct alp_pp_ok pp, struct alp_sk_ok *sk, struct node *tree_
         g1_mul_fix(D.D2, pp.t_pre_g1, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
-            bn_neg(rho_i, rho[j+1]);
-            g1_null(D.K[j]); g2_new(D.K[j]);                
-            g1_mul(D.K[j], pp.U1[1], rho_i);
-            g1_add(D.K[j], D.K[j], pp.U1[j+2]);
-            g1_mul(D.K[j], D.K[j], r_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_neg(rho_i, rho[j+1]);
+                g1_null(D.K[j]); g2_new(D.K[j]);                
+                g1_mul(D.K[j], pp.U1[1], rho_i);
+                g1_add(D.K[j], D.K[j], pp.U1[j+2]);
+                g1_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+                g1_null(D.K[j]); g2_new(D.K[j]);                
+                g1_mul_sim(D.K[j], pp.U1[1], rho_i, pp.U1[j+2], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }

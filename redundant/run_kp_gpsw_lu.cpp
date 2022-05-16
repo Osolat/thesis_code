@@ -93,11 +93,11 @@ int main(int argc, char **argv) {
         d++;
     }
 
-    struct master_key_kp_gpsw_lu_ok msk;
-    struct public_key_kp_gpsw_lu_ok mpk;
+    struct master_key_kp_gpsw_lu_std msk;
+    struct public_key_kp_gpsw_lu_std mpk;
     
-    init_master_key_kp_gpsw_lu_ok(N_ATTR, &msk);
-    init_public_key_kp_gpsw_lu_ok(N_ATTR, &mpk);
+    init_master_key_kp_gpsw_lu_std(N_ATTR, &msk);
+    init_public_key_kp_gpsw_lu_std(N_ATTR, &mpk);
 
     core_init();
 

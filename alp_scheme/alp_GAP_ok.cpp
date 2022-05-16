@@ -1,13 +1,13 @@
 #include <cstdio>
 #include <string>
 #include <cmath>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 #include "alp_common.cpp"
 using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp api oe, N_attr = %d", N_ATTR);
+    printf("alp GAP ok, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -42,22 +42,22 @@ void test(int N_ATTR) {
 
     
     cout << "[";
-    struct alp_pp_oe pp;
+    struct alp_pp_ok pp;
     bn_t alpha; bn_null(alpha); bn_new(alpha);
     bn_rand_mod(alpha, order);
-    setup_naive_oe(&pp, alpha, order, bound);
+    setup_GAP_ok(&pp, alpha, order, bound);
     //print_public_params(pp, bound);
 
     //cout << "Key Gen\n";
-    struct alp_sk_oe sk;
+    struct alp_sk_ok sk;
     struct node tree_root;
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
     lsss_vector = std::vector<policy_coefficient>();
-    init_secret_key_alp_oe(bound, &sk);
+    init_secret_key_alp_ok(bound, &sk);
     bn_t shares[N_ATTR]; bn_t r[N_ATTR];
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        keygen_a_lot_oe(pp, &sk, &tree_root, alpha);
+        keygen_GAP_ok(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
 
@@ -69,12 +69,11 @@ void test(int N_ATTR) {
         bn_new(attributes[i]); 
         bn_set_dig(attributes[i], i+1);
     }
-    
     coeff_array_mod(p_Coeffs, attributes, bound, order);
-    struct alp_ciphertext_oe C;
+    struct alp_ciphertext_ok C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
-        encrypt_api_oe(pp, p_Coeffs, &C);
+        encrypt_GAP_ok(pp, p_Coeffs, &C);
     } print_results("Results Encrypt():          ", t, NTESTS);
 
     try {
@@ -86,7 +85,7 @@ void test(int N_ATTR) {
 
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        decrypt_naive_oe(pp, sk, C, attributes, tree_root, p_Coeffs);
+        decrypt_GAP_ok(pp, sk, C, attributes, tree_root, p_Coeffs);
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);
@@ -110,10 +109,5 @@ int main (int argc, char **argv) {
         test(2);
     }
     cout << "**********************\n";
-    //uint32_t *attr_int_list = NULL;
-    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
-    //test_abe(2);
-    //test_abe(8);
-    //test_abe(16);
     return 0;
 }

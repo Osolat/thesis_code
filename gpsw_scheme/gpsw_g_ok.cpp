@@ -151,12 +151,10 @@ int main(int argc, char **argv) {
     print_results("Results gen param():           ", t, NTESTS);
 
     /* Encryption */
-    // TODO: Fix message construction.
     gt_t message;
     gt_null(message);
     gt_new(message);
     gt_rand(message);
-    // gt_print(message);
 
     bn_t s;
     bn_null(s);
@@ -204,8 +202,6 @@ int main(int argc, char **argv) {
 
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        // TODO: Is this legal? fp12_set_dig
-        fp12_set_dig(F_root, 1);
         gt_t mapping;
         gt_null(mapping);
         gt_new(mapping);

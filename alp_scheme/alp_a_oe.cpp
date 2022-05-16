@@ -1,13 +1,13 @@
 #include <cstdio>
 #include <string>
 #include <cmath>
-#include "bench_defs.h"
+#include "../bench_defs.h"
 #include "alp_common.cpp"
 using namespace std;
 
 void test(int N_ATTR) {
     int bound = N_ATTR+1;
-    printf("alp naive oe, N_attr = %d", N_ATTR);
+    printf("alp api oe, N_attr = %d", N_ATTR);
 
 
     std::string keyInput = "";
@@ -48,6 +48,7 @@ void test(int N_ATTR) {
     setup_naive_oe(&pp, alpha, order, bound);
     //print_public_params(pp, bound);
 
+
     //cout << "Key Gen\n";
     struct alp_sk_oe sk;
     struct node tree_root;
@@ -57,11 +58,9 @@ void test(int N_ATTR) {
     bn_t shares[N_ATTR]; bn_t r[N_ATTR];
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        keygen_naive_oe(pp, &sk, &tree_root, alpha);
+        keygen_a_oe(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
-
-
     bn_t attributes[N_ATTR];
     bn_t p_Coeffs[bound];
     for (size_t i = 0; i < N_ATTR; i++) {
@@ -69,11 +68,12 @@ void test(int N_ATTR) {
         bn_new(attributes[i]); 
         bn_set_dig(attributes[i], i+1);
     }
+    
     coeff_array_mod(p_Coeffs, attributes, bound, order);
     struct alp_ciphertext_oe C;
     for (size_t j = 0; j < NTESTS; j++){
         t[j] = cpucycles();
-        encrypt_naive_oe(pp, p_Coeffs, &C);
+        encrypt_api_oe(pp, p_Coeffs, &C);
     } print_results("Results Encrypt():          ", t, NTESTS);
 
     try {
@@ -89,6 +89,25 @@ void test(int N_ATTR) {
     } print_results("Results Decrypt():         ", t, NTESTS);
     cout << "]\n"; 
     free_tree(&tree_root);
+
+    //bn_t attributes[N_ATTR];
+    //bn_t p_Coeffs[bound];
+    //for (size_t i = 0; i < N_ATTR; i++) {
+        //bn_null(attributes[i]); 
+        //bn_new(attributes[i]); 
+        //bn_set_dig(attributes[i], i+1);
+    //}
+    //for (size_t j = 0; j < NTESTS; j++) {
+        //t[j] = cpucycles();
+        //coeff_array_mod(p_Coeffs, attributes, bound, order); 
+    //} print_results("Results Encrypt():          ", t, NTESTS);
+    //for (size_t j = 0; j < NTESTS; j++) {
+        //t[j] = cpucycles();
+        //bn_lag(p_Coeffs, attributes, order, N_ATTR); 
+    //} print_results("Results Encrypt():          ", t, NTESTS);
+    return;
+
+
 }
 
 
@@ -109,5 +128,10 @@ int main (int argc, char **argv) {
         test(2);
     }
     cout << "**********************\n";
+    //uint32_t *attr_int_list = NULL;
+    //attr_int_list = (uint32_t *) malloc(sizeof(uint32_t) * test_attr);
+    //test_abe(2);
+    //test_abe(8);
+    //test_abe(16);
     return 0;
 }
