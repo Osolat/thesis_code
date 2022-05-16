@@ -148,7 +148,6 @@ int main(int argc, char **argv) {
             bn_set_dig(x, it->leaf_index);
             t_function_g2_gap(&temp, x, pre_h1, mpk.t_values, N_ATTR, order);
             g2_norm(temp, temp);
-
             g2_mul_sim(sk.D_values[it->leaf_index - 1], mpk.g2, it->share, temp, r);
             g1_mul_fix(sk.R_values[it->leaf_index - 1], pre_g, r);
         }
@@ -244,7 +243,6 @@ int main(int argc, char **argv) {
         gt_t upper_map;
         gt_null(upper_map);
         gt_new(upper_map);
-
         g2_t g2_temp;
         g2_null(g2_temp);
         g2_new(g2_temp);
@@ -282,7 +280,6 @@ int main(int argc, char **argv) {
             g2_null(mul_temp);
             g2_new(mul_temp);
             g2_set_infty(g2_temp);
-
             for (auto it = res.begin(); it != res.end(); it++) {
                 g1_null(R_vals[it->leaf_index - 1]);
                 g1_new(R_vals[it->leaf_index - 1]);
@@ -298,30 +295,17 @@ int main(int argc, char **argv) {
             }
         }
         
-        //pc_map(upper_map, E.E_prime_prime, g2_temp);
         g2_copy(E_vals[res.size()], g2_temp);
         g1_copy(R_vals[res.size()], E.E_prime_prime);
-        /*for (auto it = res.begin(); it != res.end(); it++) {
-            //g1_mul(g1_temp, sk.D_values[it->leaf_index - 1], it->coeff);
-            pc_map(mapping, sk.D_values[it->leaf_index - 1], E.E_values[it->leaf_index - 1]);
-            gt_exp(mapping, mapping, it->coeff);
-            gt_mul(F_root, F_root, mapping);
-        }*/
         pc_map_sim(F_root, R_vals, E_vals, res.size()+1);
-        //gt_inv(F_root, F_root);
-        //gt_mul(F_root, upper_map, F_root);
         gt_inv(F_root, F_root);
         gt_mul(result, F_root, E.E_prime);
     }
     print_results("Results gen param():           ", t, NTESTS);
     printf("]\n");
 
-    // free_tree(&tree_root);
-    /* printf("------------------ \n");
-    gt_print(result); */
     if (!gt_cmp(message, result) == RLC_EQ) {
         printf("Result of comparison between Message and F_root: %d\n", gt_cmp(message, result) == RLC_EQ);
     }
-
     return 0;
 }
