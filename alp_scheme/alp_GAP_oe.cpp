@@ -57,7 +57,7 @@ void test(int N_ATTR) {
     bn_t shares[N_ATTR]; bn_t r[N_ATTR];
     for (size_t j = 0; j < NTESTS; j++) {
         t[j] = cpucycles();
-        keygen_GAP_oe(pp, &sk, &tree_root, alpha);
+        keygen_pre_oe(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
     return;
