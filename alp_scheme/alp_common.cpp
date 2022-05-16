@@ -580,14 +580,12 @@ void keygen_a_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_ro
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
             if (pp.bound < exponent_bits_exceed_breakpoint) {
-                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 bn_neg(rho_i, rho[j+1]);
                 g2_null(D.K[j]); g2_new(D.K[j]);                
                 g2_mul(D.K[j], pp.U2[1], rho_i);
                 g2_add(D.K[j], D.K[j], pp.U2[j+2]);
                 g2_mul(D.K[j], D.K[j], r_i);
             } else {
-                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 bn_neg(rho_i, rho[j+1]);
                 bn_mul(rho_i, rho_i, r_i);
             
@@ -678,17 +676,27 @@ void keygen_pre_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
         bn_rand_mod(r_i, pp.order);
         g2_t u_0_tmp; g2_null(u_0_tmp); g2_new(u_0_tmp);
         g2_mul_fix(u_0_tmp, pp.t_pre_u2[0], r_i);
-
         g2_mul_fix(D.D1, pp.t_pre_g2, it -> share);  
         g2_add(D.D1, D.D1, u_0_tmp);
+
         g2_mul_fix(D.D2, pp.t_pre_g2, r_i);
-        for (int j = 0; j < pp.bound-1; j++){
+        for (int j = 0; j < pp.bound-1; j++){ 
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
-            bn_neg(rho_i, rho[j+1]);
-            g2_null(D.K[j]); g2_new(D.K[j]);                
-            g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
-            g2_add(D.K[j], D.K[j], pp.U2[j+2]);
-            g2_mul(D.K[j], D.K[j], r_i);
+            if (pp.bound < exponent_bits_exceed_breakpoint) {
+                bn_neg(rho_i, rho[j+1]);
+                g2_null(D.K[j]); g2_new(D.K[j]);                
+                g2_mul(D.K[j], pp.U2[1], rho_i);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul(D.K[j], D.K[j], r_i);
+            } else {
+                bn_neg(rho_i, rho[j+1]);
+                bn_mul(rho_i, rho_i, r_i);
+            
+                g2_null(D.K[j]); g2_new(D.K[j]);   
+                g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
+                g2_add(D.K[j], D.K[j], pp.U2[j+2]);
+                g2_mul(D.K[j], D.K[j], r_i);
+            }
         }
         sk->D[attr_index] = D; 
     }
@@ -714,19 +722,21 @@ void keygen_GAP_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
         }
         bn_t r_i; bn_null(r_i); bn_new(r_i);
         bn_rand_mod(r_i, pp.order); 
-        g2_mul_sim(D.D1, pp.g2, it -> share, pp.U2[0], r_i);
+        g2_t u_0_tmp; g2_null(u_0_tmp); g2_new(u_0_tmp);
+        g2_mul_fix(u_0_tmp, pp.t_pre_u2[0], r_i);
+        g2_mul_fix(D.D1, pp.t_pre_g2, it -> share);  
+        g2_add(D.D1, D.D1, u_0_tmp);
+
         g2_mul_fix(D.D2, pp.t_pre_g2, r_i);
         for (int j = 0; j < pp.bound-1; j++){
             bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
             if (pp.bound < exponent_bits_exceed_breakpoint) {
-                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 bn_neg(rho_i, rho[j+1]);
                 g2_null(D.K[j]); g2_new(D.K[j]);                
-                g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
+                g2_mul(D.K[j], pp.U2[1], rho_i);
                 g2_add(D.K[j], D.K[j], pp.U2[j+2]);
                 g2_mul(D.K[j], D.K[j], r_i);
             } else {
-                bn_t rho_i; bn_null(rho_i); bn_new(rho_i);
                 bn_neg(rho_i, rho[j+1]);
                 bn_mul(rho_i, rho_i, r_i);
             
