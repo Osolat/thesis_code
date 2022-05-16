@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     pc_param_set_any();
     pc_param_print();
     pc_get_ord(order);
-
+    std::cout << "gpsw_luRO_a_std " << N_ATTR << std::endl;
     /* Setup */
 
     /*Generator of G1*/
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
     struct ciphertext_kp_gpsw_lu_std E;
     init_ciphertext_kp_gpsw_lu_std(test_attr, &E);
 
-    for (size_t i = 0; i < NTESTS; i++) {
+    for (size_t i = 0; i < 2; i++) {
         t[i] = cpucycles();
         bn_rand_mod(s, order);
         //g1_mul_fix(g1_prime, pre_g1, s);
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
     gt_null(result);
     gt_new(result);
 
-    for (size_t i = 0; i < NTESTS; i++) {
+    for (size_t i = 0; i < 2; i++) {
         t[i] = cpucycles();
 
         try {
