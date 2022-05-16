@@ -67,7 +67,7 @@ void test(int N_ATTR) {
         keygen_pre_oe(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
-
+    return;
 
     
     struct alp_ciphertext_oe C;

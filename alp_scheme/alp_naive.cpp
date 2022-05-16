@@ -41,7 +41,7 @@ void test(int N_ATTR) {
     pc_get_ord(order);
 
     
-    //cout << "[";
+    cout << "[";
     //benchmark_g2_mul(N_ATTR, order, t);
     //cout << "]";
     //return;
