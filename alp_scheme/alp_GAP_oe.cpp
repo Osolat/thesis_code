@@ -60,7 +60,7 @@ void test(int N_ATTR) {
         keygen_GAP_oe(pp, &sk, &tree_root, alpha);
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
-    return;
+    
 
     bn_t attributes[N_ATTR];
     bn_t p_Coeffs[bound];
