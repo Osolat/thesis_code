@@ -243,7 +243,7 @@ int init_master_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct mast
 int init_public_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct public_key_k_lin *p) {
     p->N_ATTR = n_attr;
     p->K_SEC = kss;
-    p->mats = (struct k_lin_mat *)malloc((2 * (n_attr + 1)) * sizeof(struct k_lin_mat));
+    p->mats = (struct k_lin_mat *)malloc(( (n_attr + 1)) * sizeof(struct k_lin_mat));
     p->a_mat = (g1_t *)malloc((kss * (kss + 1)) * sizeof(g1_t));
     p->e_mat = (gt_t *)malloc(kss * sizeof(gt_t));
 
@@ -256,7 +256,7 @@ int init_public_key_k_lin(const uint32_t n_attr, const uint32_t kss, struct publ
 
 int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s) {
     s->N_ATTR = n_attr;
-    s->sk = (struct k_lin_secret_key *)malloc(((n_attr + 1) * (kss + 1)) * sizeof(struct k_lin_secret_key));
+    s->sk = (struct k_lin_secret_key *)malloc(((n_attr)) * sizeof(struct k_lin_secret_key));
 
     if (s->sk == NULL) {
         return EXIT_FAILURE;
@@ -268,8 +268,8 @@ int init_secret_key_K_Lin(const uint32_t n_attr, struct secret_key_K_Lin *s) {
 int init_sk_tmp_vj(const uint32_t n_attr, const uint32_t kss, struct sk_tmp_vj *v) {
     v->N_ATTR = n_attr;
     v->K_SEC = kss;
-    v->vj = (struct tmp_vj *)malloc(((n_attr + 1) * (kss + 1)) * sizeof(struct tmp_vj));
-    v->rj = (struct tmp_rj *)malloc(((n_attr + 1) * (kss + 1)) * sizeof(struct tmp_rj));
+    v->vj = (struct tmp_vj *)malloc(((n_attr)) * sizeof(struct tmp_vj));
+    v->rj = (struct tmp_rj *)malloc(((n_attr)) * sizeof(struct tmp_rj));
 
     if (v->vj == NULL || v->rj == NULL) {
         return EXIT_FAILURE;

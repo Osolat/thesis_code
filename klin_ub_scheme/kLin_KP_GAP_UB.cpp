@@ -375,13 +375,13 @@ int main(int argc, char **argv) {
     //g2_t K4_prod[two_k];
 
 
-    for (int hg = 0; hg < two_k; ++hg) {
-        init_null_new_g2_t_var(K1_prod[hg]);
-        //init_null_new_g2_t_var(K4_prod[hg]);
-        init_null_new_g2_t_var(sk1_tmp[hg]);
-        //init_null_new_g2_t_var(sk4_tmp[hg]);
-        g2_set_infty(K1_prod[hg]);
-        //g2_set_infty(K4_prod[hg]);
+    for (int i = 0; i < two_k; ++i) {
+        init_null_new_g2_t_var(K1_prod[i]);
+        //init_null_new_g2_t_var(K4_prod[i]);
+        init_null_new_g2_t_var(sk1_tmp[i]);
+        //init_null_new_g2_t_var(sk4_tmp[i]);
+        g2_set_infty(K1_prod[i]);
+        //g2_set_infty(K4_prod[i]);
     }
 
     for (int go = 0; go < NTESTS; go++) {
@@ -400,44 +400,43 @@ int main(int argc, char **argv) {
             printf("Fail");
         }
 
-        res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
         int a = 0;
         int b = 0;
         int c = 0;
         int d = 0;
-        for (int po = 0; po < two_k; ++po) {
+        for (int i = 0; i < two_k; ++i) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-                if (po == 0) {
+                if (i == 0) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
-                    for (int im = 0; im < two_k; ++im) {
-                        if (im < kss) {
-                            g1_mul(full_pairings_g1[im + c], CT_A.C_23[it5->leaf_index - 1].c_2_vec[im],pack_coef[it5->leaf_index - 1]);
-                            g2_copy(full_pairings_g2[im + c], sk.sk13[it5->leaf_index - 1].sk_two[im]);
+                    for (int z = 0; z < two_k; ++z) {
+                        if (z < kss) {
+                            g1_mul(full_pairings_g1[z + c], CT_A.C_23[it5->leaf_index - 1].c_2_vec[z],it5->coeff);
+                            g2_copy(full_pairings_g2[z + c], sk.sk13[it5->leaf_index - 1].sk_two[z]);
                             a++;
                         }
                         //TODO could use pack_coef_neg instead. Faster than g1_neg???
-                        g1_mul(full_pairings_g1[im + c + kss], CT_A.C_23[it5->leaf_index - 1].c_3_vec[im],pack_coef[it5->leaf_index - 1]);
-                        g1_neg(full_pairings_g1[im + c + kss], full_pairings_g1[im + c + kss]);
-                        g2_copy(full_pairings_g2[im + c + kss], sk.sk13[it5->leaf_index - 1].sk_three[im]);
+                        g1_mul(full_pairings_g1[z + c + kss], CT_A.C_23[it5->leaf_index - 1].c_3_vec[z],it5->coeff);
+                        g1_neg(full_pairings_g1[z + c + kss], full_pairings_g1[z + c + kss]);
+                        g2_copy(full_pairings_g2[z + c + kss], sk.sk13[it5->leaf_index - 1].sk_three[z]);
                         b++;
                     }
                     c = b + a;
                 }
-                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[po]);
-                //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[po]);
+                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[i]);
+                //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[i]);
             }
-            d = c + po;
-            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(full_pairings_g1[d], CT_A.C_1[po]);
-            g2_copy(full_pairings_g2[d], K1_prod[po]);
+            d = c + i;
+            g2_mul_sim_lot(K1_prod[i], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(full_pairings_g1[d], CT_A.C_1[i]);
+            g2_copy(full_pairings_g2[d], K1_prod[i]);
 
             //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-            //g2_mul_sim_lot(K4_prod[po], sk4_tmp, pack_coef_neg, N_ATTR);
+            //g2_mul_sim_lot(K4_prod[i], sk4_tmp, pack_coef_neg, N_ATTR);
         }
 
-        pp_map_sim_oatep_k12(map_tmp_1, full_pairings_g1, full_pairings_g2, ((kss + two_k) * N_ATTR) + two_k);
+        pc_map_sim(map_tmp_1, full_pairings_g1, full_pairings_g2, ((kss + two_k) * N_ATTR) + two_k);
         //pp_map_sim_oatep_k12(map_tmp_2, CT_A.C_1, K4_prod, two_k);
 
         //TODO multiply cases where X_rho(j)=1 and rho(j)=0 "Multiply map_tmp_2 with tmp_res
@@ -447,9 +446,9 @@ int main(int argc, char **argv) {
         init_null_new_gt_t_var(final_final_res);
         gt_mul(final_final_res, map_tmp_1, CT_A.C_4_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(final_final_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(final_final_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(final_final_res, CT_A.M) == RLC_EQ);
+        }
 
         //progress4 = ((float) (go+1) / NTESTS);
     }

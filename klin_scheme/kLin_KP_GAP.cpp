@@ -77,7 +77,7 @@ static void print_result_array(unsigned long long *array) {
 }
 
 unsigned long long t[NTESTS];
-unsigned long long resultArray[4];
+//unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
     std::cout << "Benchmarking KP-ABE from K-Lin_GAP on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
@@ -150,7 +150,6 @@ int main(int argc, char **argv) {
                 init_null_new_g1_t_var(t_pre_A[d][j]);
             }
             g1_mul_pre(t_pre_A[d], mpk.a_mat[d]);
-
         }
 
         bn_t *Av;
@@ -158,16 +157,16 @@ int main(int argc, char **argv) {
         Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
         gt_t map_tmp[kss];
 
-        //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
-        //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
+        for (int i = 0; i < kss; ++i) {
+            pp_map_oatep_k12(map_tmp[i], group1, group2);
+            gt_exp(mpk.e_mat[i], map_tmp[i], Av[i]);
+        }
+
         for (int j = 0; j < (N_ATTR + 1); j++) {
             for (int m = 0; m < ((kss + 1) * kss); m++) {
                 if (j != 0) {
                     //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                     bn_rand_mod(msk.atts[j].w[m], order);
-                } else if (m < kss) {
-                    pp_map_oatep_k12(map_tmp[m], group1, group2);
-                    gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                 } else {
                     //Set all entries in W0 to be zero
                     bn_zero(msk.atts[j].w[m]);
@@ -209,12 +208,10 @@ int main(int argc, char **argv) {
 
     for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
-
         t[no] = cpucycles();
         bn_t *Wr;
         bn_t output1[kss + 1];
 
-        //For all kss+1 secrets in v:
         for (int i = 0; i < (kss + 1); ++i) {
             res = std::vector<policy_coefficient>();
             share_secret(&tree_root, msk.v_share[i], order, res, true);
@@ -250,7 +247,7 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < 1; qo++) {
+    for (int qo = 0; qo < NTESTS; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
@@ -276,17 +273,17 @@ int main(int argc, char **argv) {
         //set ct_1
         g1_t *ct_1;
         g1_t output[kss + 1];
-        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
+        g1_t output1[kss];
 
+        //Calculate sT*A using vector-matrix multiplication for a transposed vector.
+        ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
         //Finishing ct_1 by doing the exponentiation of g.
 
         //set ct_2i
         //For all N_ATTR + 1 calculate sTAW_i and the reason for doing it over N_ATTR+1 opposed to N_ATTR is because W_0 = 0 and is done to support that the lsss map can be rho(j) = 0.
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
-            g1_t output[kss];
-            ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
-
+            ct2_i = vector_trans_mul_matrix_g1_pre(output1, rnd_s, t_pre_AW[a], kss, kss, kss);
             //Finishing c_2i, by doing the exponentiation of g.
             for (int v = 0; v < (kss + 1); ++v) {
                 if (v < kss){
@@ -304,8 +301,8 @@ int main(int argc, char **argv) {
     /* Decryption */
     //float progress4 = 0.0;
     bn_t pack_coef[N_ATTR];
-    g1_t g1_list_lol[(N_ATTR * kss) + (kss + 1)];
-    g2_t g2_list_lol[(N_ATTR * kss) + (kss + 1)];
+    g1_t g1_list[(N_ATTR * kss) + (kss + 1)];
+    g2_t g2_list[(N_ATTR * kss) + (kss + 1)];
     g2_t K1_prod[kss + 1];
     g2_t sk1_tmp[N_ATTR];
     gt_t test_res;
@@ -319,7 +316,7 @@ int main(int argc, char **argv) {
     init_null_new_gt_t_var(test_res);
     gt_t map_sim_test_1;
 
-    for (int go = 0; go < 1; go++) {
+    for (int go = 0; go < NTESTS; go++) {
         //progressBar(100, progress4);
         t[go] = cpucycles();
         for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
@@ -331,35 +328,35 @@ int main(int argc, char **argv) {
         } catch (struct TreeUnsatisfiableException *e) {
             printf("Fail");
         }
-        res = std::vector<policy_coefficient>();
+
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        int lel = 0;
-        int kul = 0;
-        for (int po = 0; po < kss + 1; ++po) {
+        int a = 0;
+        int c = 0;
+        for (int b = 0; b < kss + 1; ++b) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-                if (po == 0) {
+                if (b == 0) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
-                    for (int jk2 = 0; jk2 < kss; ++jk2) {
-                        g1_mul(g1_list_lol[lel], CT_A.C_2[it5->leaf_index].c_2_mat[jk2], pack_coef[it5->leaf_index - 1]);
-                        g2_copy(g2_list_lol[lel], sk.sk[it5->leaf_index - 1].sk_two[jk2]);
-                        lel++;
+                    for (int j = 0; j < kss; ++j) {
+                        g1_mul(g1_list[a], CT_A.C_2[it5->leaf_index].c_2_mat[j], it5->coeff);
+                        g2_copy(g2_list[a], sk.sk[it5->leaf_index - 1].sk_two[j]);
+                        a++;
                     }
                 }
-                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
+                g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[b]);
             }
-            kul = lel + po;
-            g2_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(g1_list_lol[kul], CT_A.C_1[po]);
-            g2_copy(g2_list_lol[kul], K1_prod[po]);
+            c = a + b;
+            g2_mul_sim_lot(K1_prod[b], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(g1_list[c], CT_A.C_1[b]);
+            g2_copy(g2_list[c], K1_prod[b]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, g1_list_lol, g2_list_lol, (N_ATTR*kss)+(kss + 1));
+        pc_map_sim(map_sim_test_1, g1_list, g2_list, (N_ATTR*kss)+(kss + 1));
         gt_mul(test_res, map_sim_test_1, CT_A.C_3_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(test_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(test_res, CT_A.M) == RLC_EQ);
+        }
         //progress4 = ((float) (go+1) / NTESTS);
     }
 

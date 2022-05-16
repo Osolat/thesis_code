@@ -654,7 +654,7 @@ int init_public_key_k_lin_od(const uint32_t n_attr, const uint32_t kss, struct p
 
 struct alp_pp_naive_oe {
     uint32_t bound;
-    g1_t g1; 
+    g1_t g1;
     g2_t g2;
     gt_t gt;
     g1_t *H1;
@@ -666,7 +666,7 @@ struct alp_pp_naive_oe {
 
 struct alp_pp_oe {
     uint32_t bound;
-    g1_t g1; 
+    g1_t g1;
     g2_t g2;
     gt_t gt;
     g1_t *H1;
@@ -702,7 +702,7 @@ struct alp_sk_attr_oe {
 
 struct alp_pp_ok {
     uint32_t bound;
-    g1_t g1; 
+    g1_t g1;
     g2_t g2;
     gt_t gt;
     g1_t *H1;

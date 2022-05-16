@@ -158,6 +158,11 @@ int main(int argc, char **argv) {
         Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
         gt_t map_tmp[kss];
 
+        for (int i = 0; i < kss; ++i) {
+            pp_map_oatep_k12(map_tmp[i], group1, group2);
+            gt_exp(mpk.e_mat[i], map_tmp[i], Av[i]);
+        }
+
         //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
         //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
         for (int j = 0; j < (N_ATTR + 1); j++) {
@@ -165,9 +170,6 @@ int main(int argc, char **argv) {
                 if (j != 0) {
                     //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                     bn_rand_mod(msk.atts[j].w[m], order);
-                } else if (m < kss) {
-                    pp_map_oatep_k12(map_tmp[m], group1, group2);
-                    gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                 } else {
                     //Set all entries in W0 to be zero
                     bn_zero(msk.atts[j].w[m]);
@@ -309,19 +311,19 @@ int main(int argc, char **argv) {
     //float progress4 = 0.0;
 
     bn_t pack_coef[N_ATTR];
-    g1_t g1_list_lol[(N_ATTR * kss) + (kss + 1)];
-    g2_t g2_list_lol[(N_ATTR * kss) + (kss + 1)];
+    g1_t g1_list[(N_ATTR * kss) + (kss + 1)];
+    g2_t g2_list[(N_ATTR * kss) + (kss + 1)];
     g1_t K1_prod[kss + 1];
     g1_t sk1_tmp[N_ATTR];
     gt_t test_res;
-
-    for (int hg = 0; hg < kss + 1; ++hg) {
-        init_null_new_g1_t_var(K1_prod[hg]);
-        init_null_new_g1_t_var(sk1_tmp[hg]);
-    }
-    init_null_new_gt_t_var(test_res);
     gt_t map_sim_test_1;
+    init_null_new_gt_t_var(test_res);
     init_null_new_gt_t_var(map_sim_test_1);
+
+    for (int i = 0; i < kss + 1; ++i) {
+        init_null_new_g1_t_var(K1_prod[i]);
+        init_null_new_g1_t_var(sk1_tmp[i]);
+    }
 
     for (int go = 0; go < NTESTS; go++) {
         //progressBar(100, progress4);
@@ -336,36 +338,35 @@ int main(int argc, char **argv) {
         } catch (struct TreeUnsatisfiableException *e) {
             printf("Fail");
         }
-        res = std::vector<policy_coefficient>();
+
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-
-        int lel = 0;
-        int kul = 0;
-        for (int po = 0; po < kss + 1; ++po) {
+        int a = 0;
+        int c = 0;
+        for (int b = 0; b < kss + 1; ++b) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-                if (po == 0) {
+                if (b == 0) {
                     bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
-                    for (int jk2 = 0; jk2 < kss; ++jk2) {
-                        g1_mul(g1_list_lol[lel], sk.sk[it5->leaf_index - 1].sk_two[jk2], pack_coef[it5->leaf_index - 1]);
-                        g2_copy(g2_list_lol[lel], CT_A.C_2[it5->leaf_index].c_2_mat[jk2]);
-                        lel++;
+                    for (int j = 0; j < kss; ++j) {
+                        g1_mul(g1_list[a], sk.sk[it5->leaf_index - 1].sk_two[j], pack_coef[it5->leaf_index - 1]);
+                        g2_copy(g2_list[a], CT_A.C_2[it5->leaf_index].c_2_mat[j]);
+                        a++;
                     }
                 }
-                g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[po]);
+                g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk[it5->leaf_index - 1].sk_one[b]);
             }
-            kul = lel + po;
-            g1_mul_sim_lot(K1_prod[po], sk1_tmp, pack_coef, N_ATTR);
-            g1_neg(g1_list_lol[kul], K1_prod[po]);
-            g2_copy(g2_list_lol[kul], CT_A.C_1[po]);
+            c = a + b;
+            g1_mul_sim_lot(K1_prod[b], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(g1_list[c], K1_prod[b]);
+            g2_copy(g2_list[c], CT_A.C_1[b]);
         }
 
-        pp_map_sim_oatep_k12(map_sim_test_1, g1_list_lol, g2_list_lol, (N_ATTR*kss)+(kss + 1));
+        pc_map_sim(map_sim_test_1, g1_list, g2_list, (N_ATTR*kss)+(kss + 1));
         gt_mul(test_res, map_sim_test_1, CT_A.C_3_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(test_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(test_res, CT_A.M) == RLC_EQ);
+        }
         //progress4 = ((float) (go+1) / NTESTS);
     }
 

@@ -142,6 +142,11 @@ int main(int argc, char **argv) {
         Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
         gt_t map_tmp[kss];
 
+        for (int i = 0; i < kss; ++i) {
+            pp_map_oatep_k12(map_tmp[i], group1, group2);
+            gt_exp(mpk.e_mat[i], map_tmp[i], Av[i]);
+        }
+
         //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
         //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
         for (int j = 0; j < (N_ATTR + 1); j++) {
@@ -149,9 +154,6 @@ int main(int argc, char **argv) {
                 if (j != 0) {
                     //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                     bn_rand_mod(msk.atts[j].w[m], order);
-                } else if (m < kss) {
-                    pp_map_oatep_k12(map_tmp[m], group1, group2);
-                    gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                 } else {
                     //Set all entries in W0 to be zero
                     bn_zero(msk.atts[j].w[m]);
@@ -230,7 +232,7 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < 1; qo++) {
+    for (int qo = 0; qo < NTESTS; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
@@ -285,87 +287,74 @@ int main(int argc, char **argv) {
 
     /* Decryption */
     //float progress4 = 0.0;
-
-    bn_t pack_coef[N_ATTR];
-    //g1_t neg_ct[kss + 1];
     gt_t prod_test2;
     gt_t test_res;
+    gt_t inv_elem;
 
     init_null_new_gt_t_var(prod_test2);
     init_null_new_gt_t_var(test_res);
 
-    for (int go = 0; go < 1; go++) {
+    gt_t map_tmp_1;
+    init_null_new_gt_t_var(map_tmp_1);
+
+    gt_t map_tmp_test;
+    init_null_new_gt_t_var(map_tmp_test);
+
+    gt_t map_tmp_prod_1;
+    init_null_new_gt_t_var(map_tmp_prod_1);
+
+    gt_t map_tmp_prod_2;
+    init_null_new_gt_t_var(map_tmp_prod_2);
+
+    g1_t exp_tmp_1;
+    init_null_new_g1_t_var(exp_tmp_1);
+
+    for (int go = 0; go < NTESTS; go++) {
         //progressBar(100, progress4);
         t[go] = cpucycles();
 
-        gt_t map_tmp_1;
-        init_null_new_gt_t_var(map_tmp_1);
-
-        gt_t map_tmp_test;
-        init_null_new_gt_t_var(map_tmp_test);
-
-        gt_t map_tmp_prod_1;
-        init_null_new_gt_t_var(map_tmp_prod_1);
-
-        gt_t map_tmp_prod_2;
-        init_null_new_gt_t_var(map_tmp_prod_2);
-
-        g1_t exp_tmp_1;
-        init_null_new_g1_t_var(exp_tmp_1);
-
         g2_t tmp_prod_g2[kss + 1];
         g2_t tmp_add_g2[kss + 1];
-
-        fp12_set_dig(prod_test2, 1);
-
-        for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
-            init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
-        }
+        gt_set_unity(prod_test2);
 
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
         } catch (struct TreeUnsatisfiableException *e) {
             printf("Fail");
         }
-        res = std::vector<policy_coefficient>();
+
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        fp12_set_dig(map_tmp_prod_2, 1);
+        gt_set_unity(map_tmp_prod_2);
 
-        for (int po = 0; po < kss + 1; ++po) {
-            g2_set_infty(tmp_add_g2[po]);
+        for (int i = 0; i < kss + 1; ++i) {
+            g2_set_infty(tmp_add_g2[i]);
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-                if (po == 0) {
-                    bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
+                if (i == 0) {
                     fp12_set_dig(map_tmp_prod_1, 1);
-                    for (int jk2 = 0; jk2 < kss; ++jk2) {
-                        g1_mul(exp_tmp_1, CT_A.C_2[it5->leaf_index].c_2_mat[jk2], pack_coef[it5->leaf_index - 1]);
-                        pp_map_oatep_k12(map_tmp_1, exp_tmp_1, sk.sk[it5->leaf_index - 1].sk_two[jk2]);
+                    for (int j = 0; j < kss; ++j) {
+                        g1_mul(exp_tmp_1, CT_A.C_2[it5->leaf_index].c_2_mat[j], it5->coeff);
+                        pc_map(map_tmp_1, exp_tmp_1, sk.sk[it5->leaf_index - 1].sk_two[j]);
                         gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
                     }
                     gt_mul(prod_test2, prod_test2, map_tmp_prod_1);
                 }
-                g2_mul(tmp_prod_g2[po], sk.sk[it5->leaf_index - 1].sk_one[po], pack_coef[it5->leaf_index - 1]);
-                g2_add(tmp_add_g2[po], tmp_add_g2[po], tmp_prod_g2[po]);
+                g2_mul(tmp_prod_g2[i], sk.sk[it5->leaf_index - 1].sk_one[i], it5->coeff);
+                g2_add(tmp_add_g2[i], tmp_add_g2[i], tmp_prod_g2[i]);
             }
-            //g1_neg(neg_ct[po], CT_A.C_1[po]);
-            pp_map_oatep_k12(map_tmp_test, CT_A.C_1[po], tmp_add_g2[po]);
+            pc_map(map_tmp_test, CT_A.C_1[i], tmp_add_g2[i]);
             gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_test);
         }
 
-        gt_t inv_elem;
-        init_null_new_gt_t_var(inv_elem);
         gt_inv(inv_elem, map_tmp_prod_2);
-
         gt_mul(test_res, inv_elem, prod_test2);
         gt_mul(test_res, test_res, CT_A.C_3_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(test_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(test_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(test_res, CT_A.M) == RLC_EQ);
+        }
         //progress4 = ((float) (go+1) / NTESTS);
     }
-
     //test_stuff(resultArray, 3, t, NTESTS);
 
     print_results("Results decryption():           ", t, NTESTS);

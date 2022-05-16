@@ -77,7 +77,7 @@ static void print_result_array(unsigned long long *array) {
 }
 
 unsigned long long t[NTESTS];
-unsigned long long resultArray[4];
+//unsigned long long resultArray[4];
 
 int main(int argc, char **argv) {
     std::cout << "Benchmarking KP-ABE from K-Lin_P on attr=" << atoi(argv[1]) << " and k=" << kss <<"\n";
@@ -88,7 +88,6 @@ int main(int argc, char **argv) {
     }
 
     int test_attr = atoi(argv[1]);
-
     srand(time(NULL));
     uint32_t N_ATTR = test_attr;
 
@@ -147,7 +146,6 @@ int main(int argc, char **argv) {
             //Also initializes the g1 entries of the A-matrix by doing matrix multiplications and sets the A_(i,j) to g1^(AW_(i,j)).
             bn_rand_mod(A_tmp[d], order);
             g1_mul_fix(mpk.a_mat[d], t_pre_g, A_tmp[d]);
-
             for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
                 init_null_new_g1_t_var(t_pre_A[d][j]);
             }
@@ -159,16 +157,16 @@ int main(int argc, char **argv) {
         Av = matrix_mul_vector(output, A_tmp, msk.v_share, kss, kss + 1, kss + 1, order);
         gt_t map_tmp[kss];
 
-        //Initializes the "n" W-matrices (master secret key) by setting every entry in these matrices to some random bn value mod the order.
-        //In the K-Lin paper the master secret key consists of w_1,...,w_n and describe w_0 = 0.
+        for (int i = 0; i < kss; ++i) {
+            pp_map_oatep_k12(map_tmp[i], group1, group2);
+            gt_exp(mpk.e_mat[i], map_tmp[i], Av[i]);
+        }
+
         for (int j = 0; j < (N_ATTR + 1); j++) {
             for (int m = 0; m < ((kss + 1) * kss); m++) {
                 if (j != 0) {
                     //Sets entries for Wi where i = 1,...., N_att +1 to random bn_t elements
                     bn_rand_mod(msk.atts[j].w[m], order);
-                } else if (m < kss) {
-                    pp_map_oatep_k12(map_tmp[m], group1, group2);
-                    gt_exp(mpk.e_mat[m], map_tmp[m], Av[m]);
                 } else {
                     //Set all entries in W0 to be zero
                     bn_zero(msk.atts[j].w[m]);
@@ -249,12 +247,11 @@ int main(int argc, char **argv) {
     init_ciphertext_K_Lin(N_ATTR, kss, &CT_A);
     bn_t rnd_s[kss];
 
-    for (int qo = 0; qo < 1; qo++) {
+    for (int qo = 0; qo < NTESTS; qo++) {
         //progressBar(100, progress3);
 
         t[qo] = cpucycles();
-        gt_t gt_mul_test;
-        gt_t gt_st_test;
+        gt_t gt_mul_test; gt_t gt_st_test;
         init_null_new_gt_t_var(gt_mul_test);
         init_null_new_gt_t_var(gt_st_test);
         fp12_set_dig(gt_st_test, 1);
@@ -276,6 +273,7 @@ int main(int argc, char **argv) {
         //set ct_1
         g1_t *ct_1;
         g1_t output[kss + 1];
+        g1_t output1[kss];
 
         //Calculate sT*A using vector-matrix multiplication for a transposed vector.
         ct_1 = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_A, kss, kss + 1, kss);
@@ -285,12 +283,10 @@ int main(int argc, char **argv) {
         //For all N_ATTR + 1 calculate sTAW_i and the reason for doing it over N_ATTR+1 opposed to N_ATTR is because W_0 = 0 and is done to support that the lsss map can be rho(j) = 0.
         for (int a = 0; a < (N_ATTR + 1); ++a) {
             g1_t *ct2_i;
-            g1_t output[kss];
-            ct2_i = vector_trans_mul_matrix_g1_pre(output, rnd_s, t_pre_AW[a], kss, kss, kss);
-
+            ct2_i = vector_trans_mul_matrix_g1_pre(output1, rnd_s, t_pre_AW[a], kss, kss, kss);
             //Finishing c_2i, by doing the exponentiation of g.
             for (int v = 0; v < (kss + 1); ++v) {
-                if (v < kss) {
+                if (v < kss){
                     g1_copy(CT_A.C_2[a].c_2_mat[v], ct2_i[v]);
                 }
                 g1_copy(CT_A.C_1[v], ct_1[v]);
@@ -313,36 +309,32 @@ int main(int argc, char **argv) {
     //Temporary variable supposed to hold intermediate result of the calculations.
     gt_t tmp_res;
     init_null_new_gt_t_var(tmp_res);
-    bn_t pack_coef[N_ATTR];
 
-    for (int go = 0; go < 1; go++) {
+    gt_t map_tmp_1;
+    init_null_new_gt_t_var(map_tmp_1);
+
+    gt_t map_tmp_2;
+    init_null_new_gt_t_var(map_tmp_2);
+
+    gt_t map_tmp_prod_1;
+    init_null_new_gt_t_var(map_tmp_prod_1);
+
+    gt_t map_tmp_prod_2;
+    init_null_new_gt_t_var(map_tmp_prod_2);
+
+    gt_t invert_elem;
+    init_null_new_gt_t_var(invert_elem);
+
+    gt_t map_res;
+    init_null_new_gt_t_var(map_res);
+
+    for (int go = 0; go < NTESTS; go++) {
         //progressBar(100,progress4);
 
         t[go] = cpucycles();
 
-        gt_t map_tmp_1;
-        init_null_new_gt_t_var(map_tmp_1);
-
-        gt_t map_tmp_2;
-        init_null_new_gt_t_var(map_tmp_2);
-
-        gt_t map_tmp_prod_1;
-        init_null_new_gt_t_var(map_tmp_prod_1);
-
-        gt_t map_tmp_prod_2;
-        init_null_new_gt_t_var(map_tmp_prod_2);
-
-        gt_t invert_elem;
-        init_null_new_gt_t_var(invert_elem);
-
-        gt_t map_res;
-        init_null_new_gt_t_var(map_res);
-
-        //Sets tmp_mul_list[r] to one so that the multiplication starts out correct.
-        fp12_set_dig(prod, 1);
-
-        //Sets tmp_res to one so that the final multiplications starts out correct.
-        fp12_set_dig(tmp_res, 1);
+        gt_set_unity(prod);
+        gt_set_unity(tmp_res);
 
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
@@ -350,36 +342,32 @@ int main(int argc, char **argv) {
             printf("Fail");
         }
 
-        res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
         for (auto it3 = res.begin(); it3 != res.end(); ++it3) {
-            fp12_set_dig(map_tmp_prod_1, 1);
-            fp12_set_dig(map_tmp_prod_2, 1);
+            gt_set_unity(map_tmp_prod_1);
+            gt_set_unity(map_tmp_prod_2);
 
-            //Copy all the coefficients to the pack_coef list.
-            init_null_new_bn_t_var(pack_coef[it3->leaf_index - 1]);
-            bn_copy(pack_coef[it3->leaf_index - 1], it3->coeff);
+            for (int i = 0; i < kss; ++i) {
+                pc_map(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[i],sk.sk[it3->leaf_index - 1].sk_two[i]);
+                gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
+            }
 
-            for (int ole = 0; ole < (kss + 1); ++ole) {
-                if (ole < kss) {
-                    pp_map_oatep_k12(map_tmp_2, CT_A.C_2[(it3->leaf_index - 1) + 1].c_2_mat[ole],sk.sk[it3->leaf_index - 1].sk_two[ole]);
-                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-                }
-                pp_map_oatep_k12(map_tmp_1, CT_A.C_1[ole], sk.sk[it3->leaf_index - 1].sk_one[ole]);
+            for (int j = 0; j < kss+1; ++j) {
+                pc_map(map_tmp_1, CT_A.C_1[j], sk.sk[it3->leaf_index - 1].sk_one[j]);
                 gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
             }
 
             gt_inv(invert_elem, map_tmp_prod_1);
             gt_mul(map_res, invert_elem, map_tmp_prod_2);
-            gt_exp(exp_val, map_res, pack_coef[it3->leaf_index - 1]);
+            gt_exp(exp_val, map_res, it3->coeff);
             gt_mul(prod, prod, exp_val);
         }
         gt_mul(tmp_res, prod, CT_A.C_3_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(tmp_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(tmp_res, CT_A.M) == RLC_EQ);
+        }
         //progress4 = ((float) (go+1) / NTESTS);
     }
     //test_stuff(resultArray, 3, t, NTESTS);
