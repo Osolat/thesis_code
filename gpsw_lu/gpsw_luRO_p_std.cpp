@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
     pc_param_print();
     pc_get_ord(order);
 
+    std::cout << "gpsw_luRO_p_std " << N_ATTR << std::endl;
+
     /* Setup */
 
     /*Generator of G1*/
@@ -245,7 +247,7 @@ int main(int argc, char **argv) {
     gt_null(result);
     gt_new(result);
 
-    for (size_t i = 0; i < NTESTS; i++) {
+    for (size_t i = 0; i < 2; i++) {
         t[i] = cpucycles();
 
         try {
