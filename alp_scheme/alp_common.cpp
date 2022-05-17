@@ -690,7 +690,7 @@ void keygen_pre_oe(struct alp_pp_oe pp, struct alp_sk_oe *sk, struct node *tree_
                 g2_mul(D.K[j], D.K[j], r_i);
             } else {
                 bn_neg(rho_i, rho[j+1]);
-                bn_mul(rho_i, rho_i, r_i);
+                //bn_mul(rho_i, rho_i, r_i);
             
                 g2_null(D.K[j]); g2_new(D.K[j]);   
                 g2_mul_fix(D.K[j], pp.t_pre_u2[1], rho_i);
