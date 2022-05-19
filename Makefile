@@ -175,12 +175,12 @@ alp:
 	g++ $(CXXFLAGS) -c lib/gt_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/structures.c -I$(RELIC_INCLUDE_BLS_12_381)
 	g++ $(CXXFLAGS) -c lib/pairing_arith.c -I$(RELIC_INCLUDE_BLS_12_381)
-	$(CXX) -o objects/alp_naive_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_naive.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/alp_g_oe_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_g_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/alp_a_oe_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_a_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
-	$(CXX) -o objects/alp_p_oe_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_p_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/alp_GAP_oe_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_GAP_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
-	$(CXX) -o objects/alp_GAP_ok_2 $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_GAP_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_naive $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_naive.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_g_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_g_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_a_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_a_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp	
+	$(CXX) -o objects/alp_p_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_p_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_GAP_oe $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_GAP_oe.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/alp_GAP_ok $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) alp_scheme/alp_GAP_ok.cpp $(RELIC_LIB_BLS_12_381) -lgmp
 	rm *.o
 	
 policy_tree:
