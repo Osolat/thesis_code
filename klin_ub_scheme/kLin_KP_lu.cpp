@@ -100,6 +100,12 @@ int main(int argc, char **argv) {
         bn_set_dig(attributes[i], i + 1);
     }
 
+    bn_t mul_attributes[test_attr];
+    for (int i = 0; i < N_ATTR; ++i) {
+        init_null_new_bn_t_var(mul_attributes[i]);
+        bn_set_dig(mul_attributes[i], 1);
+    }
+
     struct master_key_k_lin_lu msk;
     struct public_key_k_lin_lu mpk;
 
@@ -205,7 +211,7 @@ int main(int argc, char **argv) {
             share_secret(&tree_root, msk.v_secret[i], order, res, true);
             for (auto it = res.begin(); it != res.end(); ++it) {
                 bn_copy(vj.vj[it->leaf_index - 1].vec_j[i], it->share);
-                g2_mul(sk.sk4[it->leaf_index - 1].sk_four[i], group2, vj.vj[it->leaf_index - 1].vec_j[i]);
+                //g2_mul(sk.sk4[it->leaf_index - 1].sk_four[i], group2, vj.vj[it->leaf_index - 1].vec_j[i]);
             }
         }
 
@@ -353,8 +359,18 @@ int main(int argc, char **argv) {
     //
     /* Decryption */
     //float progress4 = 0.0;
-    bn_t pack_coef[N_ATTR];
-    bn_t pack_coef_neg[N_ATTR];
+    //bn_t pack_coef_neg[N_ATTR];
+    gt_t map_tmp_1;
+    gt_t map_tmp_2;
+    gt_t map_tmp_3;
+    gt_t map_tmp_4;
+    gt_t map_tmp_prod_1;
+    gt_t map_tmp_prod_2;
+    gt_t map_tmp_prod_3;
+    gt_t map_tmp_prod_4;
+    gt_t invert_elem_1;
+    gt_t de_nom;
+    gt_t map_res;
 
     gt_t exp_val; gt_t exp_val_extra; gt_t prod; gt_t mul_val; gt_t mul_val_extra; gt_t tmp_res;
     init_null_new_gt_t_var(exp_val);
@@ -363,54 +379,24 @@ int main(int argc, char **argv) {
     init_null_new_gt_t_var(mul_val);
     init_null_new_gt_t_var(mul_val_extra);
     init_null_new_gt_t_var(tmp_res);
-
-    //Initializes the list of coefficients which should yield a size of N_ATTR * (kss+1)
-    for (auto it4 = res.begin(); it4 != res.end(); ++it4) {
-        init_null_new_bn_t_var(pack_coef[it4->leaf_index - 1]);                       //Same as for std.
-    }
+    init_null_new_gt_t_var(map_tmp_1);
+    init_null_new_gt_t_var(map_tmp_2);
+    init_null_new_gt_t_var(map_tmp_3);
+    init_null_new_gt_t_var(map_tmp_4);
+    init_null_new_gt_t_var(map_tmp_prod_1);
+    init_null_new_gt_t_var(map_tmp_prod_2);
+    init_null_new_gt_t_var(map_tmp_prod_3);
+    init_null_new_gt_t_var(map_tmp_prod_4);
+    init_null_new_gt_t_var(invert_elem_1);
+    init_null_new_gt_t_var(de_nom);
+    init_null_new_gt_t_var(map_res);
 
     for (int go = 0; go < NTESTS; go++) {
         //progressBar(100,progress4);
         t[go] = cpucycles();
 
-        gt_t map_tmp_1;
-        init_null_new_gt_t_var(map_tmp_1);
-
-        gt_t map_tmp_2;
-        init_null_new_gt_t_var(map_tmp_2);
-
-        gt_t map_tmp_3;
-        init_null_new_gt_t_var(map_tmp_3);
-
-        gt_t map_tmp_4;
-        init_null_new_gt_t_var(map_tmp_4);
-
-        gt_t map_tmp_prod_1;
-        init_null_new_gt_t_var(map_tmp_prod_1);
-
-        gt_t map_tmp_prod_2;
-        init_null_new_gt_t_var(map_tmp_prod_2);
-
-        gt_t map_tmp_prod_3;
-        init_null_new_gt_t_var(map_tmp_prod_3);
-
-        gt_t map_tmp_prod_4;
-        init_null_new_gt_t_var(map_tmp_prod_4);
-
-        gt_t invert_elem_1;
-        init_null_new_gt_t_var(invert_elem_1);
-
-        gt_t de_nom;
-        init_null_new_gt_t_var(de_nom);
-
-        gt_t map_res;
-        init_null_new_gt_t_var(map_res);
-
-        //Sets mul_val to one so that the multiplication starts out correct.
-        fp12_set_dig(mul_val, 1);
-
-        //Sets tmp_res to one so that the final multiplications starts out correct.
-        fp12_set_dig(tmp_res, 1);
+        gt_set_unity(mul_val);
+        gt_set_unity(tmp_res);
 
         try {
             check_satisfiability(&tree_root, attributes, N_ATTR);
@@ -418,61 +404,85 @@ int main(int argc, char **argv) {
             printf("Fail");
         }
 
-        res = std::vector<policy_coefficient>();
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
         for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
+                gt_set_unity(map_tmp_prod_1);
+                gt_set_unity(map_tmp_prod_2);
+                gt_set_unity(map_tmp_prod_3);
+                gt_set_unity(map_tmp_prod_4);
 
-            fp12_set_dig(map_tmp_prod_1, 1);
-            fp12_set_dig(map_tmp_prod_2, 1);
-            fp12_set_dig(map_tmp_prod_3, 1);
-            fp12_set_dig(map_tmp_prod_4, 1);
+                //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
+                //bn_t neg_coef;
+                //init_null_new_bn_t_var(neg_coef);
+                //bn_copy(neg_coef, it5->coeff);
+                //bn_t_negate(neg_coef, order);
+                //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
 
-            init_null_new_bn_t_var(pack_coef[it5->leaf_index - 1]);
-            bn_copy(pack_coef[it5->leaf_index - 1], it5->coeff);
-
-
-            //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
-            //bn_t neg_coef;
-            //init_null_new_bn_t_var(neg_coef);
-            //bn_copy(neg_coef, it5->coeff);
-            //bn_t_negate(neg_coef, order);
-            //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
-
-            for (int jk = 0; jk < ((2 * two_k) + kss); ++jk) {
-                if (jk < two_k) {
-                    pp_map_oatep_k12(map_tmp_1, CT_A.C_1[jk], sk.sk13[it5->leaf_index - 1].sk_one[jk]);
-                    gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
-                } else if (jk >= two_k && jk < (2 * two_k)) {
-                    pp_map_oatep_k12(map_tmp_2, CT_A.C_23[it5->leaf_index - 1].c_3_vec[jk % two_k], sk.sk13[it5->leaf_index - 1].sk_three[jk % two_k]);
-                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-                } else {
-                    pp_map_oatep_k12(map_tmp_3, CT_A.C_23[it5->leaf_index - 1].c_2_vec[jk % (2 * two_k)], sk.sk13[it5->leaf_index - 1].sk_two[jk % (2 * two_k)]);
-                    gt_mul(map_tmp_prod_3, map_tmp_prod_3, map_tmp_3);
+                for (int j = 0; j < ((2 * two_k) + kss); ++j) {
+                    if (j < two_k) {
+                        pc_map(map_tmp_1, CT_A.C_1[j], sk.sk13[it5->leaf_index - 1].sk_one[j]);
+                        gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
+                    } else if (j >= two_k && j < (2 * two_k)) {
+                        pc_map(map_tmp_2, CT_A.C_23[it5->leaf_index - 1].c_3_vec[j % two_k], sk.sk13[it5->leaf_index - 1].sk_three[j % two_k]);
+                        gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
+                    } else {
+                        pc_map(map_tmp_3, CT_A.C_23[it5->leaf_index - 1].c_2_vec[j % (2 * two_k)], sk.sk13[it5->leaf_index - 1].sk_two[j % (2 * two_k)]);
+                        gt_mul(map_tmp_prod_3, map_tmp_prod_3, map_tmp_3);
+                    }
                 }
-            }
 
-            //TODO not used right now as we only use policies of AND gates.
-            //for (int ik = 0; ik < (two_k); ++ik) {
-                //pp_map_oatep_k12(map_tmp_4, CT_A.C_1[ik], sk.sk4[it5->leaf_index - 1].sk_four[ik]);
+                //TODO not used right now as we only use policies of AND gates.
+                //for (int ik = 0; ik < (two_k); ++ik) {
+                //pc_map(map_tmp_4, CT_A.C_1[ik], sk.sk4[it5->leaf_index - 1].sk_four[ik]);
                 //gt_mul(map_tmp_prod_4, map_tmp_prod_4, map_tmp_4);
-            //}
+                //}
 
-            gt_mul(de_nom, map_tmp_prod_1, map_tmp_prod_2);
-            gt_inv(invert_elem_1, de_nom);
-            gt_mul(map_res, invert_elem_1, map_tmp_prod_3);
+                gt_mul(de_nom, map_tmp_prod_1, map_tmp_prod_2);
+                gt_inv(invert_elem_1, de_nom);
+                gt_mul(map_res, invert_elem_1, map_tmp_prod_3);
 
-            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-            gt_exp(exp_val, map_res, pack_coef[it5->leaf_index - 1]);
+                //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+                gt_exp(exp_val, map_res, it5->coeff);
 
-            //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-            //gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it5->leaf_index - 1]);
+                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+                //gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it5->leaf_index - 1]);
 
-            //TODO multiply cases where X_rho(j)=1 and rho(j)=0
-            //gt_mul(prod, exp_val, exp_val_extra);
+                //TODO multiply cases where X_rho(j)=1 and rho(j)=0
+                //gt_mul(prod, exp_val, exp_val_extra);
 
-            gt_mul(mul_val, mul_val, exp_val);
+                gt_mul(mul_val, mul_val, exp_val);
+
         }
+
+        /*
+        for (auto it6 = res.begin(); it6 != res.end(); ++it6) {
+            if ((it6->leaf_index - 1) == 0) {
+                gt_set_unity(map_tmp_prod_4);
+                bn_t neg_coef;
+                init_null_new_bn_t_var(neg_coef);
+                bn_copy(neg_coef, it6->coeff);
+                bn_t_negate(neg_coef, order);
+                bn_copy(pack_coef_neg[it6->leaf_index - 1], neg_coef);
+
+                //TODO not used right now as we only use policies of AND gates.
+                for (int ik = 0; ik < (two_k); ++ik) {
+                    pc_map(map_tmp_4, CT_A.C_1[ik], sk.sk4[it6->leaf_index - 1].sk_four[ik]);
+                    gt_mul(map_tmp_prod_4, map_tmp_prod_4, map_tmp_4);
+                }
+
+                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+                gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it6->leaf_index - 1]);
+
+                //TODO multiply cases where X_rho(j)=1 and rho(j)=0
+                //gt_mul(prod, exp_val, exp_val_extra);
+                gt_mul(prod, prod, exp_val_extra);
+            }
+        }
+        */
+
+
+
         //Here we complete the product of [-sTAv_j]^(wj)
         gt_mul(tmp_res, tmp_res, mul_val);
 
@@ -481,9 +491,9 @@ int main(int argc, char **argv) {
         init_null_new_gt_t_var(final_final_res);
         gt_mul(final_final_res, tmp_res, CT_A.C_4_one_val);
 
-        //Uncomment for correctness check;
-        //assert(gt_cmp(final_final_res, CT_A.M) == RLC_EQ);
-        //std::cout << "[*] PASSED" << std::endl;
+        if (!gt_cmp(final_final_res, CT_A.M) == RLC_EQ) {
+            printf("Decryption failed!: %d\n", gt_cmp(final_final_res, CT_A.M) == RLC_EQ);
+        }
 
         //progress4 = ((float) (go+1) / NTESTS);
     }
