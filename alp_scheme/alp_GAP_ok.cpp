@@ -61,7 +61,6 @@ void test(int N_ATTR) {
     } print_results("Results KeyGen():          ", t, NTESTS);
     //print_secret_key_oe(sk, bound); 
 
-
     bn_t attributes[N_ATTR];
     bn_t p_Coeffs[bound];
     for (size_t i = 0; i < N_ATTR; i++) {

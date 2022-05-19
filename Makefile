@@ -100,7 +100,9 @@ basic_bench:
 	$(CXX) -o objects/bench_tree_coeffs_vs_rand $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_tree_coeffs_vs_rand.cpp $(RELIC_LIB_BLS_12_381) -lgmp		
 	$(CXX) -o objects/bench_standard_tree $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_standard_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp			
 	$(CXX) -o objects/bench_sim_simlot $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_sim_simlot.cpp $(RELIC_LIB_BLS_12_381) -lgmp			
-	$(CXX) -o objects/bench_standard_tree $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_standard_tree.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/bench_simultaneous_stuff $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_simultaneous_stuff.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+	$(CXX) -o objects/bench_TBE $(CXXFLAGS) $(ARITH_OBJ) $(POLICY_OBJ) $(UTIL_OBJ) -I$(RELIC_INCLUDE_BLS_12_381) bench_basics/bench_TBE.cpp $(RELIC_LIB_BLS_12_381) -lgmp
+
 	rm *.o
 
 kLin_KP:
