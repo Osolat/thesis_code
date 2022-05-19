@@ -100,6 +100,12 @@ int main(int argc, char **argv) {
         bn_set_dig(attributes[i], i + 1);
     }
 
+    bn_t mul_attributes[test_attr];
+    for (int i = 0; i < N_ATTR; ++i) {
+        init_null_new_bn_t_var(mul_attributes[i]);
+        bn_set_dig(mul_attributes[i], 1);
+    }
+
     struct master_key_k_lin_lu msk;
     struct public_key_k_lin_lu mpk;
 
@@ -205,7 +211,7 @@ int main(int argc, char **argv) {
             share_secret(&tree_root, msk.v_secret[i], order, res, true);
             for (auto it = res.begin(); it != res.end(); ++it) {
                 bn_copy(vj.vj[it->leaf_index - 1].vec_j[i], it->share);
-                g2_mul(sk.sk4[it->leaf_index - 1].sk_four[i], group2, vj.vj[it->leaf_index - 1].vec_j[i]);
+                //g2_mul(sk.sk4[it->leaf_index - 1].sk_four[i], group2, vj.vj[it->leaf_index - 1].vec_j[i]);
             }
         }
 
@@ -401,52 +407,82 @@ int main(int argc, char **argv) {
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
         for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
-            gt_set_unity(map_tmp_prod_1);
-            gt_set_unity(map_tmp_prod_2);
-            gt_set_unity(map_tmp_prod_3);
-            gt_set_unity(map_tmp_prod_4);
+                gt_set_unity(map_tmp_prod_1);
+                gt_set_unity(map_tmp_prod_2);
+                gt_set_unity(map_tmp_prod_3);
+                gt_set_unity(map_tmp_prod_4);
 
-            //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
-            //bn_t neg_coef;
-            //init_null_new_bn_t_var(neg_coef);
-            //bn_copy(neg_coef, it5->coeff);
-            //bn_t_negate(neg_coef, order);
-            //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
+                //TODO refactor this shitty way of doing this. Might not need it when we use all N attributes and with "AND"-tree
+                //bn_t neg_coef;
+                //init_null_new_bn_t_var(neg_coef);
+                //bn_copy(neg_coef, it5->coeff);
+                //bn_t_negate(neg_coef, order);
+                //bn_copy(pack_coef_neg[it5->leaf_index - 1], neg_coef);
 
-            for (int j = 0; j < ((2 * two_k) + kss); ++j) {
-                if (j < two_k) {
-                    pc_map(map_tmp_1, CT_A.C_1[j], sk.sk13[it5->leaf_index - 1].sk_one[j]);
-                    gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
-                } else if (j >= two_k && j < (2 * two_k)) {
-                    pc_map(map_tmp_2, CT_A.C_23[it5->leaf_index - 1].c_3_vec[j % two_k], sk.sk13[it5->leaf_index - 1].sk_three[j % two_k]);
-                    gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
-                } else {
-                    pc_map(map_tmp_3, CT_A.C_23[it5->leaf_index - 1].c_2_vec[j % (2 * two_k)], sk.sk13[it5->leaf_index - 1].sk_two[j % (2 * two_k)]);
-                    gt_mul(map_tmp_prod_3, map_tmp_prod_3, map_tmp_3);
+                for (int j = 0; j < ((2 * two_k) + kss); ++j) {
+                    if (j < two_k) {
+                        pc_map(map_tmp_1, CT_A.C_1[j], sk.sk13[it5->leaf_index - 1].sk_one[j]);
+                        gt_mul(map_tmp_prod_1, map_tmp_prod_1, map_tmp_1);
+                    } else if (j >= two_k && j < (2 * two_k)) {
+                        pc_map(map_tmp_2, CT_A.C_23[it5->leaf_index - 1].c_3_vec[j % two_k], sk.sk13[it5->leaf_index - 1].sk_three[j % two_k]);
+                        gt_mul(map_tmp_prod_2, map_tmp_prod_2, map_tmp_2);
+                    } else {
+                        pc_map(map_tmp_3, CT_A.C_23[it5->leaf_index - 1].c_2_vec[j % (2 * two_k)], sk.sk13[it5->leaf_index - 1].sk_two[j % (2 * two_k)]);
+                        gt_mul(map_tmp_prod_3, map_tmp_prod_3, map_tmp_3);
+                    }
                 }
-            }
 
-            //TODO not used right now as we only use policies of AND gates.
-            //for (int ik = 0; ik < (two_k); ++ik) {
+                //TODO not used right now as we only use policies of AND gates.
+                //for (int ik = 0; ik < (two_k); ++ik) {
                 //pc_map(map_tmp_4, CT_A.C_1[ik], sk.sk4[it5->leaf_index - 1].sk_four[ik]);
                 //gt_mul(map_tmp_prod_4, map_tmp_prod_4, map_tmp_4);
-            //}
+                //}
 
-            gt_mul(de_nom, map_tmp_prod_1, map_tmp_prod_2);
-            gt_inv(invert_elem_1, de_nom);
-            gt_mul(map_res, invert_elem_1, map_tmp_prod_3);
+                gt_mul(de_nom, map_tmp_prod_1, map_tmp_prod_2);
+                gt_inv(invert_elem_1, de_nom);
+                gt_mul(map_res, invert_elem_1, map_tmp_prod_3);
 
-            //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
-            gt_exp(exp_val, map_res, it5->coeff);
+                //Here we do map_sim = [-sTAv_j]^(wj) where map_sim = [-sTAv_j] comes from the correctness of the K_Lin paper and wj is the coefficients.
+                gt_exp(exp_val, map_res, it5->coeff);
 
-            //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-            //gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it5->leaf_index - 1]);
+                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+                //gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it5->leaf_index - 1]);
 
-            //TODO multiply cases where X_rho(j)=1 and rho(j)=0
-            //gt_mul(prod, exp_val, exp_val_extra);
+                //TODO multiply cases where X_rho(j)=1 and rho(j)=0
+                //gt_mul(prod, exp_val, exp_val_extra);
 
-            gt_mul(mul_val, mul_val, exp_val);
+                gt_mul(mul_val, mul_val, exp_val);
+
         }
+
+        /*
+        for (auto it6 = res.begin(); it6 != res.end(); ++it6) {
+            if ((it6->leaf_index - 1) == 0) {
+                gt_set_unity(map_tmp_prod_4);
+                bn_t neg_coef;
+                init_null_new_bn_t_var(neg_coef);
+                bn_copy(neg_coef, it6->coeff);
+                bn_t_negate(neg_coef, order);
+                bn_copy(pack_coef_neg[it6->leaf_index - 1], neg_coef);
+
+                //TODO not used right now as we only use policies of AND gates.
+                for (int ik = 0; ik < (two_k); ++ik) {
+                    pc_map(map_tmp_4, CT_A.C_1[ik], sk.sk4[it6->leaf_index - 1].sk_four[ik]);
+                    gt_mul(map_tmp_prod_4, map_tmp_prod_4, map_tmp_4);
+                }
+
+                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+                gt_exp(exp_val_extra, map_tmp_prod_4, pack_coef_neg[it6->leaf_index - 1]);
+
+                //TODO multiply cases where X_rho(j)=1 and rho(j)=0
+                //gt_mul(prod, exp_val, exp_val_extra);
+                gt_mul(prod, prod, exp_val_extra);
+            }
+        }
+        */
+
+
+
         //Here we complete the product of [-sTAv_j]^(wj)
         gt_mul(tmp_res, tmp_res, mul_val);
 
