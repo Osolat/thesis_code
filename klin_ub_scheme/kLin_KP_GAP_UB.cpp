@@ -245,8 +245,8 @@ int main(int argc, char **argv) {
             v_plus_w = vector_add_vector(output1_v_plus_w, vj.vj[it->leaf_index - 1].vec_j, Wr, two_k, two_k, order);
 
             for (int s = 0; s < (two_k); ++s) {
-                g2_mul_fix(sk.sk13[it->leaf_index - 1].sk_three[s], t_pre_h,  W0_w1_rj[s]);
-                g2_mul_fix(sk.sk13[it->leaf_index - 1].sk_one[s], t_pre_h,  v_plus_w[s]);
+                g2_mul_fix(sk.sk13[it->leaf_index - 1].sk_three[s], t_pre_h, W0_w1_rj[s]);
+                g2_mul_fix(sk.sk13[it->leaf_index - 1].sk_one[s], t_pre_h, v_plus_w[s]);
             }
         }
         //progress2 = ((float) (no+1) / NTESTS);
@@ -297,7 +297,8 @@ int main(int argc, char **argv) {
             g1_copy(CT_A.C_1[t], ct_1_g1[t]);
         }
 
-        for (int z = 0; z < N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
+        for (int z = 0; z <
+                        N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
             for (int x = 0; x < kss; ++x) {
                 bn_rand_mod(si.si[z].si_vec[x], order);
             }
@@ -401,7 +402,8 @@ int main(int argc, char **argv) {
 
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        int c = 0; int d = 0;
+        int c = 0;
+        int d = 0;
         for (int i = 0; i < two_k; ++i) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
                 if (i == 0) {
@@ -419,16 +421,17 @@ int main(int argc, char **argv) {
                     c += two_kk;
                 }
                 d = c + i;
-
                 g2_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[i]);
-                g2_mul_sim_lot(K1_prod[i], sk1_tmp, pack_coef, N_ATTR);
-                g1_neg(full_pairings_g1[d], CT_A.C_1[i]);
-                g2_copy(full_pairings_g2[d], K1_prod[i]);
-
-                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-                //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[i]);
-                //g2_mul_sim_lot(K4_prod[i], sk4_tmp, pack_coef_neg, N_ATTR);
             }
+
+            g2_mul_sim_lot(K1_prod[i], sk1_tmp, pack_coef, N_ATTR);
+            g1_neg(full_pairings_g1[d], CT_A.C_1[i]);
+            g2_copy(full_pairings_g2[d], K1_prod[i]);
+
+            //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+            //g2_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[i]);
+            //g2_mul_sim_lot(K4_prod[i], sk4_tmp, pack_coef_neg, N_ATTR);
+
         }
 
         pc_map_sim(map_tmp_1, full_pairings_g1, full_pairings_g2, (two_kk * (N_ATTR)) + two_k);

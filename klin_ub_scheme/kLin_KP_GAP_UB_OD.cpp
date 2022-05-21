@@ -305,7 +305,8 @@ int main(int argc, char **argv) {
             g2_copy(CT_A.C_1[t], ct_1_g2[t]);
         }
 
-        for (int z = 0; z < N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
+        for (int z = 0; z <
+                        N_ATTR; ++z) {                                                                                                                                              //i=N_ATTR because all attribute is needed to decrypt due the fact it's all AND gates
             for (int x = 0; x < kss; ++x) {
                 bn_rand_mod(si.si[z].si_vec[x], order);
             }
@@ -406,7 +407,8 @@ int main(int argc, char **argv) {
 
         res = recover_coefficients(&tree_root, attributes, N_ATTR);
 
-        int c = 0; int d = 0;
+        int c = 0;
+        int d = 0;
         for (int i = 0; i < two_k; ++i) {
             for (auto it5 = res.begin(); it5 != res.end(); ++it5) {
                 if (i == 0) {
@@ -425,14 +427,16 @@ int main(int argc, char **argv) {
                 }
                 d = c + i;
                 g1_copy(sk1_tmp[it5->leaf_index - 1], sk.sk13[it5->leaf_index - 1].sk_one[i]);
-                g1_mul_sim_lot(K1_prod[i], sk1_tmp, pack_coef, N_ATTR);
-                g2_neg(full_pairings_g2[d], CT_A.C_1[i]);
-                g1_copy(full_pairings_g1[d], K1_prod[i]);
-
-                //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
-                //g2_mul_sim_lot(K4_prod[i], sk4_tmp, pack_coef_neg, N_ATTR);
-                //g1_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[i]);
             }
+
+            g1_mul_sim_lot(K1_prod[i], sk1_tmp, pack_coef, N_ATTR);
+            g2_neg(full_pairings_g2[d], CT_A.C_1[i]);
+            g1_copy(full_pairings_g1[d], K1_prod[i]);
+
+            //TODO use for rho(j)=0 in the last mapping of ct1 and ct4
+            //g2_mul_sim_lot(K4_prod[i], sk4_tmp, pack_coef_neg, N_ATTR);
+            //g1_copy(sk4_tmp[it5->leaf_index - 1], sk.sk4[it5->leaf_index - 1].sk_four[i]);
+
         }
 
         pc_map_sim(map_tmp_1, full_pairings_g1, full_pairings_g2, ((kss + two_k) * N_ATTR) + two_k);
