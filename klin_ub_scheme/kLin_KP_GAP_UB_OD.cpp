@@ -342,7 +342,6 @@ int main(int argc, char **argv) {
                 g1_mul_pre(t_pre_C2[i], W0_i_A1_W1[i]);
             }
              */
-
             res_sT_W0 = vector_trans_mul_matrix_g1_sim(output_res_sT_W0, si.si[z].si_vec, W0_i_A1_W1, kss, kss, kss);
             //res_sT_W0 = vector_trans_mul_matrix_g1_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
             res_Add_val = vector_add_vector_g1(output_res_Add_val, sTAW, res_sT_W0, kss, kss);
