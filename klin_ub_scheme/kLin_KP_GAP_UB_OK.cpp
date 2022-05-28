@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     init_sk_tmp_vectors_ub_ok(N_ATTR, kss, &vj);
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
-    for (int no = 0; no < NTESTS; no++) {
+    for (int no = 0; no < 1; no++) {
         //progressBar(100,progress2);
         t[no] = cpucycles();
         bn_t *Wr;
@@ -255,8 +255,8 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-    printf("[");
-    print_results("Results keyGen():           ", t, NTESTS);
+    //printf("[");
+    //print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */
     //float progress3 = 0.0;
@@ -329,14 +329,17 @@ int main(int argc, char **argv) {
             i_A1_W1 = matrix_mul_scalar_g2_pre(output_i_A1_W1, t_pre_AW1, (z), kss, kss);
             W0_i_A1_W1 = matrix_add_matrix_g2(output_W0_i_A1_W1, mpk.AW0_mat, i_A1_W1, kss, kss, kss, kss);
 
+            /*
             for (int i = 0; i < kss * kss; ++i) {
                 for (int j = 0; j < RLC_EP_TABLE_MAX; ++j) {
                     init_null_new_g2_t_var(t_pre_C2[i][j]);
                 }
                 g2_mul_pre(t_pre_C2[i], W0_i_A1_W1[i]);
             }
+             */
 
-            res_sT_W0 = vector_trans_mul_matrix_g2_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
+            res_sT_W0 = vector_trans_mul_matrix_g2_sim(output_res_sT_W0, si.si[z].si_vec, W0_i_A1_W1, kss, kss, kss);
+            //res_sT_W0 = vector_trans_mul_matrix_g2_pre(output_res_sT_W0, si.si[z].si_vec, t_pre_C2, kss, kss, kss);
             res_Add_val = vector_add_vector_g2(output_res_Add_val, sTAW, res_sT_W0, kss, kss);
 
             for (int p = 0; p < two_k; ++p) {
@@ -383,7 +386,7 @@ int main(int argc, char **argv) {
         //g1_set_infty(K4_prod[i]);
     }
 
-    for (int go = 0; go < NTESTS; go++) {
+    for (int go = 0; go < 1; go++) {
         //progressBar(100,progress4);
         t[go] = cpucycles();
 
@@ -445,8 +448,8 @@ int main(int argc, char **argv) {
     //test_stuff(resultArray, 3, t, NTESTS);
     //print_result_array(resultArray);
 
-    print_results("Results decryption():           ", t, NTESTS);
-    printf("]\n");
+    //print_results("Results decryption():           ", t, NTESTS);
+    //printf("]\n");
     std::cout << "\n" << std::endl;
     return 0;
 }
