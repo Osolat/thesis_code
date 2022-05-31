@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     init_sk_tmp_vectors_lu(N_ATTR, kss, &vj);
     tree_from_string(and_tree_formula(N_ATTR), &tree_root);
 
-    for (int no = 0; no < 1; no++) {
+    for (int no = 0; no < NTESTS; no++) {
         //progressBar(100,progress2);
         t[no] = cpucycles();
         bn_t *Wr; bn_t *jW1; bn_t *W0_W1; bn_t *W0_w1_rj; bn_t *v_plus_w;
@@ -272,8 +272,8 @@ int main(int argc, char **argv) {
         //progress2 = ((float) (no+1) / NTESTS);
     }
     //test_stuff(resultArray, 1, t, NTESTS);
-    //printf("[");
-    //print_results("Results keyGen():           ", t, NTESTS);
+    printf("[");
+    print_results("Results keyGen():           ", t, NTESTS);
 
     /* Encryption */
     //float progress3 = 0.0;
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
     init_null_new_gt_t_var(de_nom);
     init_null_new_gt_t_var(map_res);
 
-    for (int go = 0; go < 1; go++) {
+    for (int go = 0; go < NTESTS; go++) {
         //progressBar(100,progress4);
         t[go] = cpucycles();
 
@@ -500,8 +500,8 @@ int main(int argc, char **argv) {
     //test_stuff(resultArray, 3, t, NTESTS);
     //print_result_array(resultArray);
 
-    //print_results("Results decryption():           ", t, NTESTS);
-    //printf("]\n");
+    print_results("Results decryption():           ", t, NTESTS);
+    printf("]\n");
     std::cout<<"\n"<<std::endl;
     return 0;
 }
