@@ -24,6 +24,11 @@ For large number of attributes the policy tree will need a lot of stack space du
 
 ``ulimit -s unlimited && objects/main 10000``
 
+## Helpful notes about the policy tree implementation
+Recover coefficients reverses the order of children. A flat tree will have leaf n at pos 0, leaf n-1 at pos 1 etc. In the n-standard tree the recursion goes down to bottom of tree first.
+Use leaf_index to index the coefficient properly.
+
+
 ## Authors
  * Benjamin B. Hansen
  * Viktor H. Miltersen
